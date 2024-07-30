@@ -1,4 +1,4 @@
-- name: Install dns utils
+- name: Install common packages
   become: true
   ansible.builtin.apt:
     name:
@@ -6,3 +6,9 @@
       - git
       - python3
     state: present
+
+- name: Clean up APT
+  become: true
+  ansible.builtin.apt:
+    autoclean: true
+    autoremove: true

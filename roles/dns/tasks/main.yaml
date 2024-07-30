@@ -6,15 +6,8 @@
       - dnsmasq
     state: present
 
-- name: Clean up APT
-  become: true
-  ansible.builtin.apt:
-    autoclean: true
-    autoremove: true
-
 - name: Install DNS File
   become: true
-  ansible.builtin.file:
+  ansible.builtin.copy:
     src: files/hosts
     dest: /etc/hosts
-    state: present
