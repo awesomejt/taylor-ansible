@@ -11,3 +11,41 @@
   ansible.builtin.copy:
     src: files/hosts
     dest: /etc/hosts
+  
+- name: Remove default DNS config file
+  become: true
+  file:
+   path: /etc/dnsmasq.conf
+   state: absent
+
+- name: DNS Masq Config
+  become: true
+  ansible.builtin.copy:
+    src: files/dnsmasq.conf
+    dest: /etc/dnsmasq.conf
+
+- name: Resolv file
+  become: true
+  file:
+   path: "/etc/resolv.conf"
+   state: absent
+
+- name: Replace resolv.conf
+  become: true
+  ansible.builtin.copy:
+    src: files/resolv.conf
+    dest: /etc/resolv.conf
+
+- name: Stop and disable Resolved
+  become: true
+  ansible.builtin.systemd_service:
+    state: stopped
+    enabled: false
+    name: systemd-resolved
+  
+- name: Make sure DNS service is running
+  become: true
+  ansible.builtin.systemd_service:
+    state: started
+    enabled: true
+    name: dnsmasq
