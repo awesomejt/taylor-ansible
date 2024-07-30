@@ -4,9 +4,11 @@
       - dnsutils
       - dnsmasq
     state: present
+    become: true
 
 - name: Install dns utils
   ansible.builtin.file:
     src: hosts
     dest: /etc/hosts
     state: present
+    become: true
