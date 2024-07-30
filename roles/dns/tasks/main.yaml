@@ -12,9 +12,9 @@
     autoclean: true
     autoremove: true
 
-- name: Install dns utils
+- name: Install DNS File
   become: true
   ansible.builtin.file:
-    src: hosts
+    src: files/hosts
     dest: /etc/hosts
     state: present
