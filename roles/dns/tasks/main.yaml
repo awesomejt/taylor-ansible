@@ -49,3 +49,7 @@
     state: started
     enabled: true
     name: dnsmasq
+
+- name: Reload systemd service
+  ansible.builtin.systemd_service:
+    daemon_reload: true
