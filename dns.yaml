@@ -1,9 +1,5 @@
 - name: DNS Setup
   hosts: dns-hosts
-  tasks:
-   - name: Ping my hosts
-     ansible.builtin.ping:
-
-   - name: Print message
-     ansible.builtin.debug:
-      msg: Hello world
+  roles:
+    - common
+    - dns

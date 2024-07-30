@@ -1,0 +1,7 @@
+- name: Install dns utils
+  ansible.builtin.apt:
+    name:
+      - nano
+      - git
+      - python3
+    state: present
