@@ -1,0 +1,10 @@
+- name: Update All Packages
+  become: true
+  apt:
+    upgrade: full
+
+- name: Clean up APT
+  become: true
+  apt:
+    autoclean: true
+    autoremove: true

@@ -1,6 +1,6 @@
 - name: Install dns utils
   become: true
-  ansible.builtin.apt:
+  apt:
     name:
       - dnsutils
       - dnsmasq
@@ -8,7 +8,7 @@
 
 - name: Install DNS File
   become: true
-  ansible.builtin.copy:
+  copy:
     src: files/hosts
     dest: /etc/hosts
   
@@ -20,7 +20,7 @@
 
 - name: DNS Masq Config
   become: true
-  ansible.builtin.copy:
+  copy:
     src: files/dnsmasq.conf
     dest: /etc/dnsmasq.conf
 
@@ -32,25 +32,25 @@
 
 - name: Replace resolv.conf
   become: true
-  ansible.builtin.copy:
+  copy:
     src: files/resolv.conf
     dest: /etc/resolv.conf
 
 - name: Stop and disable Resolved
   become: true
-  ansible.builtin.systemd_service:
+  systemd_service:
     state: stopped
     enabled: false
     name: systemd-resolved
   
 - name: Make sure DNS service is running
   become: true
-  ansible.builtin.systemd_service:
+  systemd_service:
     state: restarted
     enabled: true
     name: dnsmasq
 
 - name: Reload systemd service
   become: true
-  ansible.builtin.systemd_service:
+  systemd_service:
     daemon_reload: true

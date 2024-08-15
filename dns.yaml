@@ -1,5 +1,6 @@
 - name: DNS Setup
   hosts: dns
   roles:
+    - updates
     - common
     - dns
