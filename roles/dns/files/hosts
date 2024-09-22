@@ -1,3 +1,12 @@
-192.168.50.53   dns ns dns.taylor.lan ns.taylor.lan
-192.168.50.41   genesis genesis.taylor.lan
-192.168.50.40   homelab homelab.taylor.lan
+# Entries for DNS (dnsmasq)
+192.168.50.40 homelab.taylor.lan homelab
+192.168.50.41 genesis.taylor.lan genesis
+192.168.50.42 ipa.taylor.lan ipa
+192.168.50.43 ldap.taylor.lan ldap
+192.168.50.53 dns.taylor.lan dns
+127.0.0.1 localhost
+
+# The following lines are desirable for IPv6 capable hosts
+::1 localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
