@@ -37,6 +37,12 @@
         mode: '0755'
       become: yes
 
+    - name: Copy consul config file
+      become: true
+      copy:
+        src: files/consul.hcl
+        dest: /etc/consul.d/consul.hcl
+
     - name: Create Consul data directory
       ansible.builtin.file:
         path: /opt/consul
