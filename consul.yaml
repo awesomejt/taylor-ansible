@@ -1,0 +1,6 @@
+- name: Consul
+  hosts: consul
+  roles:
+    - updates
+    - common
+    - consul
