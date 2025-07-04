@@ -1,7 +1,7 @@
 # consul.hcl
 
 # Data directory for Consul state
-data_dir = "/opt/consul/data"
+data_dir = "/opt/consul"
 
 # Bind address for the Consul server
 bind_addr = "0.0.0.0" # Listen on all interfaces; replace with specific IP if needed
@@ -43,7 +43,7 @@ dns_config {
 }
 
 # Enable encryption for gossip protocol (optional for single node)
-encrypt = "YOUR_GOSSIP_ENCRYPTION_KEY" # Generate with `consul keygen`
+encrypt = "UGoK9dyBBdReRk2V+HQWXXqnKhuYMJ8i8DU4+vnaXTE=" # Generate with `consul keygen`
 
 # Logging configuration
 log_level = "INFO"
