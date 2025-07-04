@@ -1,0 +1,57 @@
+- name: Install Consul via APT on Ubuntu
+  block:
+    - name: Ensure required packages are installed
+      ansible.builtin.apt:
+        name:
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+        update_cache: yes
+      become: yes
+
+    - name: Add HashiCorp GPG key
+      ansible.builtin.apt_key:
+        url: https://apt.releases.hashicorp.com/gpg
+        state: present
+      become: yes
+
+    - name: Add HashiCorp APT repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+        state: present
+        filename: hashicorp
+      become: yes
+
+    - name: Install Consul
+      ansible.builtin.apt:
+        name: consul
+        state: present
+        update_cache: yes
+      become: yes
+
+    - name: Create Consul configuration directory
+      ansible.builtin.file:
+        path: /etc/consul.d
+        state: directory
+        mode: '0755'
+      become: yes
+
+    - name: Create Consul data directory
+      ansible.builtin.file:
+        path: /opt/consul
+        state: directory
+        mode: '0755'
+        owner: consul
+        group: consul
+      become: yes
+
+    - name: Create Consul user
+      ansible.builtin.user:
+        name: consul
+        system: yes
+        shell: /bin/false
+        home: /opt/consul
+      become: yes
+  tags:
+    - consul
