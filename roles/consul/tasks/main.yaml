@@ -43,6 +43,12 @@
         src: files/consul.hcl
         dest: /etc/consul.d/consul.hcl
 
+    - name: Copy consul service file
+      become: true
+      copy:
+        src: files/service.hcl
+        dest: /etc/consul.d/service.hcl
+
     - name: Create Consul data directory
       ansible.builtin.file:
         path: /opt/consul

@@ -5,6 +5,7 @@ data_dir = "/opt/consul"
 
 # Bind address for the Consul server
 bind_addr = "0.0.0.0" # Listen on all interfaces; replace with specific IP if needed
+client_addr = "0.0.0.0"
 
 # Node name (unique for the node)
 node_name = "consul-server-1"
@@ -23,6 +24,14 @@ ui_config {
   enabled = true
 }
 
+connect {
+  enabled = true
+}
+
+autopilot {
+  min_quorum = 1
+}
+
 # Ports configuration, emphasizing DNS
 ports {
   http  = 8500  # HTTP API
@@ -32,6 +41,8 @@ ports {
   serf_lan = 8301 # LAN gossip protocol
 }
 
+retry_join = ["127.0.0.1"]
+
 # DNS configuration
 dns_config {
   enable_truncate = true # Enable DNS truncation for large responses
@@ -39,7 +50,7 @@ dns_config {
   allow_stale = true     # Allow stale DNS queries for performance
   max_stale = "10m"      # Maximum staleness for stale queries
   node_ttl = "30s"       # TTL for node DNS responses
-  service_ttl = "30s"    # TTL for service DNS responses
+  # service_ttl = "30s"    # TTL for service DNS responses
 }
 
 # Enable encryption for gossip protocol (optional for single node)
