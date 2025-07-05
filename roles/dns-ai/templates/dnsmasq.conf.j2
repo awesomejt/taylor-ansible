@@ -1,0 +1,24 @@
+# Basic dnsmasq configuration for DNS resolution from other systems
+
+# Listen on the server's network interface (replace eth0 with your interface)
+interface={{ ansible_default_ipv4.interface | default('eth0') }}
+# Optionally, specify listen-address for specific IP
+# listen-address={{ ansible_default_ipv4.address | default('0.0.0.0') }}
+
+# Specify upstream DNS servers (e.g., Google DNS)
+server=8.8.8.8
+server=8.8.4.4
+
+# Enable DNS caching
+cache-size=1000
+
+# Prevent dnsmasq from using /etc/resolv.conf as upstream servers
+no-resolv
+
+# Allow DNS queries from other systems
+no-poll
+no-hosts
+
+# Log queries for debugging
+log-queries
+log-facility=/var/log/dnsmasq.log

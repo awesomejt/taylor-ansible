@@ -1,0 +1,41 @@
+- name: Configure dnsmasq for DNS resolution from other systems on Ubuntu 24.04
+  block:
+    - name: Install dnsmasq
+      ansible.builtin.apt:
+        name: dnsmasq
+        state: present
+        update_cache: yes
+      become: yes
+
+    - name: Configure dnsmasq to listen on network interfaces
+      ansible.builtin.template:
+        src: dnsmasq.conf.j2
+        dest: /etc/dnsmasq.conf
+        owner: root
+        group: root
+        mode: '0644'
+        backup: yes
+      become: yes
+      notify: Restart dnsmasq
+
+    - name: Open DNS port (53) in ufw
+      ansible.builtin.ufw:
+        rule: allow
+        port: 53
+        proto: udp
+        state: enabled
+      become: yes
+
+    - name: Ensure dnsmasq service is enabled and started
+      ansible.builtin.service:
+        name: dnsmasq
+        state: started
+        enabled: yes
+      become: yes
+
+  handlers:
+    - name: Restart dnsmasq
+      ansible.builtin.service:
+        name: dnsmasq
+        state: restarted
+      become: yes
