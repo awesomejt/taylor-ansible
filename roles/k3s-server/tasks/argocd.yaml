@@ -1,0 +1,10 @@
+- name: Install ArgoCD
+  kubernetes.core.k8s:
+    state: present
+    src: https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+    namespace: argocd
+    kubeconfig: "{{ kubeconfig_path | default('/etc/kubernetes/admin.conf') }}"
+  register: argocd_install
+  retries: 3
+  delay: 5
+  until: argocd_install is success

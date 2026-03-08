@@ -4,7 +4,6 @@
     name:
       - nano
       - git
-      - python3
     state: present
 
 - name: Clean up APT
