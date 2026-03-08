@@ -1,0 +1,52 @@
+- name: Ensure role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == "Debian"
+    fail_msg: "postgresql-18 role currently supports Debian/Ubuntu only"
+
+- name: Install packages required to configure PGDG repository
+  become: true
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: yes
+
+- name: Create PGDG key directory
+  become: true
+  ansible.builtin.file:
+    path: "{{ postgresql_repo_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Download PGDG repository signing key
+  become: true
+  ansible.builtin.get_url:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    dest: "{{ postgresql_repo_key_path }}"
+    mode: "0644"
+
+- name: Configure PGDG APT repository
+  become: true
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by={{ postgresql_repo_key_path }}] https://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main"
+    state: present
+    filename: pgdg
+    update_cache: yes
+
+- name: Install PostgreSQL 18 packages
+  become: true
+  ansible.builtin.apt:
+    name: "{{ postgresql_packages }}"
+    state: present
+    update_cache: yes
+
+- name: Ensure PostgreSQL service is enabled and running
+  become: true
+  ansible.builtin.systemd:
+    name: "{{ postgresql_service_name }}"
+    enabled: true
+    state: started

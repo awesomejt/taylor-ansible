@@ -1,0 +1,10 @@
+postgresql_major_version: "18"
+postgresql_repo_key_path: /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+postgresql_repo_dir: /usr/share/postgresql-common/pgdg
+
+postgresql_packages:
+  - postgresql-common
+  - "postgresql-{{ postgresql_major_version }}"
+  - "postgresql-contrib-{{ postgresql_major_version }}"
+
+postgresql_service_name: postgresql
