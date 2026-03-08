@@ -7,7 +7,7 @@ usage() {
 Usage: sync-to-ansible.sh [host_or_user@host] [remote_path] [--delete] [--dry-run]
 
 Defaults:
-    host_or_user@host: jason@192.168.50.61
+    host_or_user@host: jason@192.168.50.12
   remote_path: ~/ansible
 
 Path rules:
@@ -16,15 +16,15 @@ Path rules:
   my-folder  -> treated as ~/my-folder
 
 Environment overrides:
-    ANSIBLE_SYNC_HOST  (default: 192.168.50.61)
+    ANSIBLE_SYNC_HOST  (default: 192.168.50.12)
     ANSIBLE_SYNC_USER  (default: jason)
   ANSIBLE_SYNC_DEST  (default: ~/ansible)
 
 Examples:
-  ./sync-to-ansible.sh jason@192.168.50.61
-  ./sync-to-ansible.sh 192.168.50.61
-  ./sync-to-ansible.sh jason@192.168.50.61 ansible --delete
-  ANSIBLE_SYNC_HOST=192.168.50.61 ./sync-to-ansible.sh
+  ./sync-to-ansible.sh jason@192.168.50.12
+  ./sync-to-ansible.sh 192.168.50.12
+  ./sync-to-ansible.sh jason@192.168.50.12 ansible --delete
+  ANSIBLE_SYNC_HOST=192.168.50.12 ./sync-to-ansible.sh
 
 Git Bash fallback:
   If rsync is missing on Git Bash for Windows, this script falls back to
@@ -79,7 +79,7 @@ normalize_remote_dest() {
         exit 1
     fi
 
-    if [[ "${REMOTE_DEST}" == *"~"* ]] && [[ "${REMOTE_DEST}" != "~" ]] && [[ "${REMOTE_DEST}" != ~/* ]]; then
+    if [[ "${REMOTE_DEST}" == *"~"* ]] && [[ "${REMOTE_DEST}" != "~" ]] && [[ "${REMOTE_DEST}" != "~/"* ]]; then
         echo "Tilde (~) is only supported as '~' or '~/path': ${REMOTE_DEST}"
         exit 1
     fi
@@ -91,7 +91,7 @@ normalize_remote_dest() {
 
     if [ "${REMOTE_DEST}" = "~" ] || [ "${REMOTE_DEST}" = "~/" ]; then
         REMOTE_DEST="~"
-    elif [[ "${REMOTE_DEST}" == ~/* ]]; then
+    elif [[ "${REMOTE_DEST}" == "~/"* ]]; then
         :
     elif [[ "${REMOTE_DEST}" == /* ]]; then
         :
@@ -103,16 +103,53 @@ normalize_remote_dest() {
 ensure_remote_dest_exists() {
     if [ "${REMOTE_DEST}" = "~" ]; then
         ssh "${REMOTE_TARGET}" 'mkdir -p "$HOME"'
-    elif [[ "${REMOTE_DEST}" == ~/* ]]; then
+    elif [[ "${REMOTE_DEST}" == "~/"* ]]; then
         local remote_suffix
-        remote_suffix="${REMOTE_DEST#~/}"
+        remote_suffix="${REMOTE_DEST:2}"
         ssh "${REMOTE_TARGET}" "mkdir -p \"\$HOME/${remote_suffix}\""
     else
         ssh "${REMOTE_TARGET}" "mkdir -p '${REMOTE_DEST}'"
     fi
 }
 
+print_resolved_remote_dest() {
+    if [ "${REMOTE_DEST}" = "~" ]; then
+        ssh "${REMOTE_TARGET}" 'printf "%s\n" "$HOME"'
+    elif [[ "${REMOTE_DEST}" == "~/"* ]]; then
+        local remote_suffix
+        remote_suffix="${REMOTE_DEST:2}"
+        ssh "${REMOTE_TARGET}" "printf '%s\\n' \"\$HOME/${remote_suffix}\""
+    else
+        printf '%s\n' "${REMOTE_DEST}"
+    fi
+}
+
+verify_remote_dest_exists() {
+    if [ "${REMOTE_DEST}" = "~" ]; then
+        ssh "${REMOTE_TARGET}" 'test -d "$HOME"'
+    elif [[ "${REMOTE_DEST}" == "~/"* ]]; then
+        local remote_suffix
+        remote_suffix="${REMOTE_DEST:2}"
+        ssh "${REMOTE_TARGET}" "test -d \"\$HOME/${remote_suffix}\""
+    else
+        ssh "${REMOTE_TARGET}" "test -d '${REMOTE_DEST}'"
+    fi
+}
+
+resolve_remote_dest_for_rsync() {
+    if [ "${REMOTE_DEST}" = "~" ]; then
+        ssh "${REMOTE_TARGET}" 'printf "%s" "$HOME"'
+    elif [[ "${REMOTE_DEST}" == "~/"* ]]; then
+        local remote_suffix
+        remote_suffix="${REMOTE_DEST:2}"
+        ssh "${REMOTE_TARGET}" "printf '%s' \"\$HOME/${remote_suffix}\""
+    else
+        printf '%s' "${REMOTE_DEST}"
+    fi
+}
+
 sync_with_rsync() {
+    local rsync_remote_dest
     local rsync_args=(
         -avz
         --progress
@@ -131,7 +168,8 @@ sync_with_rsync() {
     fi
 
     ensure_remote_dest_exists
-    rsync "${rsync_args[@]}" "${SCRIPT_DIR}/" "${REMOTE_TARGET}:${REMOTE_DEST}/"
+    rsync_remote_dest="$(resolve_remote_dest_for_rsync)"
+    rsync "${rsync_args[@]}" "${SCRIPT_DIR}/" "${REMOTE_TARGET}:${rsync_remote_dest}/"
 }
 
 sync_with_git_bash_fallback() {
@@ -165,9 +203,9 @@ sync_with_git_bash_fallback() {
             cd "${SCRIPT_DIR}"
             tar "${tar_excludes[@]}" -czf - .
         ) | ssh "${REMOTE_TARGET}" 'mkdir -p "$HOME" && tar -xzf - -C "$HOME"'
-    elif [[ "${REMOTE_DEST}" == ~/* ]]; then
+    elif [[ "${REMOTE_DEST}" == "~/"* ]]; then
         local remote_suffix
-        remote_suffix="${REMOTE_DEST#~/}"
+        remote_suffix="${REMOTE_DEST:2}"
         (
             cd "${SCRIPT_DIR}"
             tar "${tar_excludes[@]}" -czf - .
@@ -180,7 +218,7 @@ sync_with_git_bash_fallback() {
     fi
 }
 
-DEFAULT_HOST="${ANSIBLE_SYNC_HOST:-192.168.50.61}"
+DEFAULT_HOST="${ANSIBLE_SYNC_HOST:-192.168.50.12}"
 DEFAULT_USER="${ANSIBLE_SYNC_USER:-jason}"
 DEFAULT_DEST="${ANSIBLE_SYNC_DEST:-~/ansible}"
 
@@ -262,6 +300,16 @@ else
     else
         echo "Missing required command: rsync"
         echo "Install rsync to continue."
+        exit 1
+    fi
+fi
+
+if [ "${DRY_RUN}" = "false" ]; then
+    if verify_remote_dest_exists; then
+        RESOLVED_REMOTE_DEST="$(print_resolved_remote_dest)"
+        echo "Remote destination verified: ${RESOLVED_REMOTE_DEST}"
+    else
+        echo "Sync completed, but remote destination directory was not found: ${REMOTE_DEST}"
         exit 1
     fi
 fi
