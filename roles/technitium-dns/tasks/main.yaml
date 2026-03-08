@@ -1,0 +1,62 @@
+- name: Install packages required for Technitium DNS
+  become: true
+  ansible.builtin.apt:
+    name:
+      - curl
+      - ca-certificates
+      - dnsutils
+    state: present
+    update_cache: yes
+
+- name: Disable systemd-resolved so Technitium can bind port 53
+  become: true
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    enabled: false
+    state: stopped
+
+- name: Set temporary resolver config for installer connectivity
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/resolv.conf
+    mode: '0644'
+    content: |
+      nameserver {{ technitium_bootstrap_nameserver_primary }}
+      nameserver {{ technitium_bootstrap_nameserver_secondary }}
+
+- name: Check whether Technitium DNS is already installed
+  become: true
+  ansible.builtin.stat:
+    path: /opt/technitium/dns/start.sh
+  register: technitium_install_stat
+
+- name: Install or upgrade Technitium DNS
+  become: true
+  ansible.builtin.shell: |
+    set -euo pipefail
+    curl -sSL {{ technitium_install_script_url }} | bash
+  args:
+    executable: /bin/bash
+  when: technitium_force_upgrade | bool or not technitium_install_stat.stat.exists
+
+- name: Ensure Technitium dns.service is enabled and running
+  become: true
+  ansible.builtin.systemd:
+    name: dns.service
+    enabled: true
+    state: started
+
+- name: Configure host resolver to use local Technitium DNS
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/resolv.conf
+    mode: '0644'
+    content: |
+      nameserver {{ technitium_local_nameserver }}
+      nameserver {{ technitium_fallback_nameserver }}
+
+- name: Restart Technitium DNS service after resolver update
+  become: true
+  ansible.builtin.systemd:
+    name: dns.service
+    state: restarted

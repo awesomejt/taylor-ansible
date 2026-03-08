@@ -2,6 +2,14 @@
 
 Ansible playbooks and roles for homelab hosts.
 
+## Playbooks
+
+Run Technitium DNS setup against hosts in the `dns` inventory group:
+
+```bash
+ansible-playbook -i inventory.ini dns.yaml
+```
+
 ## Sync Files to Ansible Control Server
 
 Use the root-level sync helper to push this repository to your Ansible control server without using Git on that server:
