@@ -1,0 +1,14 @@
+postgresql_db_user: "postgres"
+postgresql_users:
+  - cman
+  - resolve
+postgresql_databases:
+  - name: course_manager_test
+    owner: cman
+    encoding: UTF-8
+  - name: resolve-training-test
+    owner: resolve
+    encoding: UTF-8
+
+k3s_server: "k3s-stage-server"
+k3s_node_count: 5

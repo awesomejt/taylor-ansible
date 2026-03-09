@@ -1,17 +1,48 @@
 - name: PostgreSQL 18 Setup
-  hosts: postgres
+  hosts: "postgres_{{ env | default('prod') }}"
   vars_files:
+    - "vars/{{ env | default('prod') }}/vars.yaml"
     - "vars/{{ env | default('prod') }}/secrets.yaml"
+  vars:
+    postgresql_use_list_bootstrap: >-
+      {{
+        (postgresql_users | default([]) | length) > 0
+        or (postgresql_databases | default([]) | length) > 0
+      }}
   pre_tasks:
-    - name: Ensure vault_postgresql_dbpass is defined
+    - name: Ensure vault_postgresql_dbpass is defined when using app bootstrap mode
       ansible.builtin.assert:
         that:
           - vault_postgresql_dbpass is defined
           - (vault_postgresql_dbpass | string | length) > 0
-        fail_msg: "Define vault_postgresql_dbpass in vars/{{ env | default('prod') }}/secrets.yaml"
+        fail_msg: >-
+          Define vault_postgresql_dbpass in vars/{{ env | default('prod') }}/secrets.yaml
+          or set postgresql_users/postgresql_databases in vars/{{ env | default('prod') }}/vars.yaml.
+      when: not (postgresql_use_list_bootstrap | bool)
   roles:
     - updates
     - common
     - role: postgresql-18
       vars:
-        postgresql_db_user_password: "{{ vault_postgresql_dbpass }}"
+        postgresql_manage_app_db: "{{ not (postgresql_use_list_bootstrap | bool) }}"
+        postgresql_db_user_password: "{{ vault_postgresql_dbpass | default('') }}"
+  post_tasks:
+    - name: Ensure declared PostgreSQL roles exist
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_user:
+        name: "{{ item }}"
+        role_attr_flags: LOGIN
+      loop: "{{ postgresql_users | default([]) }}"
+      when: postgresql_use_list_bootstrap | bool
+
+    - name: Ensure declared PostgreSQL databases exist
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: "{{ item.name }}"
+        owner: "{{ item.owner }}"
+        encoding: "{{ (item.encoding | default('UTF8')) | replace('-', '') }}"
+        template: "{{ item.template | default('template0') }}"
+      loop: "{{ postgresql_databases | default([]) }}"
+      when: postgresql_use_list_bootstrap | bool
