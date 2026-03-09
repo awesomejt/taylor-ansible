@@ -50,3 +50,36 @@
     name: "{{ postgresql_service_name }}"
     enabled: true
     state: started
+
+- name: Install Python driver required by community.postgresql modules
+  become: true
+  ansible.builtin.apt:
+    name: "{{ postgresql_python_packages }}"
+    state: present
+
+- name: Ensure application DB password is provided when bootstrap is enabled
+  ansible.builtin.assert:
+    that:
+      - (postgresql_db_user_password | string | length) > 0
+    fail_msg: "Set postgresql_db_user_password (for example from vault_postgresql_dbpass)."
+  when: postgresql_manage_app_db | bool
+
+- name: Ensure application PostgreSQL role exists
+  become: true
+  become_user: postgres
+  community.postgresql.postgresql_user:
+    name: "{{ postgresql_db_user }}"
+    password: "{{ postgresql_db_user_password }}"
+    role_attr_flags: LOGIN
+  no_log: true
+  when: postgresql_manage_app_db | bool
+
+- name: Ensure application database exists
+  become: true
+  become_user: postgres
+  community.postgresql.postgresql_db:
+    name: "{{ postgresql_db_name }}"
+    owner: "{{ postgresql_db_owner }}"
+    encoding: "{{ postgresql_db_encoding }}"
+    template: "{{ postgresql_db_template }}"
+  when: postgresql_manage_app_db | bool

@@ -1,6 +1,17 @@
 - name: PostgreSQL 18 Setup
   hosts: postgres
+  vars_files:
+    - "vars/{{ env | default('prod') }}/secrets.yaml"
+  pre_tasks:
+    - name: Ensure vault_postgresql_dbpass is defined
+      ansible.builtin.assert:
+        that:
+          - vault_postgresql_dbpass is defined
+          - (vault_postgresql_dbpass | string | length) > 0
+        fail_msg: "Define vault_postgresql_dbpass in vars/{{ env | default('prod') }}/secrets.yaml"
   roles:
     - updates
     - common
-    - postgresql-18
+    - role: postgresql-18
+      vars:
+        postgresql_db_user_password: "{{ vault_postgresql_dbpass }}"

@@ -7,4 +7,15 @@ postgresql_packages:
   - "postgresql-{{ postgresql_major_version }}"
   - "postgresql-contrib-{{ postgresql_major_version }}"
 
+postgresql_python_packages:
+  - python3-psycopg2
+
 postgresql_service_name: postgresql
+
+postgresql_manage_app_db: true
+postgresql_db_name: app
+postgresql_db_user: app
+postgresql_db_owner: "{{ postgresql_db_user }}"
+postgresql_db_user_password: ""
+postgresql_db_encoding: UTF8
+postgresql_db_template: template0
