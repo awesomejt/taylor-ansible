@@ -13,4 +13,14 @@ postgresql_databases:
 k3s_server: "k3s-prod-server"
 k3s_node_count: 5
 
+k3s_registration_address: "{{ k3s_server }}"
+k3s_prod_ha: true
+k3s_enable_argocd: true
+
+k3s_server_disable_components: []
+k3s_server_tls_sans:
+  - "{{ k3s_registration_address }}"
+k3s_server_extra_args: []
+k3s_agent_extra_args: []
+
 

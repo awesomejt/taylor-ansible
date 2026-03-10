@@ -1,0 +1,16 @@
+k3s_install_script_url: https://get.k3s.io
+k3s_version: ""
+k3s_kubeconfig_mode: "0644"
+
+k3s_mode: server
+k3s_server_init: false
+k3s_registration_address: ""
+
+k3s_server_disable_components: []
+k3s_server_tls_sans: []
+k3s_server_extra_args: []
+
+k3s_agent_extra_args: []
+
+k3s_enable_argocd: false
+k3s_argocd_manifest_url: https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
