@@ -60,3 +60,62 @@
   ansible.builtin.systemd:
     name: dns.service
     state: restarted
+
+# DNS Zone Management Tasks
+- name: Login to Technitium DNS API
+  uri:
+    url: "{{ technitium_api_url }}/api/user/login"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      username: "{{ technitium_username }}"
+      password: "{{ technitium_password }}"
+    status_code: 200
+  register: technitium_login
+  when: technitium_zones | length > 0
+
+- name: Set API token fact
+  set_fact:
+    technitium_token: "{{ technitium_login.json.response.token }}"
+  when: technitium_login is succeeded
+
+- name: Create DNS zones
+  uri:
+    url: "{{ technitium_api_url }}/api/zones/create"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      token: "{{ technitium_token }}"
+      zone: "{{ item.name }}"
+      type: "{{ item.type }}"
+    status_code: 200
+  loop: "{{ technitium_zones }}"
+  when: technitium_zones | length > 0
+  ignore_errors: true  # Zone might already exist
+
+- name: Add DNS records to zones
+  uri:
+    url: "{{ technitium_api_url }}/api/zones/records/add"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      token: "{{ technitium_token }}"
+      domain: "{{ item.1.domain }}"
+      zone: "{{ item.0.name }}"
+      type: "{{ item.1.type }}"
+      ttl: "{{ item.1.ttl | default(3600) }}"
+      ipAddress: "{{ item.1.ipAddress | default('') }}"
+      cname: "{{ item.1.cname | default('') }}"
+      nameServer: "{{ item.1.nameServer | default('') }}"
+      ptrName: "{{ item.1.ptrName | default('') }}"
+      text: "{{ item.1.text | default('') }}"
+      preference: "{{ item.1.preference | default('') }}"
+      exchange: "{{ item.1.exchange | default('') }}"
+      priority: "{{ item.1.priority | default('') }}"
+      weight: "{{ item.1.weight | default('') }}"
+      port: "{{ item.1.port | default('') }}"
+      target: "{{ item.1.target | default('') }}"
+    status_code: 200
+  loop: "{{ technitium_zones | subelements('records') }}"
+  when: technitium_zones | length > 0 and item.1.domain is defined
+  ignore_errors: true  # Record might already exist

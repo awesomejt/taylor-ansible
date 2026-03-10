@@ -4,11 +4,19 @@ Ansible playbooks and roles for homelab hosts.
 
 ## Playbooks
 
+Run system updates on all managed servers:
+
+```bash
+ansible-playbook -i inventory.ini upgrade-all.yaml
+```
+
 Run Technitium DNS setup against hosts in the `dns` inventory group:
 
 ```bash
 ansible-playbook -i inventory.ini dns.yaml
 ```
+
+The DNS role installs Technitium DNS Server. Zone and record management is optional and disabled by default. See `roles/technitium-dns/README.md` and `dns-setup-example.yaml` for details on enabling automated DNS zone management if desired.
 
 Run PostgreSQL 18 setup against hosts in the `postgres` inventory group:
 
