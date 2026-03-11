@@ -11,11 +11,21 @@ postgresql_databases:
     encoding: UTF-8
 
 k3s_server: "k3s-stage-server"
-k3s_node_count: 5
+k3s_node_count: 3
 
 k3s_registration_address: "{{ k3s_server }}"
 k3s_prod_ha: false
-k3s_enable_argocd: false
+k3s_enable_cert_manager: true
+k3s_enable_argocd: true
+k3s_argocd_ingress_enabled: true
+k3s_argocd_ingress_host: "argocd-stage.taylor.lan"
+k3s_argocd_ingress_class_name: traefik
+k3s_argocd_ingress_entrypoints: websecure
+k3s_argocd_ingress_tls: true
+k3s_argocd_bootstrap_app_name: "homelab-stage"
+k3s_argocd_bootstrap_path: "clusters/stage"
+k3s_argocd_gitops_repo_url: "git@github.com:awesomejt/homelab-k3s.git"
+k3s_argocd_gitops_repo_target_revision: main
 
 k3s_server_disable_components: []
 k3s_server_tls_sans:

@@ -35,7 +35,85 @@ K3s requirements:
 - Define hosts in inventory groups: `k3s_prod_servers`, `k3s_prod_agents`, `k3s_stage_servers`, and `k3s_stage_agents`.
 - Set `vault_k3s_token` in `vars/<env>/secrets.yaml`.
 - Set `k3s_registration_address` in `vars/<env>/vars.yaml` to a stable DNS name or VIP used by joining servers/agents.
+- Set `vault_argocd_gitops_repo_ssh_private_key` in `vars/<env>/secrets.yaml` so Argo CD can clone the GitOps repo over SSH.
+- Set `k3s_argocd_gitops_repo_url` and `k3s_argocd_bootstrap_path` in `vars/<env>/vars.yaml` when you need to override the defaults.
 - Prod HA validation expects at least 3 hosts in `k3s_prod_servers` when `k3s_prod_ha: true`.
+
+Bootstrap behavior:
+
+- Ansible installs K3s on the control-plane and agent nodes.
+- Ansible optionally installs cert-manager.
+- Ansible installs Argo CD, exposes it with ingress when configured, loads the GitOps repo SSH credential, and creates the root Argo CD application.
+- Argo CD then reconciles the environment path from the `homelab-k3s` repository using the App of Apps pattern.
+
+Suggested workflow from this workstation:
+
+```bash
+./sync-to-ansible.sh
+ssh jason@192.168.50.12
+cd ~/ansible
+ansible-playbook -i inventory.ini k3s-cluster.yaml -e env=stage --ask-vault-pass
+```
+
+You can swap `stage` for `prod` once the prod inventory and secrets are ready.
+
+## Argo CD Access
+
+If Argo CD ingress is enabled, browse to the configured host for that environment.
+
+Stage is currently configured as:
+
+```text
+https://argocd-stage.taylor.lan
+```
+
+Retrieve the initial admin password from the first control-plane server:
+
+```bash
+sudo k3s kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d && echo
+```
+
+If you use the Argo CD CLI through the ingress endpoint, use gRPC-web:
+
+```bash
+argocd login argocd-stage.taylor.lan --username admin --grpc-web
+```
+
+If ingress is disabled for an environment, use a port-forward instead:
+
+```bash
+sudo k3s kubectl -n argocd port-forward svc/argocd-server 8080:443
+```
+
+## GitOps Repo SSH Setup
+
+Generate a dedicated deploy key for Argo CD:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/argocd-homelab-k3s -C "argocd-homelab-k3s" -N ""
+```
+
+Add `~/.ssh/argocd-homelab-k3s.pub` as a read-only deploy key on the GitHub repository.
+
+Copy the private key into `vars/<env>/secrets.yaml`:
+
+```yaml
+vault_argocd_gitops_repo_ssh_private_key: |
+	-----BEGIN OPENSSH PRIVATE KEY-----
+	...
+	-----END OPENSSH PRIVATE KEY-----
+```
+
+By default the bootstrap points Argo CD at:
+
+```text
+git@github.com:awesomejt/homelab-k3s.git
+```
+
+The corresponding root application paths are:
+
+- `clusters/stage`
+- `clusters/prod`
 
 Run PostgreSQL 18 setup against hosts in the `postgres` inventory group:
 

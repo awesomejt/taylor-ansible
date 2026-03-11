@@ -16,6 +16,10 @@ k3s_node_count: 5
 k3s_registration_address: "{{ k3s_server }}"
 k3s_prod_ha: true
 k3s_enable_argocd: true
+k3s_argocd_bootstrap_app_name: "homelab-prod"
+k3s_argocd_bootstrap_path: "clusters/prod"
+k3s_argocd_gitops_repo_url: "git@github.com:awesomejt/homelab-k3s.git"
+k3s_argocd_gitops_repo_target_revision: main
 
 k3s_server_disable_components: []
 k3s_server_tls_sans:

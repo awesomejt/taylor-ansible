@@ -77,6 +77,19 @@
       vars:
         k3s_mode: agent
 
+- name: Install cert-manager on first control-plane server when enabled
+  hosts: "k3s_{{ env | default('prod') }}_servers[0]"
+  become: true
+  vars_files:
+    - "vars/{{ env | default('prod') }}/vars.yaml"
+    - "vars/{{ env | default('prod') }}/secrets.yaml"
+  tasks:
+    - name: Include cert-manager install tasks
+      ansible.builtin.include_role:
+        name: k3s-server
+        tasks_from: cert-manager
+      when: k3s_enable_cert_manager | bool
+
 - name: Install Argo CD on first control-plane server when enabled
   hosts: "k3s_{{ env | default('prod') }}_servers[0]"
   become: true

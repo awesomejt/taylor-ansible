@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ k3s_argocd_bootstrap_app_name }}
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ k3s_argocd_gitops_repo_url }}
+    targetRevision: {{ k3s_argocd_gitops_repo_target_revision }}
+    path: {{ k3s_argocd_bootstrap_path }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

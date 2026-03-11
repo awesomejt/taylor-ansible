@@ -20,9 +20,180 @@
 - name: Install Argo CD manifests
   become: true
   ansible.builtin.command:
-    cmd: "k3s kubectl apply -n argocd -f {{ k3s_argocd_manifest_url }}"
+    cmd: "k3s kubectl apply --server-side --force-conflicts -n argocd -f {{ k3s_argocd_manifest_url }}"
   register: argocd_install
   retries: 3
   delay: 5
   until: argocd_install.rc == 0
   changed_when: "'created' in argocd_install.stdout or 'configured' in argocd_install.stdout"
+
+- name: Read Argo CD server insecure setting
+  become: true
+  ansible.builtin.command:
+    cmd: "k3s kubectl -n argocd get configmap argocd-cmd-params-cm -o jsonpath={.data.server\\.insecure}"
+  register: argocd_server_insecure_current
+  changed_when: false
+  failed_when: false
+  when:
+    - k3s_argocd_ingress_enabled | bool
+    - k3s_argocd_server_insecure_when_ingress | bool
+
+- name: Enable Argo CD server insecure mode behind ingress
+  become: true
+  ansible.builtin.command:
+    cmd: "k3s kubectl -n argocd patch configmap argocd-cmd-params-cm --type merge -p '{\"data\":{\"server.insecure\":\"true\"}}'"
+  register: argocd_server_insecure_patch
+  changed_when: "'patched' in argocd_server_insecure_patch.stdout"
+  when:
+    - k3s_argocd_ingress_enabled | bool
+    - k3s_argocd_server_insecure_when_ingress | bool
+    - argocd_server_insecure_current.stdout != 'true'
+
+- name: Restart Argo CD server deployment when insecure mode changes
+  become: true
+  ansible.builtin.command:
+    cmd: "k3s kubectl -n argocd rollout restart deployment argocd-server"
+  when:
+    - argocd_server_insecure_patch is defined
+    - argocd_server_insecure_patch is changed
+
+- name: Wait for Argo CD server rollout after insecure mode update
+  become: true
+  ansible.builtin.command:
+    cmd: "k3s kubectl -n argocd rollout status deployment argocd-server --timeout=180s"
+  changed_when: false
+  when:
+    - argocd_server_insecure_patch is defined
+    - argocd_server_insecure_patch is changed
+
+- name: Validate Argo CD ingress settings when enabled
+  ansible.builtin.assert:
+    that:
+      - (k3s_argocd_ingress_host | default('') | string | length) > 0
+      - not ('traefik' in (k3s_server_disable_components | default([])))
+      - (k3s_argocd_ingress_service_name | default('') | string | length) > 0
+      - (k3s_argocd_ingress_service_port | int) > 0
+    fail_msg: >-
+      Argo CD ingress is enabled but not correctly configured.
+      Set host/service/port values and ensure Traefik is not disabled.
+  when: k3s_argocd_ingress_enabled | bool
+
+- name: Apply Argo CD ingress for Traefik
+  become: true
+  ansible.builtin.shell: |
+    set -euo pipefail
+    cat <<'EOF' | k3s kubectl apply -f -
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: argocd-server
+      namespace: argocd
+      annotations:
+        traefik.ingress.kubernetes.io/router.entrypoints: {{ k3s_argocd_ingress_entrypoints }}
+        traefik.ingress.kubernetes.io/router.tls: "{{ (k3s_argocd_ingress_tls | bool) | ternary('true', 'false') }}"
+    {% if (k3s_argocd_ingress_backend_scheme | default('') | string | length) > 0 %}
+        traefik.ingress.kubernetes.io/service.serversscheme: {{ k3s_argocd_ingress_backend_scheme }}
+    {% endif %}
+    spec:
+      ingressClassName: {{ k3s_argocd_ingress_class_name }}
+      rules:
+        - host: {{ k3s_argocd_ingress_host }}
+          http:
+            paths:
+              - path: /
+                pathType: Prefix
+                backend:
+                  service:
+                    name: {{ k3s_argocd_ingress_service_name }}
+                    port:
+                      number: {{ k3s_argocd_ingress_service_port | int }}
+    EOF
+  args:
+    executable: /bin/bash
+  register: argocd_ingress
+  changed_when: "'created' in argocd_ingress.stdout or 'configured' in argocd_ingress.stdout"
+  when: k3s_argocd_ingress_enabled | bool
+
+- name: Wait for Argo CD control-plane deployments to be available
+  become: true
+  ansible.builtin.command:
+    cmd: "k3s kubectl -n argocd rollout status deployment/{{ item }} --timeout=300s"
+  changed_when: false
+  loop: "{{ k3s_argocd_deployments }}"
+
+- name: Validate Argo CD GitOps bootstrap settings when enabled
+  ansible.builtin.assert:
+    that:
+      - (k3s_argocd_gitops_repo_url | default('') | string | length) > 0
+      - (k3s_argocd_gitops_repo_target_revision | default('') | string | length) > 0
+      - (k3s_argocd_bootstrap_path | default('') | string | length) > 0
+      - k3s_argocd_gitops_repo_url is not match('^(git@|ssh://)') or (k3s_argocd_gitops_repo_ssh_private_key | default('') | string | length) > 0
+      - k3s_argocd_gitops_repo_url is not match('^(git@|ssh://)') or (k3s_argocd_gitops_repo_ssh_known_hosts | default('') | string | length) > 0
+    fail_msg: >-
+      Argo CD GitOps bootstrap is enabled but missing required repo settings.
+      Set the repo URL, target revision, bootstrap path, and provide
+      vault_argocd_gitops_repo_ssh_private_key when using SSH.
+  when: k3s_argocd_bootstrap_enabled | bool
+
+- name: Render Argo CD SSH known hosts config for GitOps repo
+  become: true
+  ansible.builtin.template:
+    src: argocd-ssh-known-hosts-cm.yaml.j2
+    dest: /tmp/argocd-ssh-known-hosts-cm.yaml
+    mode: "0600"
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_argocd_gitops_repo_url is match('^(git@|ssh://)')
+
+- name: Apply Argo CD SSH known hosts config for GitOps repo
+  become: true
+  ansible.builtin.command:
+    cmd: k3s kubectl apply -f /tmp/argocd-ssh-known-hosts-cm.yaml
+  register: argocd_gitops_known_hosts
+  changed_when: >-
+    'created' in argocd_gitops_known_hosts.stdout
+    or 'configured' in argocd_gitops_known_hosts.stdout
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_argocd_gitops_repo_url is match('^(git@|ssh://)')
+
+- name: Render Argo CD GitOps repository secret
+  become: true
+  ansible.builtin.template:
+    src: argocd-gitops-repository-secret.yaml.j2
+    dest: /tmp/argocd-gitops-repository-secret.yaml
+    mode: "0600"
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_argocd_gitops_repo_url is match('^(git@|ssh://)')
+
+- name: Apply Argo CD GitOps repository secret
+  become: true
+  ansible.builtin.command:
+    cmd: k3s kubectl apply -f /tmp/argocd-gitops-repository-secret.yaml
+  register: argocd_gitops_repository
+  changed_when: >-
+    'created' in argocd_gitops_repository.stdout
+    or 'configured' in argocd_gitops_repository.stdout
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_argocd_gitops_repo_url is match('^(git@|ssh://)')
+
+- name: Render Argo CD root application
+  become: true
+  ansible.builtin.template:
+    src: argocd-root-application.yaml.j2
+    dest: /tmp/argocd-root-application.yaml
+    mode: "0600"
+  when: k3s_argocd_bootstrap_enabled | bool
+
+- name: Apply Argo CD root application
+  become: true
+  ansible.builtin.command:
+    cmd: k3s kubectl apply -f /tmp/argocd-root-application.yaml
+  register: argocd_root_application
+  changed_when: >-
+    'created' in argocd_root_application.stdout
+    or 'configured' in argocd_root_application.stdout
+    or 'unchanged' not in argocd_root_application.stdout
+  when: k3s_argocd_bootstrap_enabled | bool
