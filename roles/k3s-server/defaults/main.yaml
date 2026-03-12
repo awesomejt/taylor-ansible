@@ -32,10 +32,13 @@ k3s_argocd_ingress_service_name: argocd-server
 k3s_argocd_ingress_service_port: 80
 k3s_argocd_ingress_backend_scheme: ""
 k3s_argocd_server_insecure_when_ingress: true
-k3s_argocd_deployments:
-  - argocd-server
-  - argocd-repo-server
-  - argocd-application-controller
+k3s_argocd_rollout_resources:
+  - kind: deployment
+    name: argocd-server
+  - kind: deployment
+    name: argocd-repo-server
+  - kind: statefulset
+    name: argocd-application-controller
 k3s_argocd_bootstrap_enabled: true
 k3s_argocd_bootstrap_app_name: "homelab-{{ env | default('prod') }}"
 k3s_argocd_bootstrap_path: "clusters/{{ env | default('prod') }}"

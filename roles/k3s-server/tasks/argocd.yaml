@@ -114,12 +114,12 @@
   changed_when: "'created' in argocd_ingress.stdout or 'configured' in argocd_ingress.stdout"
   when: k3s_argocd_ingress_enabled | bool
 
-- name: Wait for Argo CD control-plane deployments to be available
+- name: Wait for Argo CD control-plane workloads to be available
   become: true
   ansible.builtin.command:
-    cmd: "k3s kubectl -n argocd rollout status deployment/{{ item }} --timeout=300s"
+    cmd: "k3s kubectl -n argocd rollout status {{ item.kind }}/{{ item.name }} --timeout=300s"
   changed_when: false
-  loop: "{{ k3s_argocd_deployments }}"
+  loop: "{{ k3s_argocd_rollout_resources }}"
 
 - name: Validate Argo CD GitOps bootstrap settings when enabled
   ansible.builtin.assert:
