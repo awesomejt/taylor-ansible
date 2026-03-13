@@ -77,7 +77,7 @@
 - name: Set API token fact
   set_fact:
     technitium_token: "{{ technitium_login.json.token }}"
-  when: technitium_login is succeeded
+  when: technitium_zones | length > 0 and technitium_login is succeeded
 
 - name: Create DNS zones
   uri:
