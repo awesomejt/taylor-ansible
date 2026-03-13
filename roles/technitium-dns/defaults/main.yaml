@@ -14,4 +14,9 @@ technitium_password: "admin"
 
 # Define zones to create/manage
 # Set to empty list [] to disable automated zone/record management
+# Each zone can optionally set RFC2136 update policy with:
+#   update: Deny|Allow|AllowOnlyZoneNameServers|UseSpecifiedNetworkACL|AllowZoneNameServersAndUseSpecifiedNetworkACL
+#   update_network_acl:
+#     - 192.168.50.0/24
+#     - !192.168.50.53
 technitium_zones: []

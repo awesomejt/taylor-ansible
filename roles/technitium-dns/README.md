@@ -30,6 +30,8 @@ This Ansible role installs and configures Technitium DNS Server, and optionally 
 - `technitium_zones`: List of zones to manage (default: `[]` - disabled)
   - `name`: Zone name (e.g., "local")
   - `type`: Zone type ("Primary", "Secondary", etc.)
+  - `update`: Optional dynamic update policy for the zone
+  - `update_network_acl`: Optional list of source IPs/CIDRs allowed to submit RFC2136 updates when using a network ACL-based update policy
   - `records`: List of DNS records for the zone
 
 ## DNS Record Types Supported
@@ -63,6 +65,9 @@ The role supports the following DNS record types:
 technitium_zones:
   - name: "local"
     type: "Primary"
+    update: "UseSpecifiedNetworkACL"
+    update_network_acl:
+      - "192.168.50.0/24"
     records:
       - domain: "dns.local"
         type: "A"
@@ -95,10 +100,23 @@ technitium_zones:
 - The default API credentials are `admin`/`admin` - change these immediately
 - Consider using Ansible Vault to encrypt sensitive credentials
 - The API calls use HTTP by default; consider enabling HTTPS for production use
+- RFC2136 updates should be limited to trusted K3s node ranges or protected with TSIG if you move away from insecure updates
+
+## ExternalDNS Example
+
+To let ExternalDNS update `taylor.lan` from a K3s cluster running on `192.168.50.0/24`:
+
+```yaml
+technitium_zones:
+  - name: "taylor.lan"
+    type: "Primary"
+    update: "UseSpecifiedNetworkACL"
+    update_network_acl:
+      - "192.168.50.0/24"
+```
 
 ## Troubleshooting
 
 - Check Technitium DNS logs: `journalctl -u dns.service`
-- Verify API connectivity: `curl -X POST http://localhost:5380/api/user/login -d "username=admin&password=admin"`
-- Zone management requires the DNS service to be running and accessible via API</content>
-<parameter name="filePath">/home/jason/projects/ansible/roles/technitium-dns/README.md
+- Verify API connectivity: `curl -X POST http://localhost:5380/api/user/login -d "user=admin&pass=admin"`
+- Zone management requires the DNS service to be running and accessible via API

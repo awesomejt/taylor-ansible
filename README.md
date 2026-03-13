@@ -16,7 +16,7 @@ Run Technitium DNS setup against hosts in the `dns` inventory group:
 ansible-playbook -i inventory.ini dns.yaml
 ```
 
-The DNS role installs Technitium DNS Server. Zone and record management is optional and disabled by default. See `roles/technitium-dns/README.md` and `dns-setup-example.yaml` for details on enabling automated DNS zone management if desired.
+The DNS role installs Technitium DNS Server. Zone and record management is optional and disabled by default. See `roles/technitium-dns/README.md` and `examples/dns-setup-example.yaml` for details on enabling automated DNS zone management, including RFC2136 update ACLs for ExternalDNS.
 
 Run K3s cluster setup for prod (HA):
 

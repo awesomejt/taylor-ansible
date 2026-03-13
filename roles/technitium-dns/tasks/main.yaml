@@ -68,15 +68,15 @@
     method: POST
     body_format: form-urlencoded
     body:
-      username: "{{ technitium_username }}"
-      password: "{{ technitium_password }}"
+      user: "{{ technitium_username }}"
+      pass: "{{ technitium_password }}"
     status_code: 200
   register: technitium_login
   when: technitium_zones | length > 0
 
 - name: Set API token fact
   set_fact:
-    technitium_token: "{{ technitium_login.json.response.token }}"
+    technitium_token: "{{ technitium_login.json.token }}"
   when: technitium_login is succeeded
 
 - name: Create DNS zones
@@ -92,6 +92,29 @@
   loop: "{{ technitium_zones }}"
   when: technitium_zones | length > 0
   ignore_errors: true  # Zone might already exist
+
+- name: Configure DNS zone options
+  uri:
+    url: "{{ technitium_api_url }}/api/zones/options/set"
+    method: POST
+    body_format: form-urlencoded
+    body: "{{ technitium_zone_options_body }}"
+    status_code: 200
+  vars:
+    technitium_zone_options_body: >-
+      {{
+        {'token': technitium_token, 'zone': item.name}
+        | combine(item.query_access is defined | ternary({'queryAccess': item.query_access}, {}))
+        | combine(item.query_access_network_acl is defined | ternary({'queryAccessNetworkACL': ((item.query_access_network_acl | length) > 0) | ternary(item.query_access_network_acl | join(','), 'false')}, {}))
+        | combine(item.zone_transfer is defined | ternary({'zoneTransfer': item.zone_transfer}, {}))
+        | combine(item.zone_transfer_network_acl is defined | ternary({'zoneTransferNetworkACL': ((item.zone_transfer_network_acl | length) > 0) | ternary(item.zone_transfer_network_acl | join(','), 'false')}, {}))
+        | combine(item.notify is defined | ternary({'notify': item.notify}, {}))
+        | combine(item.notify_name_servers is defined | ternary({'notifyNameServers': ((item.notify_name_servers | length) > 0) | ternary(item.notify_name_servers | join(','), 'false')}, {}))
+        | combine(item.update is defined | ternary({'update': item.update}, {}))
+        | combine(item.update_network_acl is defined | ternary({'updateNetworkACL': ((item.update_network_acl | length) > 0) | ternary(item.update_network_acl | join(','), 'false')}, {}))
+      }}
+  loop: "{{ technitium_zones }}"
+  when: technitium_zones | length > 0
 
 - name: Add DNS records to zones
   uri:
@@ -116,6 +139,6 @@
       port: "{{ item.1.port | default('') }}"
       target: "{{ item.1.target | default('') }}"
     status_code: 200
-  loop: "{{ technitium_zones | subelements('records') }}"
+  loop: "{{ technitium_zones | subelements('records', skip_missing=True) }}"
   when: technitium_zones | length > 0 and item.1.domain is defined
   ignore_errors: true  # Record might already exist
