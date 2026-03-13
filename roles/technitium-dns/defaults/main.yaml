@@ -10,7 +10,7 @@ technitium_fallback_nameserver: 1.1.1.1
 # DNS Zone Management
 technitium_api_url: "http://localhost:5380"
 technitium_username: "admin"
-technitium_password: "admin"
+technitium_password: "{{ vault_technitium_password | default('admin') }}"
 
 # Define zones to create/manage
 # Set to empty list [] to disable automated zone/record management
