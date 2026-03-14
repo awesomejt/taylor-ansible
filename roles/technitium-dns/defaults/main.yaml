@@ -10,7 +10,7 @@ technitium_fallback_nameserver: 1.1.1.1
 # DNS Zone Management
 technitium_api_url: "http://localhost:5380"
 technitium_username: "admin"
-technitium_password: "{{ vault_technitium_password | default('admin') }}"
+technitium_password: "admin"
 
 # Define zones to create/manage
 # Set to empty list [] to disable automated zone/record management
@@ -19,11 +19,9 @@ technitium_password: "{{ vault_technitium_password | default('admin') }}"
 #   update_network_acl:
 #     - 192.168.50.0/24
 #     - !192.168.50.53
+# Technitium DNS zone config for this environment
 technitium_zones: []
 
 # TSIG keys to configure on the Technitium server (managed via API)
 
-technitium_tsig_keys:
-  - keyName: external-dns
-    sharedSecret: "{{ vault_external_dns_rfc2136_tsig_secret }}"
-    algorithmName: "hmac-sha256"
+technitium_tsig_keys: []

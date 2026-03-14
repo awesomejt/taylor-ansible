@@ -82,18 +82,31 @@
 # Fetch current DNS settings so we can add TSIG keys if requested
 - name: Get current DNS settings
   uri:
-    url: "{{ technitium_api_url }}/api/settings/get"
+    url: "{{ technitium_api_url }}/api/settings/get?token={{ technitium_token }}"
     method: GET
     return_content: yes
     status_code: 200
-    params:
-      token: "{{ technitium_token }}"
   register: technitium_settings
   when: technitium_tsig_keys | length > 0
 
 - name: Initialize settings payload
   set_fact:
     technitium_settings_payload: "{{ technitium_settings.json.response | default({}) }}"
+  when: technitium_tsig_keys | length > 0
+
+- name: Set debug var current_tsigs
+  set_fact:
+    _current_tsigs: "{{ technitium_settings.json.response.tsigKeys | default([]) }}"
+  when: technitium_tsig_keys | length > 0
+
+- name: Debug current TSIG keys returned by server
+  ansible.builtin.debug:
+    var: _current_tsigs
+  when: technitium_tsig_keys | length > 0
+
+- name: Debug technitium_settings_payload (before adding keys)
+  ansible.builtin.debug:
+    var: technitium_settings_payload
   when: technitium_tsig_keys | length > 0
 
 - name: Ensure TSIG keys are present in settings payload
@@ -105,14 +118,28 @@
 
 - name: Push updated DNS settings (add TSIG keys)
   uri:
-    url: "{{ technitium_api_url }}/api/settings/set"
+    url: "{{ technitium_api_url }}/api/settings/set?token={{ technitium_token }}"
     method: POST
     body_format: json
-    body: "{{ technitium_settings_payload }}"
+    body: "{{ {'tsigKeys': technitium_settings_payload.tsigKeys} }}"
     status_code: 200
-    params:
-      token: "{{ technitium_token }}"
   when: technitium_tsig_keys | length > 0 and (technitium_settings_payload.tsigKeys | length) > (technitium_settings.json.response.tsigKeys | default([]) | length)
+
+- name: Set debug counts for payload and server tsigKeys
+  set_fact:
+    _payload_count: "{{ technitium_settings_payload.tsigKeys | default([]) | length }}"
+    _server_count: "{{ technitium_settings.json.response.tsigKeys | default([]) | length }}"
+  when: technitium_tsig_keys | length > 0
+
+- name: Debug technitium_settings_payload vs server tsigKeys counts
+  ansible.builtin.debug:
+    msg: "payload_count={{ _payload_count }}, server_count={{ _server_count }}"
+  when: technitium_tsig_keys | length > 0
+
+- name: Debug technitium_settings_payload (after adding keys)
+  ansible.builtin.debug:
+    var: technitium_settings_payload
+  when: technitium_tsig_keys | length > 0
 
 - name: Create DNS zones
   uri:
@@ -130,7 +157,7 @@
 
 - name: Configure DNS zone options
   uri:
-    url: "{{ technitium_api_url }}/api/zones/options/set"
+    url: "{{ technitium_api_url }}/api/zones/options/set?token={{ technitium_token }}"
     method: POST
     body_format: json
     body: >-

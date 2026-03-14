@@ -1,0 +1,38 @@
+# Common variables
+technitium_api_url: "http://192.168.50.53:5380"
+technitium_username: "admin"
+technitium_password: "{{ vault_technitium_password | default('admin') }}"
+
+## Secrets - located in vars/common/secrets.yaml (not committed to Git)
+# vault_technitium_password
+# vault_external_dns_rfc2136_tsig_secret
+
+technitium_zones: 
+  - name: "prod.lab"
+    type: "Primary"
+    # allow updates authenticated by TSIG `external-dns` key for A/AAAA records
+    update: "UseSpecifiedNetworkACL"
+    update_network_acl: []
+    update_security_policies:
+      - tsigKeyName: "external-dns"
+        domain: "prod.lab"
+        allowedTypes:
+          - "A"
+          - "AAAA"
+          - "CNAME"
+  - name: "stage.lab"
+    type: "Primary"
+    # allow updates authenticated by TSIG `external-dns` key for A/AAAA records
+    update: "UseSpecifiedNetworkACL"
+    update_network_acl: []
+    update_security_policies:
+      - tsigKeyName: "external-dns"
+        domain: "stage.lab"
+        allowedTypes:
+          - "A"
+          - "AAAA"
+          - "CNAME"
+technitium_tsig_keys:
+  - keyName: external-dns
+    sharedSecret: "{{ vault_external_dns_rfc2136_tsig_secret }}"
+    algorithmName: "hmac-sha256"
