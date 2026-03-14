@@ -135,6 +135,60 @@
       vault_argocd_gitops_repo_ssh_private_key when using SSH.
   when: k3s_argocd_bootstrap_enabled | bool
 
+- name: Validate ExternalDNS RFC2136 TSIG settings when secret seeding is enabled
+  ansible.builtin.assert:
+    that:
+      - (k3s_external_dns_rfc2136_tsig_keyname | default('') | string | length) > 0
+      - (k3s_external_dns_rfc2136_tsig_secret | default('') | string | length) > 0
+      - (k3s_external_dns_rfc2136_tsig_secret_alg | default('') | string | length) > 0
+    fail_msg: >-
+      ExternalDNS secret seeding is enabled but required TSIG values are missing.
+      Define vault_external_dns_rfc2136_tsig_keyname,
+      vault_external_dns_rfc2136_tsig_secret,
+      and optionally vault_external_dns_rfc2136_tsig_secret_alg in vars/<env>/secrets.yaml.
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_external_dns_secret_enabled | bool
+
+- name: Ensure ExternalDNS namespace exists for secret seeding
+  become: true
+  ansible.builtin.shell: |
+    set -euo pipefail
+    k3s kubectl create namespace {{ k3s_external_dns_namespace }} --dry-run=client -o yaml | k3s kubectl apply -f -
+  args:
+    executable: /bin/bash
+  register: external_dns_namespace
+  changed_when: >-
+    'created' in external_dns_namespace.stdout
+    or 'configured' in external_dns_namespace.stdout
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_external_dns_secret_enabled | bool
+
+- name: Render ExternalDNS RFC2136 TSIG secret
+  become: true
+  ansible.builtin.template:
+    src: external-dns-rfc2136-secret.yaml.j2
+    dest: /tmp/external-dns-rfc2136-secret.yaml
+    mode: "0600"
+  no_log: true
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_external_dns_secret_enabled | bool
+
+- name: Apply ExternalDNS RFC2136 TSIG secret
+  become: true
+  ansible.builtin.command:
+    cmd: k3s kubectl apply -f /tmp/external-dns-rfc2136-secret.yaml
+  register: external_dns_secret
+  changed_when: >-
+    'created' in external_dns_secret.stdout
+    or 'configured' in external_dns_secret.stdout
+  no_log: true
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_external_dns_secret_enabled | bool
+
 - name: Render Argo CD SSH known hosts config for GitOps repo
   become: true
   ansible.builtin.template:

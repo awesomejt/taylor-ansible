@@ -79,6 +79,41 @@
     technitium_token: "{{ technitium_login.json.token }}"
   when: technitium_zones | length > 0 and technitium_login is succeeded
 
+# Fetch current DNS settings so we can add TSIG keys if requested
+- name: Get current DNS settings
+  uri:
+    url: "{{ technitium_api_url }}/api/settings/get"
+    method: GET
+    return_content: yes
+    status_code: 200
+    params:
+      token: "{{ technitium_token }}"
+  register: technitium_settings
+  when: technitium_tsig_keys | length > 0
+
+- name: Initialize settings payload
+  set_fact:
+    technitium_settings_payload: "{{ technitium_settings.json.response | default({}) }}"
+  when: technitium_tsig_keys | length > 0
+
+- name: Ensure TSIG keys are present in settings payload
+  set_fact:
+    technitium_settings_payload: >-
+      {{ technitium_settings_payload | combine({'tsigKeys': (technitium_settings_payload.tsigKeys | default([])) + [ {'keyName': item.keyName, 'sharedSecret': item.sharedSecret, 'algorithmName': (item.algorithmName | default('hmac-sha256')) } ] }) }}
+  loop: "{{ technitium_tsig_keys }}"
+  when: "item.keyName not in (technitium_settings_payload.tsigKeys | default([]) | map(attribute='keyName') | list)"
+
+- name: Push updated DNS settings (add TSIG keys)
+  uri:
+    url: "{{ technitium_api_url }}/api/settings/set"
+    method: POST
+    body_format: json
+    body: "{{ technitium_settings_payload }}"
+    status_code: 200
+    params:
+      token: "{{ technitium_token }}"
+  when: technitium_tsig_keys | length > 0 and (technitium_settings_payload.tsigKeys | length) > (technitium_settings.json.response.tsigKeys | default([]) | length)
+
 - name: Create DNS zones
   uri:
     url: "{{ technitium_api_url }}/api/zones/create"
@@ -97,7 +132,7 @@
   uri:
     url: "{{ technitium_api_url }}/api/zones/options/set"
     method: POST
-    body_format: form-urlencoded
+    body_format: json
     body: "{{ technitium_zone_options_body }}"
     status_code: 200
   vars:
@@ -112,6 +147,7 @@
         | combine(item.notify_name_servers is defined | ternary({'notifyNameServers': ((item.notify_name_servers | length) > 0) | ternary(item.notify_name_servers | join(','), 'false')}, {}))
         | combine(item.update is defined | ternary({'update': item.update}, {}))
         | combine(item.update_network_acl is defined | ternary({'updateNetworkACL': ((item.update_network_acl | length) > 0) | ternary(item.update_network_acl | join(','), 'false')}, {}))
+        | combine(item.update_security_policies is defined | ternary({'updateSecurityPolicies': item.update_security_policies}, {}))
       }}
   loop: "{{ technitium_zones }}"
   when: technitium_zones | length > 0
