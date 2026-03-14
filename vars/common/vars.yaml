@@ -3,9 +3,12 @@ technitium_api_url: "http://192.168.50.53:5380"
 technitium_username: "admin"
 technitium_password: "{{ vault_technitium_password | default('admin') }}"
 
+k3s_external_dns_rfc2136_tsig_keyname: "external-dns"
+
 ## Secrets - located in vars/common/secrets.yaml (not committed to Git)
 # vault_technitium_password
 # vault_external_dns_rfc2136_tsig_secret
+# vault_argocd_gitops_admin_password
 
 technitium_zones: 
   - name: "prod.lab"
@@ -14,7 +17,7 @@ technitium_zones:
     update: "UseSpecifiedNetworkACL"
     update_network_acl: []
     update_security_policies:
-      - tsigKeyName: "external-dns"
+      - tsigKeyName: "{{ k3s_external_dns_rfc2136_tsig_keyname }}"
         domain: "prod.lab"
         allowedTypes:
           - "A"
@@ -26,13 +29,13 @@ technitium_zones:
     update: "UseSpecifiedNetworkACL"
     update_network_acl: []
     update_security_policies:
-      - tsigKeyName: "external-dns"
+      - tsigKeyName: "{{ k3s_external_dns_rfc2136_tsig_keyname }}"
         domain: "stage.lab"
         allowedTypes:
           - "A"
           - "AAAA"
           - "CNAME"
 technitium_tsig_keys:
-  - keyName: external-dns
+  - keyName: "{{ k3s_external_dns_rfc2136_tsig_keyname }}"
     sharedSecret: "{{ vault_external_dns_rfc2136_tsig_secret }}"
     algorithmName: "hmac-sha256"

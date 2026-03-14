@@ -5,6 +5,8 @@
     target_env: "{{ env | default('prod') }}"
     k3s_server_group: "k3s_{{ target_env }}_servers"
   vars_files:
+    - "vars/common/vars.yaml"
+    - "vars/common/secrets.yaml"
     - "vars/{{ env | default('prod') }}/vars.yaml"
     - "vars/{{ env | default('prod') }}/secrets.yaml"
   tasks:
@@ -41,6 +43,8 @@
   hosts: "k3s_{{ env | default('prod') }}_servers[0]"
   become: true
   vars_files:
+    - "vars/common/vars.yaml"
+    - "vars/common/secrets.yaml"
     - "vars/{{ env | default('prod') }}/vars.yaml"
     - "vars/{{ env | default('prod') }}/secrets.yaml"
   roles:
@@ -55,6 +59,8 @@
   serial: 1
   become: true
   vars_files:
+    - "vars/common/vars.yaml"
+    - "vars/common/secrets.yaml"
     - "vars/{{ env | default('prod') }}/vars.yaml"
     - "vars/{{ env | default('prod') }}/secrets.yaml"
   roles:
@@ -69,6 +75,8 @@
   serial: 1
   become: true
   vars_files:
+    - "vars/common/vars.yaml"
+    - "vars/common/secrets.yaml"
     - "vars/{{ env | default('prod') }}/vars.yaml"
     - "vars/{{ env | default('prod') }}/secrets.yaml"
   roles:
@@ -81,6 +89,8 @@
   hosts: "k3s_{{ env | default('prod') }}_servers[0]"
   become: true
   vars_files:
+    - "vars/common/vars.yaml"
+    - "vars/common/secrets.yaml"
     - "vars/{{ env | default('prod') }}/vars.yaml"
     - "vars/{{ env | default('prod') }}/secrets.yaml"
   tasks:
@@ -94,6 +104,8 @@
   hosts: "k3s_{{ env | default('prod') }}_servers[0]"
   become: true
   vars_files:
+    - "vars/common/vars.yaml"
+    - "vars/common/secrets.yaml"
     - "vars/{{ env | default('prod') }}/vars.yaml"
     - "vars/{{ env | default('prod') }}/secrets.yaml"
   tasks:

@@ -145,7 +145,8 @@
       ExternalDNS secret seeding is enabled but required TSIG values are missing.
       Define vault_external_dns_rfc2136_tsig_keyname,
       vault_external_dns_rfc2136_tsig_secret,
-      and optionally vault_external_dns_rfc2136_tsig_secret_alg in vars/<env>/secrets.yaml.
+      and optionally vault_external_dns_rfc2136_tsig_secret_alg in vars/common/secrets.yaml
+      or vars/<env>/secrets.yaml.
   when:
     - k3s_argocd_bootstrap_enabled | bool
     - k3s_external_dns_secret_enabled | bool
@@ -251,3 +252,56 @@
     or 'configured' in argocd_root_application.stdout
     or 'unchanged' not in argocd_root_application.stdout
   when: k3s_argocd_bootstrap_enabled | bool
+
+# Admin password management
+- name: Ensure python3-bcrypt is available for ArgoCD admin password management
+  become: true
+  ansible.builtin.apt:
+    name: python3-bcrypt
+    state: present
+  when: k3s_argocd_admin_password | default('') | length > 0
+
+- name: Read current ArgoCD admin password hash
+  become: true
+  ansible.builtin.shell: |
+    k3s kubectl -n argocd get secret argocd-secret \
+      -o jsonpath='{.data.admin\.password}' 2>/dev/null | base64 -d || echo ""
+  args:
+    executable: /bin/bash
+  register: argocd_current_password_hash
+  changed_when: false
+  no_log: true
+  when: k3s_argocd_admin_password | default('') | length > 0
+
+- name: Check if current ArgoCD admin password already matches
+  ansible.builtin.shell: |
+    python3 -c "import bcrypt,os,sys; sys.exit(0 if bcrypt.checkpw(os.environ['ARGOCD_ADMIN_PASSWORD'].encode(), os.environ['ARGOCD_STORED_HASH'].encode()) else 1)"
+  environment:
+    ARGOCD_ADMIN_PASSWORD: "{{ k3s_argocd_admin_password }}"
+    ARGOCD_STORED_HASH: "{{ argocd_current_password_hash.stdout | default('') }}"
+  register: argocd_password_matches
+  failed_when: false
+  changed_when: false
+  no_log: true
+  when:
+    - k3s_argocd_admin_password | default('') | length > 0
+    - argocd_current_password_hash.stdout | default('') | length > 0
+
+- name: Set ArgoCD admin password
+  become: true
+  ansible.builtin.shell: |
+    set -euo pipefail
+    NEW_HASH=$(python3 -c "import bcrypt,os; print(bcrypt.hashpw(os.environ['ARGOCD_ADMIN_PASSWORD'].encode(), bcrypt.gensalt(rounds=10)).decode())")
+    MTIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    k3s kubectl -n argocd patch secret argocd-secret \
+      --type merge \
+      -p "{\"stringData\":{\"admin.password\":\"${NEW_HASH}\",\"admin.passwordMtime\":\"${MTIME}\"}}"
+  args:
+    executable: /bin/bash
+  environment:
+    ARGOCD_ADMIN_PASSWORD: "{{ k3s_argocd_admin_password }}"
+  no_log: true
+  changed_when: true
+  when:
+    - k3s_argocd_admin_password | default('') | length > 0
+    - argocd_password_matches.rc | default(1) != 0
