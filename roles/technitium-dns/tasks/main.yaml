@@ -129,26 +129,38 @@
   ignore_errors: true  # Zone might already exist
 
 - name: Configure DNS zone options
-  uri:
-    url: "{{ technitium_api_url }}/api/zones/options/set"
-    method: POST
-    body_format: json
-    body: "{{ technitium_zone_options_body }}"
-    status_code: 200
   vars:
-    technitium_zone_options_body: >-
-      {{
-        {'token': technitium_token, 'zone': item.name}
-        | combine(item.query_access is defined | ternary({'queryAccess': item.query_access}, {}))
-        | combine(item.query_access_network_acl is defined | ternary({'queryAccessNetworkACL': ((item.query_access_network_acl | length) > 0) | ternary(item.query_access_network_acl | join(','), 'false')}, {}))
-        | combine(item.zone_transfer is defined | ternary({'zoneTransfer': item.zone_transfer}, {}))
-        | combine(item.zone_transfer_network_acl is defined | ternary({'zoneTransferNetworkACL': ((item.zone_transfer_network_acl | length) > 0) | ternary(item.zone_transfer_network_acl | join(','), 'false')}, {}))
-        | combine(item.notify is defined | ternary({'notify': item.notify}, {}))
-        | combine(item.notify_name_servers is defined | ternary({'notifyNameServers': ((item.notify_name_servers | length) > 0) | ternary(item.notify_name_servers | join(','), 'false')}, {}))
-        | combine(item.update is defined | ternary({'update': item.update}, {}))
-        | combine(item.update_network_acl is defined | ternary({'updateNetworkACL': ((item.update_network_acl | length) > 0) | ternary(item.update_network_acl | join(','), 'false')}, {}))
-        | combine(item.update_security_policies is defined | ternary({'updateSecurityPolicies': item.update_security_policies}, {}))
-      }}
+    _qac: "{{ item.get('query_access_network_acl') | default([]) }}"
+    _ztac: "{{ item.get('zone_transfer_network_acl') | default([]) }}"
+    _nns: "{{ item.get('notify_name_servers') | default([]) }}"
+    _unac: "{{ item.get('update_network_acl') | default([]) }}"
+    _usp: "{{ item.get('update_security_policies') | default([]) }}"
+  block:
+    - name: Build zone options payload for {{ item.name }}
+      set_fact:
+        technitium_zone_options_body_current: >-
+          {{ {
+            'token': technitium_token,
+            'zone': item.name,
+            'queryAccess': item.get('query_access', ''),
+            'queryAccessNetworkACL': (_qac | length) > 0 and (_qac | join(',')) or 'false',
+            'zoneTransfer': item.get('zone_transfer', ''),
+            'zoneTransferNetworkACL': (_ztac | length) > 0 and (_ztac | join(',')) or 'false',
+            'notify': item.get('notify', ''),
+            'notifyNameServers': (_nns | length) > 0 and (_nns | join(',')) or 'false',
+            'update': item.get('update', ''),
+            'updateNetworkACL': (_unac | length) > 0 and (_unac | join(',')) or 'false',
+            'updateSecurityPolicies': _usp
+          } }}
+
+    - name: Configure DNS zone options (API)
+      uri:
+        url: "{{ technitium_api_url }}/api/zones/options/set"
+        method: POST
+        body_format: json
+        body: "{{ technitium_zone_options_body_current }}"
+        status_code: 200
+      when: technitium_zones | length > 0
   loop: "{{ technitium_zones }}"
   when: technitium_zones | length > 0
 
