@@ -135,6 +135,36 @@
       vault_argocd_gitops_repo_ssh_private_key when using SSH.
   when: k3s_argocd_bootstrap_enabled | bool
 
+- name: Validate Harbor admin password settings when secret seeding is enabled
+  ansible.builtin.assert:
+    that:
+      - (k3s_harbor_admin_password | default('') | string | length) > 0
+    fail_msg: >-
+      Harbor secret seeding is enabled but harbor admin password is missing.
+      Define vault_harbor_admin_password in vars/common/secrets.yaml
+      or vars/<env>/secrets.yaml.
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_harbor_admin_secret_enabled | bool
+
+- name: Validate Headlamp OIDC settings when secret seeding is enabled
+  ansible.builtin.assert:
+    that:
+      - (k3s_headlamp_oidc_client_id | default('') | string | length) > 0
+      - (k3s_headlamp_oidc_client_secret | default('') | string | length) > 0
+      - (k3s_headlamp_oidc_issuer_url | default('') | string | length) > 0
+      - (k3s_headlamp_oidc_scopes | default('') | string | length) > 0
+    fail_msg: >-
+      Headlamp OIDC secret seeding is enabled but required values are missing.
+      Define vault_headlamp_oidc_client_id,
+      vault_headlamp_oidc_client_secret,
+      vault_headlamp_oidc_issuer_url,
+      and optionally vault_headlamp_oidc_scopes in vars/common/secrets.yaml
+      or vars/<env>/secrets.yaml.
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_headlamp_oidc_secret_enabled | bool
+
 - name: Validate ExternalDNS RFC2136 TSIG settings when secret seeding is enabled
   ansible.builtin.assert:
     that:
@@ -150,6 +180,129 @@
   when:
     - k3s_argocd_bootstrap_enabled | bool
     - k3s_external_dns_secret_enabled | bool
+
+- name: Ensure Harbor namespace exists for secret seeding
+  become: true
+  ansible.builtin.shell: |
+    set -euo pipefail
+    k3s kubectl create namespace {{ k3s_harbor_namespace }} --dry-run=client -o yaml | k3s kubectl apply -f -
+  args:
+    executable: /bin/bash
+  register: harbor_namespace
+  changed_when: >-
+    'created' in harbor_namespace.stdout
+    or 'configured' in harbor_namespace.stdout
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_harbor_admin_secret_enabled | bool
+
+- name: Render Harbor admin password secret
+  become: true
+  ansible.builtin.template:
+    src: harbor-admin-secret.yaml.j2
+    dest: /tmp/harbor-admin-secret.yaml
+    mode: "0600"
+  no_log: true
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_harbor_admin_secret_enabled | bool
+
+- name: Apply Harbor admin password secret
+  become: true
+  ansible.builtin.command:
+    cmd: k3s kubectl apply -f /tmp/harbor-admin-secret.yaml
+  register: harbor_admin_secret
+  changed_when: >-
+    'created' in harbor_admin_secret.stdout
+    or 'configured' in harbor_admin_secret.stdout
+  no_log: true
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_harbor_admin_secret_enabled | bool
+
+- name: Ensure Headlamp namespace exists
+  become: true
+  ansible.builtin.shell: |
+    set -euo pipefail
+    k3s kubectl create namespace {{ k3s_headlamp_namespace }} --dry-run=client -o yaml | k3s kubectl apply -f -
+  args:
+    executable: /bin/bash
+  register: headlamp_namespace
+  changed_when: >-
+    'created' in headlamp_namespace.stdout
+    or 'configured' in headlamp_namespace.stdout
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_headlamp_admin_token_enabled | bool or k3s_headlamp_oidc_secret_enabled | bool
+
+- name: Render Headlamp admin service account and token secret
+  become: true
+  ansible.builtin.template:
+    src: headlamp-admin-token.yaml.j2
+    dest: /tmp/headlamp-admin-token.yaml
+    mode: "0600"
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_headlamp_admin_token_enabled | bool
+
+- name: Apply Headlamp admin service account and token secret
+  become: true
+  ansible.builtin.command:
+    cmd: k3s kubectl apply -f /tmp/headlamp-admin-token.yaml
+  register: headlamp_admin_token_apply
+  changed_when: "'created' in headlamp_admin_token_apply.stdout"
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_headlamp_admin_token_enabled | bool
+
+- name: Wait for Headlamp admin token to be populated
+  become: true
+  ansible.builtin.shell: |
+    k3s kubectl -n {{ k3s_headlamp_namespace }} get secret {{ k3s_headlamp_admin_token_secret_name }} \
+      -o jsonpath='{.data.token}' 2>/dev/null | base64 -d
+  args:
+    executable: /bin/bash
+  register: headlamp_admin_token_value
+  retries: 10
+  delay: 3
+  until: headlamp_admin_token_value.stdout | length > 0
+  changed_when: false
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_headlamp_admin_token_enabled | bool
+
+- name: Display Headlamp admin token
+  ansible.builtin.debug:
+    msg: >-
+      Headlamp admin token (paste into the Headlamp login page):
+      {{ headlamp_admin_token_value.stdout }}
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_headlamp_admin_token_enabled | bool
+
+- name: Render Headlamp OIDC secret
+  become: true
+  ansible.builtin.template:
+    src: headlamp-oidc-secret.yaml.j2
+    dest: /tmp/headlamp-oidc-secret.yaml
+    mode: "0600"
+  no_log: true
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_headlamp_oidc_secret_enabled | bool
+
+- name: Apply Headlamp OIDC secret
+  become: true
+  ansible.builtin.command:
+    cmd: k3s kubectl apply -f /tmp/headlamp-oidc-secret.yaml
+  register: headlamp_oidc_secret
+  changed_when: >-
+    'created' in headlamp_oidc_secret.stdout
+    or 'configured' in headlamp_oidc_secret.stdout
+  no_log: true
+  when:
+    - k3s_argocd_bootstrap_enabled | bool
+    - k3s_headlamp_oidc_secret_enabled | bool
 
 - name: Ensure ExternalDNS namespace exists for secret seeding
   become: true

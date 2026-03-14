@@ -59,3 +59,27 @@ k3s_external_dns_rfc2136_secret_name: external-dns-rfc2136
 k3s_external_dns_rfc2136_tsig_keyname: "{{ vault_external_dns_rfc2136_tsig_keyname | default('') }}"
 k3s_external_dns_rfc2136_tsig_secret: "{{ vault_external_dns_rfc2136_tsig_secret | default('') }}"
 k3s_external_dns_rfc2136_tsig_secret_alg: "{{ vault_external_dns_rfc2136_tsig_secret_alg | default('hmac-sha256') }}"
+
+k3s_harbor_admin_secret_enabled: true
+k3s_harbor_namespace: harbor
+k3s_harbor_admin_secret_name: harbor-admin-credentials
+# Set via vault_harbor_admin_password when Harbor secret seeding is enabled.
+k3s_harbor_admin_password: "{{ vault_harbor_admin_password | default('') }}"
+
+k3s_headlamp_admin_token_enabled: true
+k3s_headlamp_namespace: kubernetes-dashboard
+k3s_headlamp_admin_sa_name: headlamp-admin
+k3s_headlamp_admin_token_secret_name: headlamp-admin-token
+
+k3s_headlamp_oidc_secret_enabled: false
+k3s_headlamp_oidc_secret_name: headlamp-oidc
+k3s_headlamp_oidc_client_id: "{{ vault_headlamp_oidc_client_id | default('') }}"
+k3s_headlamp_oidc_client_secret: "{{ vault_headlamp_oidc_client_secret | default('') }}"
+k3s_headlamp_oidc_issuer_url: "{{ vault_headlamp_oidc_issuer_url | default('') }}"
+k3s_headlamp_oidc_scopes: "{{ vault_headlamp_oidc_scopes | default('openid profile email groups') }}"
+k3s_headlamp_oidc_callback_url: "{{ vault_headlamp_oidc_callback_url | default('') }}"
+k3s_headlamp_oidc_validator_client_id: "{{ vault_headlamp_oidc_validator_client_id | default('') }}"
+k3s_headlamp_oidc_validator_issuer_url: "{{ vault_headlamp_oidc_validator_issuer_url | default('') }}"
+k3s_headlamp_oidc_use_access_token: "{{ vault_headlamp_oidc_use_access_token | default('false') }}"
+k3s_headlamp_oidc_use_pkce: "{{ vault_headlamp_oidc_use_pkce | default('true') }}"
+k3s_headlamp_oidc_me_user_info_url: "{{ vault_headlamp_oidc_me_user_info_url | default('') }}"
