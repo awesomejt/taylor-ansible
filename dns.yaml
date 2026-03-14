@@ -1,5 +1,8 @@
 - name: DNS Setup
   hosts: dns
+  vars_files:
+    - "vars/{{ env | default('stage') }}/vars.yaml"
+    - "vars/{{ env | default('stage') }}/secrets.yaml"
   roles:
     - updates
     - common
