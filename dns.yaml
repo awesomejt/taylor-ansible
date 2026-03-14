@@ -3,4 +3,4 @@
   roles:
     - updates
     - common
-    - technitium-dns
+    - { role: technitium-dns, tags: ["technitium"] }

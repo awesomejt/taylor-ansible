@@ -27,4 +27,18 @@ k3s_server_tls_sans:
 k3s_server_extra_args: []
 k3s_agent_extra_args: []
 
+# Technitium DNS zone config for this environment
+technitium_zones:
+  - name: "prod.lab"
+    type: "Primary"
+    # allow updates authenticated by TSIG `external-dns` key for A/AAAA records
+    update: "UseSpecifiedNetworkACL"
+    update_network_acl: []
+    update_security_policies:
+      - tsigKeyName: "external-dns"
+        domain: "prod.lab"
+        allowedTypes:
+          - "A"
+          - "AAAA"
+
 
