@@ -99,7 +99,7 @@
 - name: Ensure TSIG keys are present in settings payload
   set_fact:
     technitium_settings_payload: >-
-      {{ technitium_settings_payload | combine({'tsigKeys': (technitium_settings_payload.tsigKeys | default([])) + [ {'keyName': item.keyName, 'sharedSecret': item.sharedSecret, 'algorithmName': (item.algorithmName | default('hmac-sha256')) } ] }) }}
+      {{ technitium_settings_payload | combine({'tsigKeys': (technitium_settings_payload.tsigKeys | default([])) + [ {'keyName': item.keyName, 'sharedSecret': (item.sharedSecret | b64encode), 'algorithmName': (item.algorithmName | default('hmac-sha256')) } ] }) }}
   loop: "{{ technitium_tsig_keys }}"
   when: "item.keyName not in (technitium_settings_payload.tsigKeys | default([]) | map(attribute='keyName') | list)"
 

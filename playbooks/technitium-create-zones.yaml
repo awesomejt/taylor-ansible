@@ -1,0 +1,7 @@
+---
+- name: Apply Technitium DNS role (create zones & TSIG keys)
+  hosts: technitium
+  become: true
+  gather_facts: false
+  roles:
+    - role: technitium-dns
