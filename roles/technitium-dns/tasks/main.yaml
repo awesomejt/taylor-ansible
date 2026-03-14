@@ -129,38 +129,25 @@
   ignore_errors: true  # Zone might already exist
 
 - name: Configure DNS zone options
-  vars:
-    _qac: "{{ item.get('query_access_network_acl') | default([]) }}"
-    _ztac: "{{ item.get('zone_transfer_network_acl') | default([]) }}"
-    _nns: "{{ item.get('notify_name_servers') | default([]) }}"
-    _unac: "{{ item.get('update_network_acl') | default([]) }}"
-    _usp: "{{ item.get('update_security_policies') | default([]) }}"
-  block:
-    - name: Build zone options payload for {{ item.name }}
-      set_fact:
-        technitium_zone_options_body_current: >-
-          {{ {
-            'token': technitium_token,
-            'zone': item.name,
-            'queryAccess': item.get('query_access', ''),
-            'queryAccessNetworkACL': (_qac | length) > 0 and (_qac | join(',')) or 'false',
-            'zoneTransfer': item.get('zone_transfer', ''),
-            'zoneTransferNetworkACL': (_ztac | length) > 0 and (_ztac | join(',')) or 'false',
-            'notify': item.get('notify', ''),
-            'notifyNameServers': (_nns | length) > 0 and (_nns | join(',')) or 'false',
-            'update': item.get('update', ''),
-            'updateNetworkACL': (_unac | length) > 0 and (_unac | join(',')) or 'false',
-            'updateSecurityPolicies': _usp
-          } }}
-
-    - name: Configure DNS zone options (API)
-      uri:
-        url: "{{ technitium_api_url }}/api/zones/options/set"
-        method: POST
-        body_format: json
-        body: "{{ technitium_zone_options_body_current }}"
-        status_code: 200
-      when: technitium_zones | length > 0
+  uri:
+    url: "{{ technitium_api_url }}/api/zones/options/set"
+    method: POST
+    body_format: json
+    body: >-
+      {{ {
+        'token': technitium_token,
+        'zone': item.name,
+        'queryAccess': item.get('query_access',''),
+        'queryAccessNetworkACL': (((item.get('query_access_network_acl') or []) | length) > 0) and ((item.get('query_access_network_acl') or []) | join(',')) or 'false',
+        'zoneTransfer': item.get('zone_transfer',''),
+        'zoneTransferNetworkACL': (((item.get('zone_transfer_network_acl') or []) | length) > 0) and ((item.get('zone_transfer_network_acl') or []) | join(',')) or 'false',
+        'notify': item.get('notify',''),
+        'notifyNameServers': (((item.get('notify_name_servers') or []) | length) > 0) and ((item.get('notify_name_servers') or []) | join(',')) or 'false',
+        'update': item.get('update',''),
+        'updateNetworkACL': (((item.get('update_network_acl') or []) | length) > 0) and ((item.get('update_network_acl') or []) | join(',')) or 'false',
+        'updateSecurityPolicies': item.get('update_security_policies',[])
+      } }}
+    status_code: 200
   loop: "{{ technitium_zones }}"
   when: technitium_zones | length > 0
 

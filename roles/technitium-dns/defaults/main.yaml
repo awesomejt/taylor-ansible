@@ -22,9 +22,8 @@ technitium_password: "{{ vault_technitium_password | default('admin') }}"
 technitium_zones: []
 
 # TSIG keys to configure on the Technitium server (managed via API)
-# Example:
-# technitium_tsig_keys:
-#   - keyName: external-dns
-#     sharedSecret: "BASE64ENCODEDSECRET=="
-#     algorithmName: "hmac-sha256"
-technitium_tsig_keys: []
+
+technitium_tsig_keys:
+  - keyName: external-dns
+    sharedSecret: "{{ vault_external_dns_rfc2136_tsig_secret }}"
+    algorithmName: "hmac-sha256"
