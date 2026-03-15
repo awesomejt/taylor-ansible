@@ -63,6 +63,29 @@ ansible-playbook -i inventory.ini k3s-cluster.yaml -e env=stage --ask-vault-pass
 
 You can swap `stage` for `prod` once the prod inventory and secrets are ready.
 
+## Post-Setup Validation
+
+Run the post-bootstrap validation script from this repo:
+
+```bash
+./validate-k3s-post-setup.sh prod
+```
+
+For stage (or when apps are still converging), you can allow `Progressing` app health:
+
+```bash
+./validate-k3s-post-setup.sh stage --allow-progressing
+```
+
+The script validates:
+
+- Kubernetes API connectivity and active context
+- Argo CD app presence, sync, and health status
+- `letsencrypt-lab` ClusterIssuer readiness
+- Required seeded secrets for ExternalDNS, Grafana, and Reposilite
+- Expected ingress hostnames
+- Certificate readiness for monitoring and artifact ingress
+
 ## Argo CD Access
 
 If Argo CD ingress is enabled, browse to the configured host for that environment.

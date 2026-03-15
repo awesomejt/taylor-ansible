@@ -39,6 +39,24 @@
           - (k3s_registration_address | default('') | string | length) > 0
         fail_msg: "Set k3s_registration_address in vars/{{ env | default('prod') }}/vars.yaml"
 
+    - name: Ensure Reposilite admin credentials are configured
+      ansible.builtin.assert:
+        that:
+          - (reposilite_admin_username | default('') | string | length) > 0
+          - (vault_reposilite_admin_password | default('') | string | length) > 0
+        fail_msg: >-
+          Set reposilite_admin_username in vars/{{ env | default('prod') }}/vars.yaml
+          and vault_reposilite_admin_password in vars/{{ env | default('prod') }}/secrets.yaml
+
+    - name: Ensure Grafana admin credentials are configured
+      ansible.builtin.assert:
+        that:
+          - (grafana_admin_username | default('') | string | length) > 0
+          - (vault_grafana_admin_password | default('') | string | length) > 0
+        fail_msg: >-
+          Set grafana_admin_username in vars/{{ env | default('prod') }}/vars.yaml
+          and vault_grafana_admin_password in vars/{{ env | default('prod') }}/secrets.yaml
+
 - name: Bootstrap first K3s control-plane server
   hosts: "k3s_{{ env | default('prod') }}_servers[0]"
   become: true
