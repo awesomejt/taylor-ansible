@@ -32,3 +32,6 @@ k3s_server_tls_sans:
   - "{{ k3s_registration_address }}"
 k3s_server_extra_args: []
 k3s_agent_extra_args: []
+
+reposilite_admin_username: "admin"
+# 

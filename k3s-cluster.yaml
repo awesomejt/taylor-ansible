@@ -114,3 +114,35 @@
         name: k3s-server
         tasks_from: argocd
       when: k3s_enable_argocd | bool
+
+- name: Create Reposilite secrets on first control-plane server
+  hosts: "k3s_{{ env | default('prod') }}_servers[0]"
+  become: true
+  vars_files:
+    - "vars/common/vars.yaml"
+    - "vars/common/secrets.yaml"
+    - "vars/{{ env | default('prod') }}/vars.yaml"
+    - "vars/{{ env | default('prod') }}/secrets.yaml"
+  tasks:
+    - name: Ensure reposilite namespace exists
+      ansible.builtin.shell: |
+        set -euo pipefail
+        k3s kubectl create namespace reposilite --dry-run=client -o yaml | k3s kubectl apply -f -
+      args:
+        executable: /bin/bash
+      register: reposilite_namespace
+      changed_when: "'created' in reposilite_namespace.stdout or 'configured' in reposilite_namespace.stdout"
+
+    - name: Create Reposilite admin secret
+      become: true
+      ansible.builtin.shell: |
+        set -euo pipefail
+        k3s kubectl create secret generic reposilite-admin \
+          --namespace reposilite \
+          --from-literal=username="{{ reposilite_admin_username }}" \
+          --from-literal=password="{{ vault_reposilite_admin_password }}" \
+          --dry-run=client -o yaml | k3s kubectl apply -f -
+      args:
+        executable: /bin/bash
+      register: reposilite_secret
+      changed_when: "'created' in reposilite_secret.stdout or 'configured' in reposilite_secret.stdout"
