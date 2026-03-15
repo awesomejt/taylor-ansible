@@ -100,8 +100,8 @@
 
 - name: Wait for K3s API to be reachable on server nodes
   ansible.builtin.wait_for:
-    host: 127.0.0.1
+    host: "{{ '127.0.0.1' if (k3s_server_init | bool) else k3s_registration_address }}"
     port: 6443
     delay: 3
-    timeout: 180
+    timeout: "{{ k3s_api_wait_timeout }}"
   when: k3s_mode == 'server'
