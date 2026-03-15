@@ -146,3 +146,17 @@
         executable: /bin/bash
       register: reposilite_secret
       changed_when: "'created' in reposilite_secret.stdout or 'configured' in reposilite_secret.stdout"
+
+    - name: Create Grafana admin secret
+      become: true
+      ansible.builtin.shell: |
+        set -euo pipefail
+        k3s kubectl create secret generic grafana-admin \
+          --namespace monitoring \
+          --from-literal=admin-user="{{ grafana_admin_username }}" \
+          --from-literal=admin-password="{{ vault_grafana_admin_password }}" \
+          --dry-run=client -o yaml | k3s kubectl apply -f -
+      args:
+        executable: /bin/bash
+      register: grafana_secret
+      changed_when: "'created' in grafana_secret.stdout or 'configured' in grafana_secret.stdout"

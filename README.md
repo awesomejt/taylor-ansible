@@ -39,6 +39,8 @@ K3s requirements:
 - Set `k3s_argocd_gitops_repo_url` and `k3s_argocd_bootstrap_path` in `vars/<env>/vars.yaml` when you need to override the defaults.
 - Set `vault_external_dns_rfc2136_tsig_keyname` and `vault_external_dns_rfc2136_tsig_secret` in `vars/<env>/secrets.yaml` so Ansible can seed the `external-dns-rfc2136` Kubernetes secret used by ExternalDNS.
 - Optional: set `vault_external_dns_rfc2136_tsig_secret_alg` in `vars/<env>/secrets.yaml` (defaults to `hmac-sha256`).
+- Set `reposilite_admin_username` in `vars/<env>/vars.yaml` and `vault_reposilite_admin_password` in `vars/<env>/secrets.yaml` so Ansible can seed the `reposilite-admin` Kubernetes secret used by Reposilite.
+- Set `grafana_admin_username` in `vars/<env>/vars.yaml` and `vault_grafana_admin_password` in `vars/<env>/secrets.yaml` so Ansible can seed the `grafana-admin` Kubernetes secret used by Grafana.
 - Prod HA validation expects at least 3 hosts in `k3s_prod_servers` when `k3s_prod_ha: true`.
 
 Bootstrap behavior:
@@ -46,7 +48,7 @@ Bootstrap behavior:
 - Ansible installs K3s on the control-plane and agent nodes.
 - Ansible optionally installs cert-manager.
 - Ansible installs Argo CD, exposes it with ingress when configured, loads the GitOps repo SSH credential, and creates the root Argo CD application.
-- Ansible seeds cluster secrets required before GitOps reconciliation (including ExternalDNS RFC2136 TSIG credentials).
+- Ansible seeds cluster secrets required before GitOps reconciliation (including ExternalDNS RFC2136 TSIG credentials, Reposilite admin credentials, and Grafana admin credentials).
 - Argo CD then reconciles the environment path from the `homelab-k3s` repository using the App of Apps pattern.
 
 Suggested workflow from this workstation:

@@ -28,5 +28,6 @@ k3s_server_extra_args: []
 k3s_agent_extra_args: []
 
 reposilite_admin_username: "admin"
+grafana_admin_username: "admin"
 
 
