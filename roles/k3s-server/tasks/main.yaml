@@ -30,6 +30,13 @@
     path: "{{ k3s_service_unit_path }}"
   register: k3s_service_unit
 
+- name: Check if K3s service is currently active
+  become: true
+  ansible.builtin.command: systemctl is-active {{ k3s_service_name }}
+  register: k3s_service_active
+  changed_when: false
+  failed_when: false
+
 - name: Build K3s server install command
   ansible.builtin.set_fact:
     k3s_install_exec: >-
@@ -37,7 +44,7 @@
       {% if k3s_server_init | bool %}
       --cluster-init
       {% else %}
-      --server https://{{ k3s_registration_address }}:6443
+      --server https://{{ k3s_api_check_host if (k3s_api_check_host | string | length) > 0 else k3s_registration_address }}:6443
       {% endif %}
       --write-kubeconfig-mode {{ k3s_kubeconfig_mode }}
       {% for component in k3s_server_disable_components %}
@@ -61,19 +68,46 @@
   when: k3s_mode == 'agent'
 
 - name: Install K3s server
-  become: true
-  ansible.builtin.shell: |
-    set -euo pipefail
-    curl -sfL {{ k3s_install_script_url }} | sh -
-  args:
-    executable: /bin/bash
-  environment:
-    INSTALL_K3S_EXEC: "{{ k3s_install_exec | trim }}"
-    INSTALL_K3S_VERSION: "{{ k3s_version }}"
-    K3S_TOKEN: "{{ vault_k3s_token }}"
   when:
     - k3s_mode == 'server'
-    - not k3s_service_unit.stat.exists
+    - not k3s_service_unit.stat.exists or k3s_service_active.rc != 0
+  block:
+    - name: Run K3s server installer
+      become: true
+      ansible.builtin.shell: |
+        set -euo pipefail
+        curl -sfL {{ k3s_install_script_url }} | sh -
+      args:
+        executable: /bin/bash
+      environment:
+        INSTALL_K3S_EXEC: "{{ k3s_install_exec | trim }}"
+        INSTALL_K3S_VERSION: "{{ k3s_version }}"
+        K3S_TOKEN: "{{ vault_k3s_token }}"
+  rescue:
+    - name: Collect K3s server service status
+      become: true
+      ansible.builtin.command: systemctl status k3s --no-pager -l
+      register: k3s_server_status
+      changed_when: false
+      failed_when: false
+
+    - name: Collect K3s server journal logs
+      become: true
+      ansible.builtin.command: journalctl -u k3s -n 200 --no-pager
+      register: k3s_server_journal
+      changed_when: false
+      failed_when: false
+
+    - name: Fail with K3s server diagnostics
+      ansible.builtin.fail:
+        msg: |-
+          K3s server install failed on {{ inventory_hostname }}.
+
+          systemctl status k3s:
+          {{ k3s_server_status.stdout | default('') }}
+
+          journalctl -u k3s -n 200:
+          {{ k3s_server_journal.stdout | default('') }}
 
 - name: Install K3s agent
   become: true
@@ -85,11 +119,11 @@
   environment:
     INSTALL_K3S_EXEC: "{{ k3s_install_exec | trim }}"
     INSTALL_K3S_VERSION: "{{ k3s_version }}"
-    K3S_URL: "https://{{ k3s_registration_address }}:6443"
+    K3S_URL: "https://{{ k3s_api_check_host if (k3s_api_check_host | string | length) > 0 else k3s_registration_address }}:6443"
     K3S_TOKEN: "{{ vault_k3s_token }}"
   when:
     - k3s_mode == 'agent'
-    - not k3s_service_unit.stat.exists
+    - not k3s_service_unit.stat.exists or k3s_service_active.rc != 0
 
 - name: Ensure K3s service is enabled and running
   become: true
@@ -100,7 +134,10 @@
 
 - name: Wait for K3s API to be reachable on server nodes
   ansible.builtin.wait_for:
-    host: "{{ '127.0.0.1' if (k3s_server_init | bool) else k3s_registration_address }}"
+    host: >-
+      {{ '127.0.0.1' if (k3s_server_init | bool) else
+         (k3s_api_check_host if (k3s_api_check_host | string | length) > 0
+          else k3s_registration_address) }}
     port: 6443
     delay: 3
     timeout: "{{ k3s_api_wait_timeout }}"
