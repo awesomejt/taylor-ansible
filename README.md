@@ -41,6 +41,7 @@ K3s requirements:
 - Optional: set `vault_external_dns_rfc2136_tsig_secret_alg` in `vars/<env>/secrets.yaml` (defaults to `hmac-sha256`).
 - Set `reposilite_admin_username` in `vars/<env>/vars.yaml` and `vault_reposilite_admin_password` in `vars/<env>/secrets.yaml` so Ansible can seed the `reposilite-admin` Kubernetes secret used by Reposilite.
 - Set `grafana_admin_username` in `vars/<env>/vars.yaml` and `vault_grafana_admin_password` in `vars/<env>/secrets.yaml` so Ansible can seed the `grafana-admin` Kubernetes secret used by Grafana.
+- Enable cert-manager (`k3s_enable_cert_manager: true`) so GitOps-managed ingresses can resolve certificates via ClusterIssuer `letsencrypt-lab`.
 - Prod HA validation expects at least 3 hosts in `k3s_prod_servers` when `k3s_prod_ha: true`.
 
 Bootstrap behavior:
@@ -69,7 +70,7 @@ If Argo CD ingress is enabled, browse to the configured host for that environmen
 Stage is currently configured as:
 
 ```text
-https://argocd-stage.taylor.lan
+https://argocd.stage.lab
 ```
 
 Retrieve the initial admin password from the first control-plane server:
@@ -81,7 +82,7 @@ sudo k3s kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{
 If you use the Argo CD CLI through the ingress endpoint, use gRPC-web:
 
 ```bash
-argocd login argocd-stage.taylor.lan --username admin --grpc-web
+argocd login argocd.stage.lab --username admin --grpc-web
 ```
 
 If ingress is disabled for an environment, use a port-forward instead:

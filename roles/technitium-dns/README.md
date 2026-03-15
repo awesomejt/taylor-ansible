@@ -104,11 +104,16 @@ technitium_zones:
 
 ## ExternalDNS Example
 
-To let ExternalDNS update `taylor.lan` from a K3s cluster running on `192.168.50.0/24`:
+To let ExternalDNS update `stage.lab` and `prod.lab` from a K3s cluster running on `192.168.50.0/24`:
 
 ```yaml
 technitium_zones:
-  - name: "taylor.lan"
+  - name: "stage.lab"
+    type: "Primary"
+    update: "UseSpecifiedNetworkACL"
+    update_network_acl:
+      - "192.168.50.0/24"
+  - name: "prod.lab"
     type: "Primary"
     update: "UseSpecifiedNetworkACL"
     update_network_acl:

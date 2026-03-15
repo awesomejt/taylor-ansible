@@ -15,6 +15,7 @@ k3s_node_count: 5
 
 k3s_registration_address: "{{ k3s_server }}"
 k3s_prod_ha: true
+k3s_enable_cert_manager: true
 k3s_enable_argocd: true
 k3s_argocd_bootstrap_app_name: "homelab-prod"
 k3s_argocd_bootstrap_path: "clusters/prod"

@@ -18,7 +18,7 @@ k3s_prod_ha: false
 k3s_enable_cert_manager: true
 k3s_enable_argocd: true
 k3s_argocd_ingress_enabled: true
-k3s_argocd_ingress_host: "argocd-stage.taylor.lan"
+k3s_argocd_ingress_host: "argocd.stage.lab"
 k3s_argocd_ingress_class_name: traefik
 k3s_argocd_ingress_entrypoints: websecure
 k3s_argocd_ingress_tls: true

@@ -93,7 +93,7 @@
             ttl: 3600
 
       # Example for allowing ExternalDNS RFC2136 updates from a K3s subnet
-      - name: "taylor.lan"
+      - name: "stage.lab"
         type: "Primary"
         update: "UseSpecifiedNetworkACL"
         update_network_acl:
