@@ -151,6 +151,7 @@
       become: true
       ansible.builtin.shell: |
         set -euo pipefail
+        k3s kubectl create namespace monitoring --dry-run=client -o yaml | k3s kubectl apply -f -
         k3s kubectl create secret generic grafana-admin \
           --namespace monitoring \
           --from-literal=admin-user="{{ grafana_admin_username }}" \
