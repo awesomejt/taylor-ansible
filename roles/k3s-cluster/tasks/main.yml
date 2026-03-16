@@ -1,0 +1,93 @@
+---
+# Minimal k3s-cluster role tasks
+# Expectations:
+# - `vault_k3s_token` is provided from vars/<env>/secrets.yaml (Ansible Vault)
+# - Non-secret values (e.g. `k3s_first_server_dns_name`) from vars/<env>/vars.yaml
+
+- name: Assert required variables are present
+  ansible.builtin.assert:
+    that:
+      - vault_k3s_token is defined
+      - (k3s_registration_address is defined) or (k3s_fqdn is defined) or (k3s_server_name is defined)
+    fail_msg: "Missing required k3s vars. Define `vault_k3s_token` in vars/<env>/secrets.yaml and set `k3s_registration_address` or `k3s_fqdn`/`k3s_server_name` in vars/<env>/vars.yaml"
+
+- name: Determine primary server host
+  ansible.builtin.set_fact:
+    k3s_primary_host: "{{ (groups['k3s_servers'] | first) | default(inventory_hostname) }}"
+
+- name: Ensure curl is installed (simple preflight)
+  ansible.builtin.package:
+    name: curl
+    state: present
+  become: true
+
+- name: Install k3s on primary server
+  when: inventory_hostname == k3s_primary_host
+  block:
+    - name: Check for existing k3s binary
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s
+      register: k3s_bin
+
+    - name: Install k3s server (idempotent: uses creates check)
+      become: true
+      ansible.builtin.shell: |
+        curl -sfL https://get.k3s.io | \
+        INSTALL_K3S_EXEC="--tls-san {{ (k3s_registration_address | default(k3s_fqdn | default(k3s_server_name))) }}" \
+        K3S_TOKEN={{ vault_k3s_token }} sh -s - server --cluster-init
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Wait for k3s API to become available
+      ansible.builtin.wait_for:
+        host: "127.0.0.1"
+        port: 6443
+        delay: 5
+        timeout: 600
+      delegate_to: localhost
+
+  rescue:
+    - name: Gather systemctl status for k3s on failed server
+      become: true
+      ansible.builtin.command: systemctl status k3s --no-pager
+      register: k3s_status
+      ignore_errors: true
+
+    - name: Gather journalctl for k3s
+      become: true
+      ansible.builtin.command: journalctl -u k3s --no-pager -n 200
+      register: k3s_journal
+      ignore_errors: true
+
+    - name: Fail with diagnostics
+      ansible.builtin.fail:
+        msg: |
+          k3s server install failed on {{ inventory_hostname }}.
+          systemctl: {{ k3s_status.stdout | default('n/a') }}
+          journal: {{ k3s_journal.stdout | default('n/a') }}
+
+- name: Install k3s agent on non-primary hosts
+  when: inventory_hostname != k3s_primary_host
+  block:
+    - name: Check for existing k3s agent binary
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s
+      register: k3s_agent_bin
+
+    - name: Determine primary server address
+      ansible.builtin.set_fact:
+        k3s_server_addr: "{{ hostvars[k3s_primary_host].ansible_default_ipv4.address | default(hostvars[k3s_primary_host].ansible_host | default(k3s_registration_address | default(k3s_fqdn | default(k3s_server_name)))) }}"
+
+    - name: Install k3s agent
+      become: true
+      ansible.builtin.shell: |
+        curl -sfL https://get.k3s.io | \
+        K3S_URL=https://{{ k3s_server_addr }}:6443 \
+        K3S_TOKEN={{ vault_k3s_token }} sh -s - agent
+      args:
+        creates: /usr/local/bin/k3s
+
+  rescue:
+    - name: Fail agent install with message
+      ansible.builtin.fail:
+        msg: "k3s agent install failed on {{ inventory_hostname }}"

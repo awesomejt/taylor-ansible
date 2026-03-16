@@ -1,3 +1,10 @@
+# Environment: stage
+k3s_domain_name: stage.lab
+k3s_server_name: k3s-stage-server1
+k3s_fqdn: "{{ k3s_server_name }}.{{ k3s_domain_name }}"
+k3s_server_count: 1
+k3s_worker_count: 3
+
 postgresql_db_user: "postgres"
 postgresql_users:
   - cman
@@ -10,16 +17,13 @@ postgresql_databases:
     owner: resolve
     encoding: UTF-8
 
-k3s_server: "k3s-stage-server"
-k3s_node_count: 3
-
-k3s_registration_address: "{{ k3s_server }}"
+k3s_registration_address: "{{ k3s_fqdn }}"
 k3s_external_dns_rfc2136_tsig_keyname: "external-dns-stage"
-k3s_prod_ha: false
+k3s_stage_ha: false
 k3s_enable_cert_manager: true
 k3s_enable_argocd: true
 k3s_argocd_ingress_enabled: true
-k3s_argocd_ingress_host: "argocd.stage.lab"
+k3s_argocd_ingress_host: "argocd.{{ k3s_domain_name }}"
 k3s_argocd_ingress_class_name: traefik
 k3s_argocd_ingress_entrypoints: websecure
 k3s_argocd_ingress_tls: true
