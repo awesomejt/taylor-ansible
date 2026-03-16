@@ -37,7 +37,7 @@ K3s requirements:
 - Set `k3s_registration_address` in `vars/<env>/vars.yaml` to a stable DNS name or VIP used by joining servers/agents.
 - Set `vault_argocd_gitops_repo_ssh_private_key` in `vars/<env>/secrets.yaml` so Argo CD can clone the GitOps repo over SSH.
 - Set `k3s_argocd_gitops_repo_url` and `k3s_argocd_bootstrap_path` in `vars/<env>/vars.yaml` when you need to override the defaults.
-- Set `vault_external_dns_rfc2136_tsig_keyname` and `vault_external_dns_rfc2136_tsig_secret` in `vars/<env>/secrets.yaml` so Ansible can seed the `external-dns-rfc2136` Kubernetes secret used by ExternalDNS.
+- Set `k3s_external_dns_rfc2136_tsig_keyname` in `vars/<env>/vars.yaml` (for example `external-dns-stage` / `external-dns-prod`) and set `vault_external_dns_rfc2136_tsig_secret` in `vars/<env>/secrets.yaml` so Ansible can seed the `external-dns-rfc2136` Kubernetes secret used by ExternalDNS.
 - Optional: set `vault_external_dns_rfc2136_tsig_secret_alg` in `vars/<env>/secrets.yaml` (defaults to `hmac-sha256`).
 - Set `reposilite_admin_username` in `vars/<env>/vars.yaml` and `vault_reposilite_admin_password` in `vars/<env>/secrets.yaml` so Ansible can seed the `reposilite-admin` Kubernetes secret used by Reposilite.
 - Set `grafana_admin_username` in `vars/<env>/vars.yaml` and `vault_grafana_admin_password` in `vars/<env>/secrets.yaml` so Ansible can seed the `grafana-admin` Kubernetes secret used by Grafana.

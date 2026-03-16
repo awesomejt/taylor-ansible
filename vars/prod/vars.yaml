@@ -15,6 +15,7 @@ k3s_node_count: 5
 
 k3s_registration_address: "{{ k3s_server }}"
 k3s_api_check_host: "192.168.50.17"  # k3s-prod-server1 IP — used by wait_for to bypass DNS on joining servers
+k3s_external_dns_rfc2136_tsig_keyname: "external-dns-prod"
 k3s_prod_ha: true
 k3s_enable_cert_manager: true
 k3s_enable_argocd: true

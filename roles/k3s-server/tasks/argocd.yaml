@@ -173,10 +173,9 @@
       - (k3s_external_dns_rfc2136_tsig_secret_alg | default('') | string | length) > 0
     fail_msg: >-
       ExternalDNS secret seeding is enabled but required TSIG values are missing.
-      Define vault_external_dns_rfc2136_tsig_keyname,
-      vault_external_dns_rfc2136_tsig_secret,
-      and optionally vault_external_dns_rfc2136_tsig_secret_alg in vars/common/secrets.yaml
-      or vars/<env>/secrets.yaml.
+      Define k3s_external_dns_rfc2136_tsig_keyname in vars/<env>/vars.yaml,
+      vault_external_dns_rfc2136_tsig_secret in vars/<env>/secrets.yaml,
+      and optionally vault_external_dns_rfc2136_tsig_secret_alg in vars/<env>/secrets.yaml.
   when:
     - k3s_argocd_bootstrap_enabled | bool
     - k3s_external_dns_secret_enabled | bool

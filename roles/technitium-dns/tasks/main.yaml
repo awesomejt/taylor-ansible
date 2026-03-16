@@ -112,18 +112,20 @@
 - name: Ensure TSIG keys are present in settings payload
   set_fact:
     technitium_settings_payload: >-
-      {{ technitium_settings_payload | combine({'tsigKeys': (technitium_settings_payload.tsigKeys | default([])) + [ {'keyName': item.keyName, 'sharedSecret': (item.sharedSecret | b64encode), 'algorithmName': (item.algorithmName | default('hmac-sha256')) } ] }) }}
+      {{ technitium_settings_payload | combine({'tsigKeys': ((technitium_settings_payload.tsigKeys | default([])) | rejectattr('keyName', 'equalto', item.keyName) | list) + [ {'keyName': item.keyName, 'sharedSecret': (item.sharedSecret | b64encode), 'algorithmName': (item.algorithmName | default('hmac-sha256')) } ] }) }}
   loop: "{{ technitium_tsig_keys }}"
-  when: "item.keyName not in (technitium_settings_payload.tsigKeys | default([]) | map(attribute='keyName') | list)"
 
-- name: Push updated DNS settings (add TSIG keys)
+- name: Push updated DNS settings (reconcile TSIG keys)
   uri:
     url: "{{ technitium_api_url }}/api/settings/set?token={{ technitium_token }}"
     method: POST
     body_format: json
     body: "{{ {'tsigKeys': technitium_settings_payload.tsigKeys} }}"
     status_code: 200
-  when: technitium_tsig_keys | length > 0 and (technitium_settings_payload.tsigKeys | length) > (technitium_settings.json.response.tsigKeys | default([]) | length)
+  when: >-
+    technitium_tsig_keys | length > 0
+    and (technitium_settings_payload.tsigKeys | to_json)
+        != ((technitium_settings.json.response.tsigKeys | default([])) | to_json)
 
 - name: Set debug counts for payload and server tsigKeys
   set_fact:

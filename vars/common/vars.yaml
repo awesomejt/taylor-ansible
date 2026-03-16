@@ -3,11 +3,13 @@ technitium_api_url: "http://192.168.50.53:5380"
 technitium_username: "admin"
 technitium_password: "{{ vault_technitium_password | default('admin') }}"
 
-k3s_external_dns_rfc2136_tsig_keyname: "external-dns"
+k3s_external_dns_rfc2136_tsig_keyname_stage: "external-dns-stage"
+k3s_external_dns_rfc2136_tsig_keyname_prod: "external-dns-prod"
 
 ## Secrets - located in vars/common/secrets.yaml (not committed to Git)
 # vault_technitium_password
-# vault_external_dns_rfc2136_tsig_secret
+# vault_external_dns_stage_rfc2136_tsig_secret
+# vault_external_dns_prod_rfc2136_tsig_secret
 # vault_argocd_gitops_admin_password
 # vault_harbor_admin_password
 # vault_headlamp_oidc_client_id
@@ -24,11 +26,11 @@ k3s_external_dns_rfc2136_tsig_keyname: "external-dns"
 technitium_zones: 
   - name: "prod.lab"
     type: "Primary"
-    # allow updates authenticated by TSIG `external-dns` key for A/AAAA records
+    # allow updates authenticated by TSIG `external-dns-prod` key for A/AAAA records
     update: "UseSpecifiedNetworkACL"
     update_network_acl: []
     update_security_policies:
-      - tsigKeyName: "{{ k3s_external_dns_rfc2136_tsig_keyname }}"
+      - tsigKeyName: "{{ k3s_external_dns_rfc2136_tsig_keyname_prod }}"
         domain: "prod.lab"
         allowedTypes:
           - "A"
@@ -36,17 +38,20 @@ technitium_zones:
           - "CNAME"
   - name: "stage.lab"
     type: "Primary"
-    # allow updates authenticated by TSIG `external-dns` key for A/AAAA records
+    # allow updates authenticated by TSIG `external-dns-stage` key for A/AAAA records
     update: "UseSpecifiedNetworkACL"
     update_network_acl: []
     update_security_policies:
-      - tsigKeyName: "{{ k3s_external_dns_rfc2136_tsig_keyname }}"
+      - tsigKeyName: "{{ k3s_external_dns_rfc2136_tsig_keyname_stage }}"
         domain: "stage.lab"
         allowedTypes:
           - "A"
           - "AAAA"
           - "CNAME"
 technitium_tsig_keys:
-  - keyName: "{{ k3s_external_dns_rfc2136_tsig_keyname }}"
-    sharedSecret: "{{ vault_external_dns_rfc2136_tsig_secret }}"
+  - keyName: "{{ k3s_external_dns_rfc2136_tsig_keyname_stage }}"
+    sharedSecret: "{{ vault_external_dns_stage_rfc2136_tsig_secret }}"
+    algorithmName: "hmac-sha256"
+  - keyName: "{{ k3s_external_dns_rfc2136_tsig_keyname_prod }}"
+    sharedSecret: "{{ vault_external_dns_prod_rfc2136_tsig_secret }}"
     algorithmName: "hmac-sha256"
