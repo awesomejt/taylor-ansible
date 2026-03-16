@@ -13,7 +13,7 @@
 
 - name: Determine primary server host
   ansible.builtin.set_fact:
-    k3s_primary_host: "{{ (groups['k3s_servers'] | first) | default(inventory_hostname) }}"
+    k3s_primary_host: "{{ (groups['k3s_' + (k3s_env | default(env)) + '_servers'] | first) | default(inventory_hostname) }}"
 
 - name: Ensure curl is installed (simple preflight)
   ansible.builtin.package:
@@ -29,7 +29,7 @@
         path: /usr/local/bin/k3s
       register: k3s_bin
 
-    - name: Install k3s server (idempotent: uses creates check)
+    - name: "Install k3s server (idempotent: uses creates check)"
       become: true
       ansible.builtin.shell: |
         curl -sfL https://get.k3s.io | \

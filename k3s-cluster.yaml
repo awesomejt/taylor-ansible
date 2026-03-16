@@ -1,6 +1,6 @@
 ---
 - name: Bootstrap k3s cluster (starter)
-  hosts: all
+  hosts: "{{ 'k3s_' + env + '_servers' }},{{ 'k3s_' + env + '_agents' }}"
   gather_facts: yes
   vars:
     env: "{{ env | default('stage') }}"
@@ -25,16 +25,16 @@
     - name: Validate server inventory count
       ansible.builtin.assert:
         that:
-          - "(groups['k3s_servers'] | default([]) | length) >= (k3s_server_count | int)"
-        fail_msg: "Inventory group 'k3s_servers' has fewer hosts than k3s_server_count ({{ k3s_server_count }})."
+          - "(groups['k3s_' + env + '_servers'] | default([]) | length) >= (k3s_server_count | int)"
+        fail_msg: "Inventory group 'k3s_{{ env }}_servers' has fewer hosts than k3s_server_count ({{ k3s_server_count }})."
       run_once: true
       delegate_to: localhost
 
     - name: Validate total hosts for servers+workers
       ansible.builtin.assert:
         that:
-          - "((groups['k3s_workers'] | default([]) | length) + (groups['k3s_servers'] | default([]) | length)) >= ((k3s_server_count|int) + (k3s_worker_count|int))"
-        fail_msg: "Inventory doesn't contain enough total hosts for servers+workers."
+          - "((groups['k3s_' + env + '_agents'] | default([]) | length) + (groups['k3s_' + env + '_servers'] | default([]) | length)) >= ((k3s_server_count|int) + (k3s_worker_count|int))"
+        fail_msg: "Inventory doesn't contain enough total hosts for servers+workers for env={{ env }}."
       run_once: true
       delegate_to: localhost
 
