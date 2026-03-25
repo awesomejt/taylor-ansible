@@ -1,0 +1,9 @@
+---
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: yes
+
+- name: Restart nexus
+  ansible.builtin.systemd:
+    name: nexus
+    state: restarted

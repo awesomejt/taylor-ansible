@@ -8,9 +8,9 @@ technitium_local_nameserver: 127.0.0.1
 technitium_fallback_nameserver: 1.1.1.1
 
 # DNS Zone Management
-technitium_api_url: "http://localhost:5380"
+technitium_api_url: "http://192.168.50.53:5380"
 technitium_username: "admin"
-technitium_password: "admin"
+technitium_password: "{{ vault_technitium_password | default('admin') }}"
 
 # Define zones to create/manage
 # Set to empty list [] to disable automated zone/record management
@@ -18,7 +18,7 @@ technitium_password: "admin"
 #   update: Deny|Allow|AllowOnlyZoneNameServers|UseSpecifiedNetworkACL|AllowZoneNameServersAndUseSpecifiedNetworkACL
 #   update_network_acl:
 #     - 192.168.50.0/24
-#     - !192.168.50.53
+#     - !192.168.50.53s
 # Technitium DNS zone config for this environment
 technitium_zones: []
 

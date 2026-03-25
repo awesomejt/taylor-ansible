@@ -1,0 +1,43 @@
+# Environment: dev
+k3s_domain_name: dev.lab
+k3s_server_name: k3s-dev-server
+k3s_fqdn: "{{ k3s_server_name }}.{{ k3s_domain_name }}"
+k3s_server_count: 1
+k3s_worker_count: 0
+
+postgresql_db_user: "postgres"
+postgresql_users:
+  - cman
+  - resolve
+postgresql_databases:
+  - name: course_manager_dev
+    owner: cman
+    encoding: UTF-8
+  - name: resolve-training-dev
+    owner: resolve
+    encoding: UTF-8
+
+k3s_registration_address: "{{ k3s_fqdn }}"
+k3s_external_dns_rfc2136_tsig_keyname: "external-dns-dev"
+k3s_dev_ha: false
+k3s_enable_cert_manager: true
+k3s_enable_argocd: true
+k3s_argocd_ingress_enabled: true
+k3s_argocd_ingress_host: "argocd.{{ k3s_domain_name }}"
+k3s_argocd_ingress_class_name: traefik
+k3s_argocd_ingress_entrypoints: websecure
+k3s_argocd_ingress_tls: true
+k3s_argocd_bootstrap_app_name: "homelab-dev"
+k3s_argocd_bootstrap_path: "clusters/dev"
+k3s_argocd_gitops_repo_url: "git@github.com:awesomejt/homelab-k3s.git"
+k3s_argocd_gitops_repo_target_revision: main
+
+k3s_server_disable_components: []
+k3s_server_tls_sans:
+  - "{{ k3s_registration_address }}"
+k3s_server_extra_args: []
+k3s_agent_extra_args: []
+
+reposilite_admin_username: "admin"
+grafana_admin_username: "admin"
+# 

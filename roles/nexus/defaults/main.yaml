@@ -1,0 +1,23 @@
+---
+# Nexus defaults
+nexus_version: "latest"
+nexus_install_dir: "/opt"
+nexus_user: "nexus"
+nexus_group: "nexus"
+java_package: "openjdk-21-jdk"
+# download URL template; keep as a full URL so users can override entirely if desired
+nexus_download_url: "https://download.sonatype.com/nexus/3/latest-unix.tar.gz"
+
+# Production hardening defaults
+nexus_data_dir: "/var/sonatype-work/nexus3"
+nexus_enable_blobstore_move: false
+
+# Backups
+nexus_backup_enabled: false
+nexus_backup_dir: "/var/backups/nexus"
+nexus_backup_retention_days: 7
+nexus_backup_cron: "0 2 * * *"
+
+# JVM and service tuning
+nexus_java_opts: "-Xms1g -Xmx1g -XX:MaxDirectMemorySize=512m"
+nexus_limit_nofile: 65536

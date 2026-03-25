@@ -1,3 +1,4 @@
+---
 - name: Install packages required for Technitium DNS
   become: true
   ansible.builtin.apt:
@@ -6,7 +7,7 @@
       - ca-certificates
       - dnsutils
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Disable systemd-resolved so Technitium can bind port 53
   become: true
@@ -37,6 +38,7 @@
     curl -sSL {{ technitium_install_script_url }} | bash
   args:
     executable: /bin/bash
+  changed_when: false
   when: technitium_force_upgrade | bool or not technitium_install_stat.stat.exists
 
 - name: Ensure Technitium dns.service is enabled and running
@@ -63,7 +65,7 @@
 
 # DNS Zone Management Tasks
 - name: Login to Technitium DNS API
-  uri:
+  ansible.builtin.uri:
     url: "{{ technitium_api_url }}/api/user/login"
     method: POST
     body_format: form-urlencoded
@@ -75,27 +77,40 @@
   when: technitium_zones | length > 0
 
 - name: Set API token fact
-  set_fact:
-    technitium_token: "{{ technitium_login.json.token }}"
   when: technitium_zones | length > 0 and technitium_login is succeeded
+  block:
+    - name: Set API token from top-level json.token
+      ansible.builtin.set_fact:
+        technitium_token: "{{ technitium_login.json.token }}"
+      when: technitium_login.json is defined and (technitium_login.json.token is defined)
+
+    - name: Set API token from json.response.token
+      ansible.builtin.set_fact:
+        technitium_token: "{{ technitium_login.json.response.token }}"
+      when: technitium_login.json is defined and (technitium_login.json.response is defined) and (technitium_login.json.response.token is defined)
+
+    - name: Fail if API token could not be found in login response
+      ansible.builtin.fail:
+        msg: "Technitium login did not return an API token. Response: {{ technitium_login.json | default(technitium_login) }}"
+      when: technitium_login is succeeded and (technitium_token is not defined or technitium_token == '')
 
 # Fetch current DNS settings so we can add TSIG keys if requested
 - name: Get current DNS settings
-  uri:
+  ansible.builtin.uri:
     url: "{{ technitium_api_url }}/api/settings/get?token={{ technitium_token }}"
     method: GET
-    return_content: yes
+    return_content: true
     status_code: 200
   register: technitium_settings
   when: technitium_tsig_keys | length > 0
 
 - name: Initialize settings payload
-  set_fact:
+  ansible.builtin.set_fact:
     technitium_settings_payload: "{{ technitium_settings.json.response | default({}) }}"
   when: technitium_tsig_keys | length > 0
 
 - name: Set debug var current_tsigs
-  set_fact:
+  ansible.builtin.set_fact:
     _current_tsigs: "{{ technitium_settings.json.response.tsigKeys | default([]) }}"
   when: technitium_tsig_keys | length > 0
 
@@ -110,13 +125,26 @@
   when: technitium_tsig_keys | length > 0
 
 - name: Ensure TSIG keys are present in settings payload
-  set_fact:
+  ansible.builtin.set_fact:
     technitium_settings_payload: >-
-      {{ technitium_settings_payload | combine({'tsigKeys': ((technitium_settings_payload.tsigKeys | default([])) | rejectattr('keyName', 'equalto', item.keyName) | list) + [ {'keyName': item.keyName, 'sharedSecret': (item.sharedSecret | b64encode), 'algorithmName': (item.algorithmName | default('hmac-sha256')) } ] }) }}
+      {{ technitium_settings_payload
+         | combine({
+             'tsigKeys': (
+               (technitium_settings_payload.tsigKeys | default([]))
+                 | rejectattr('keyName', 'equalto', item.keyName)
+                 | list
+             ) + [
+               {
+                 'keyName': item.keyName,
+                 'sharedSecret': (item.sharedSecret | b64encode),
+                 'algorithmName': (item.algorithmName | default('hmac-sha256'))
+               }
+             ]
+           }) }}
   loop: "{{ technitium_tsig_keys }}"
 
 - name: Push updated DNS settings (reconcile TSIG keys)
-  uri:
+  ansible.builtin.uri:
     url: "{{ technitium_api_url }}/api/settings/set?token={{ technitium_token }}"
     method: POST
     body_format: json
@@ -128,7 +156,7 @@
         != ((technitium_settings.json.response.tsigKeys | default([])) | to_json)
 
 - name: Set debug counts for payload and server tsigKeys
-  set_fact:
+  ansible.builtin.set_fact:
     _payload_count: "{{ technitium_settings_payload.tsigKeys | default([]) | length }}"
     _server_count: "{{ technitium_settings.json.response.tsigKeys | default([]) | length }}"
   when: technitium_tsig_keys | length > 0
@@ -144,7 +172,7 @@
   when: technitium_tsig_keys | length > 0
 
 - name: Create DNS zones
-  uri:
+  ansible.builtin.uri:
     url: "{{ technitium_api_url }}/api/zones/create"
     method: POST
     body_format: form-urlencoded
@@ -155,33 +183,51 @@
     status_code: 200
   loop: "{{ technitium_zones }}"
   when: technitium_zones | length > 0
-  ignore_errors: true  # Zone might already exist
+  failed_when: false  # Zone might already exist
 
 - name: Configure DNS zone options
-  uri:
+  ansible.builtin.uri:
     url: "{{ technitium_api_url }}/api/zones/options/set?token={{ technitium_token }}"
     method: POST
     body_format: json
     body: >-
-      {{ {
-        'token': technitium_token,
-        'zone': item.name,
-        'queryAccess': item.get('query_access',''),
-        'queryAccessNetworkACL': (((item.get('query_access_network_acl') or []) | length) > 0) and ((item.get('query_access_network_acl') or []) | join(',')) or 'false',
-        'zoneTransfer': item.get('zone_transfer',''),
-        'zoneTransferNetworkACL': (((item.get('zone_transfer_network_acl') or []) | length) > 0) and ((item.get('zone_transfer_network_acl') or []) | join(',')) or 'false',
-        'notify': item.get('notify',''),
-        'notifyNameServers': (((item.get('notify_name_servers') or []) | length) > 0) and ((item.get('notify_name_servers') or []) | join(',')) or 'false',
-        'update': item.get('update',''),
-        'updateNetworkACL': (((item.get('update_network_acl') or []) | length) > 0) and ((item.get('update_network_acl') or []) | join(',')) or 'false',
-        'updateSecurityPolicies': item.get('update_security_policies',[])
-      } }}
+      {{
+        {
+          'token': technitium_token,
+          'zone': item.name,
+          'queryAccess': item.get('query_access',''),
+          'queryAccessNetworkACL': (
+            ((item.get('query_access_network_acl') or []) | length) > 0
+              and ((item.get('query_access_network_acl') or []) | join(','))
+              or 'false'
+          ),
+          'zoneTransfer': item.get('zone_transfer',''),
+          'zoneTransferNetworkACL': (
+            ((item.get('zone_transfer_network_acl') or []) | length) > 0
+              and ((item.get('zone_transfer_network_acl') or []) | join(','))
+              or 'false'
+          ),
+          'notify': item.get('notify',''),
+          'notifyNameServers': (
+            ((item.get('notify_name_servers') or []) | length) > 0
+              and ((item.get('notify_name_servers') or []) | join(','))
+              or 'false'
+          ),
+          'update': item.get('update',''),
+          'updateNetworkACL': (
+            ((item.get('update_network_acl') or []) | length) > 0
+              and ((item.get('update_network_acl') or []) | join(','))
+              or 'false'
+          ),
+          'updateSecurityPolicies': item.get('update_security_policies',[])
+        }
+      }}
     status_code: 200
   loop: "{{ technitium_zones }}"
   when: technitium_zones | length > 0
 
 - name: Add DNS records to zones
-  uri:
+  ansible.builtin.uri:
     url: "{{ technitium_api_url }}/api/zones/records/add"
     method: POST
     body_format: form-urlencoded
@@ -205,4 +251,4 @@
     status_code: 200
   loop: "{{ technitium_zones | subelements('records', skip_missing=True) }}"
   when: technitium_zones | length > 0 and item.1.domain is defined
-  ignore_errors: true  # Record might already exist
+  failed_when: false  # Record might already exist

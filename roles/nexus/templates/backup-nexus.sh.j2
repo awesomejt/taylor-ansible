@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DATA_DIR="{{ nexus_data_dir }}"
+DEST_DIR="{{ nexus_backup_dir }}"
+RETENTION={{ nexus_backup_retention_days }}
+TS=$(date -u +"%Y%m%dT%H%M%SZ")
+
+mkdir -p "$DEST_DIR"
+tar -C "${DATA_DIR%/}" -czf "$DEST_DIR/nexus-backup-$TS.tar.gz" .
+
+# prune old backups
+find "$DEST_DIR" -type f -name 'nexus-backup-*.tar.gz' -mtime +$RETENTION -delete || true
+
+echo "Backup created: $DEST_DIR/nexus-backup-$TS.tar.gz"

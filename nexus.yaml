@@ -1,0 +1,7 @@
+---
+- name: Install Nexus Repository OSS
+  hosts: nexus
+  become: true
+  vars_files: []
+  roles:
+    - nexus

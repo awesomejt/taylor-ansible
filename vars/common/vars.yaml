@@ -6,6 +6,9 @@ technitium_password: "{{ vault_technitium_password | default('admin') }}"
 k3s_external_dns_rfc2136_tsig_keyname_stage: "external-dns-stage"
 k3s_external_dns_rfc2136_tsig_keyname_prod: "external-dns-prod"
 
+nexus_username: "admin"
+nexus_password: "{{ vault_nexus_password | default('admin') }}"
+
 ## Secrets - located in vars/common/secrets.yaml (not committed to Git)
 # vault_technitium_password
 # vault_external_dns_stage_rfc2136_tsig_secret
