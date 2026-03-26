@@ -1,0 +1,60 @@
+---
+- name: Ensure basic packages for installing step-ca are present
+  ansible.builtin.apt:
+    name:
+      - curl
+      - ca-certificates
+      - openssl
+    state: present
+    update_cache: yes
+
+- name: Ensure step-ca system group exists
+  ansible.builtin.group:
+    name: "{{ step_ca_group }}"
+    state: present
+
+- name: Ensure step-ca user exists
+  ansible.builtin.user:
+    name: "{{ step_ca_user }}"
+    group: "{{ step_ca_group }}"
+    system: yes
+    create_home: no
+    shell: /usr/sbin/nologin
+
+- name: Create step-ca directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ step_ca_user }}"
+    group: "{{ step_ca_group }}"
+    mode: '0755'
+  loop:
+    - "{{ step_ca_home }}"
+    - "{{ step_ca_config_dir }}"
+
+- name: Deploy systemd unit file for step-ca (template)
+  ansible.builtin.template:
+    src: step-ca.service.j2
+    dest: /etc/systemd/system/{{ step_ca_service_name }}.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload systemd
+
+- name: Install helper README with init instructions
+  ansible.builtin.copy:
+    src: README-step-ca.txt
+    dest: "{{ step_ca_config_dir }}/README-step-ca.txt"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Ensure systemd is aware of new unit
+  ansible.builtin.systemd:
+    daemon_reload: yes
+
+- name: Print note about manual initialization
+  ansible.builtin.debug:
+    msg: |
+      The role created the `step-ca` user, directories and a systemd unit template.
+      To initialize the CA run `step ca init` on the host (see {{ step_ca_config_dir }}/README-step-ca.txt for exact command examples).

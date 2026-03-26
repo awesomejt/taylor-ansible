@@ -1,0 +1,10 @@
+---
+# Defaults for step-ca role
+step_ca_user: step
+step_ca_group: step
+step_ca_home: /var/lib/step
+step_ca_config_dir: /etc/step
+step_ca_service_name: step-ca
+# Optionally provide a password via vault; leave empty to create interactively
+step_ca_password: ""
+step_ca_hostname: "ca.taylor.lan"

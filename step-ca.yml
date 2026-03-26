@@ -1,0 +1,8 @@
+---
+- name: Provision step-ca skeleton on dedicated host(s)
+  hosts: step-ca
+  become: true
+  vars:
+    step_ca_install_method: manual
+  roles:
+    - step-ca

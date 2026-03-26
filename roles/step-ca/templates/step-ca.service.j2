@@ -1,0 +1,16 @@
+[Unit]
+Description=step-ca (Smallstep Certificate Authority)
+After=network.target
+
+[Service]
+Type=simple
+User={{ step_ca_user }}
+Group={{ step_ca_group }}
+WorkingDirectory={{ step_ca_home }}
+# The service command is left as a placeholder. After you run `step ca init`
+# populate `{{ step_ca_config_dir }}/config/` and update ExecStart accordingly.
+ExecStart=/usr/local/bin/step-ca start --config {{ step_ca_config_dir }}/config/ca.json
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

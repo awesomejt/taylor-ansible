@@ -138,9 +138,8 @@
 
 - name: Verify nexus can write to data directory as nexus user
   ansible.builtin.command: >
-    bash -lc "touch {{ nexus_data_dir }}/.ansible_write_test && rm -f {{ nexus_data_dir }}/.ansible_write_test"
+    runuser -u {{ nexus_user }} -- bash -lc "touch {{ nexus_data_dir }}/.ansible_write_test && rm -f {{ nexus_data_dir }}/.ansible_write_test"
   become: true
-  become_user: "{{ nexus_user }}"
   register: nexus_write_test
   failed_when: nexus_write_test.rc != 0
 
@@ -224,7 +223,7 @@
     owner: "{{ nexus_user }}"
     group: "{{ nexus_group }}"
     mode: '0600'
-  when: nexus_login_verify is defined and nexus_login_verify.status == 200
+  when: (nexus_login_verify is defined) and ((nexus_login_verify.status | default(0)) == 200)
 
 # Backups: install cron job and backup script when enabled
 - name: Ensure backup directory exists
