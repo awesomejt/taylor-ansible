@@ -7,11 +7,13 @@ unit template at `/etc/systemd/system/step-ca.service`.
 
 Manual initialization (recommended):
 
-1. Install the `step` CLI on the host (download from https://smallstep.com/docs/):
+1. Install the `step` CLI on Ubuntu/Debian using the official package repository (recommended):
 
-   curl -LO https://github.com/smallstep/cli/releases/download/v0.26.0/step-cli_0.26.0_linux_amd64.tar.gz
-   tar xzf step-cli_0.26.0_linux_amd64.tar.gz
-   sudo cp step_*/bin/step /usr/local/bin/
+   curl -s https://packagecloud.io/install/repositories/smallstep/cli/script.deb.sh | sudo bash
+   sudo apt-get update
+   sudo apt-get install -y step
+
+   Alternatively, you can install a binary release from GitHub if you prefer a manual install.
 
 2. Run the interactive initializer on the host to create the CA material:
 

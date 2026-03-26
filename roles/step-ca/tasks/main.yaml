@@ -58,3 +58,119 @@
     msg: |
       The role created the `step-ca` user, directories and a systemd unit template.
       To initialize the CA run `step ca init` on the host (see {{ step_ca_config_dir }}/README-step-ca.txt for exact command examples).
+
+# Optional: non-interactive initialization using vaulted secrets
+- name: Check whether `step` CLI is present
+  ansible.builtin.command:
+    cmd: command -v step
+  register: step_cli_check
+  failed_when: false
+  changed_when: false
+
+- name: Require CA password when auto-init is enabled
+  ansible.builtin.fail:
+    msg: "vault_step_ca_password is required for non-interactive init (set it in vars/common/secrets.yaml)"
+  when: step_ca_auto_init | bool and (vault_step_ca_password is not defined)
+
+- name: Install smallstep CLI repository + package when missing
+  ansible.builtin.shell: |
+    curl -s https://packagecloud.io/install/repositories/smallstep/cli/script.deb.sh | bash
+    apt-get update -y
+    apt-get install -y step
+  when: step_cli_check.rc != 0
+
+- name: Ensure step CA config dir owned by step user
+  ansible.builtin.file:
+    path: "{{ step_ca_config_dir }}"
+    owner: "{{ step_ca_user }}"
+    group: "{{ step_ca_group }}"
+    recurse: yes
+
+- name: Create password file for CA init from vault
+  ansible.builtin.copy:
+    dest: "{{ step_ca_config_dir }}/ca-password"
+    content: "{{ vault_step_ca_password }}\n"
+    owner: root
+    group: root
+    mode: '0600'
+  when: step_ca_auto_init | bool and (vault_step_ca_password is defined)
+  no_log: true
+
+- name: Create provisioner password file for CA init from vault
+  ansible.builtin.copy:
+    dest: "{{ step_ca_config_dir }}/prov-password"
+    content: "{{ vault_step_ca_provisioner_password | default('') }}\n"
+    owner: root
+    group: root
+    mode: '0600'
+  when: step_ca_auto_init | bool
+  no_log: true
+
+- name: Run non-interactive `step ca init` (creates CA material)
+  ansible.builtin.command: >
+    runuser -u {{ step_ca_user }} -- step ca init
+    --name "{{ step_ca_hostname }}"
+    --dns "{{ step_ca_hostname }}"
+    --provisioner admin
+    --password-file "{{ step_ca_config_dir }}/ca-password"
+    --provisioner-password-file "{{ step_ca_config_dir }}/prov-password"
+    --email "{{ vault_step_ca_admin_email | default('admin@local') }}"
+    --yes
+  register: step_ca_init
+  changed_when: "step_ca_init.rc == 0"
+  failed_when: step_ca_init.rc != 0
+  when: step_ca_auto_init | bool
+  no_log: true
+
+- name: Debug: list step CA config and data directories
+  ansible.builtin.command: ls -la {{ item }}
+  loop:
+    - "{{ step_ca_config_dir }}"
+    - "{{ step_ca_home }}"
+  register: step_ca_dirs
+  changed_when: false
+  failed_when: false
+  when: step_ca_auto_init | bool
+
+- name: Show recent journal for step-ca service
+  ansible.builtin.command: journalctl -u {{ step_ca_service_name }} --no-pager -n 200 || true
+  register: step_ca_journal
+  changed_when: false
+  failed_when: false
+  when: step_ca_auto_init | bool
+
+- name: Display diagnostics (non-sensitive)
+  ansible.builtin.debug:
+    msg:
+      - "step-ca init rc: {{ step_ca_init.rc | default('not-run') }}"
+      - "dirs: {{ step_ca_dirs.results | map(attribute='stdout') | list }}"
+      - "journal: {{ (step_ca_journal.stdout_lines[:30]) | default([]) }}"
+  when: step_ca_auto_init | bool
+
+- name: Secure CA files and set ownership to step user
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: "{{ step_ca_user }}"
+    group: "{{ step_ca_group }}"
+    mode: '0600'
+  loop:
+    - "{{ step_ca_home }}"
+    - "{{ step_ca_config_dir }}"
+  when: step_ca_auto_init | bool
+
+- name: Enable and start step-ca service after init
+  ansible.builtin.systemd:
+    name: "{{ step_ca_service_name }}"
+    enabled: true
+    state: started
+  when: step_ca_auto_init | bool
+
+- name: Remove temporary CA init password files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ step_ca_config_dir }}/ca-password"
+    - "{{ step_ca_config_dir }}/prov-password"
+  when: step_ca_auto_init | bool
+  no_log: true

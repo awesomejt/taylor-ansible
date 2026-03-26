@@ -8,3 +8,4 @@ step_ca_service_name: step-ca
 # Optionally provide a password via vault; leave empty to create interactively
 step_ca_password: ""
 step_ca_hostname: "ca.taylor.lan"
+step_ca_auto_init: false
