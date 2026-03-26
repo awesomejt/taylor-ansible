@@ -1,14 +1,15 @@
 ---
 # Nexus defaults
-nexus_version: "latest"
+nexus_version: "3.90.2-06"
 nexus_install_dir: "/opt"
 nexus_user: "nexus"
 nexus_group: "nexus"
 # Java package (prefixed for role var-naming)
 nexus_java_package: "openjdk-21-jdk"
 # download URL template; keep as a full URL so users can override entirely if desired
-nexus_download_url: >
-  https://download.sonatype.com/nexus/3/latest-unix.tar.gz
+nexus_arch: "linux-x86_64"
+
+nexus_download_url: "https://download.sonatype.com/nexus/3/nexus-{{ nexus_version }}-{{ nexus_arch }}.tar.gz"
 
 # Production hardening defaults
 nexus_data_dir: "/var/sonatype-work/nexus3"
@@ -23,3 +24,17 @@ nexus_backup_cron: "0 2 * * *"
 # JVM and service tuning
 nexus_java_opts: "-Xms1g -Xmx1g -XX:MaxDirectMemorySize=512m"
 nexus_limit_nofile: 65536
+
+# Optional nginx reverse-proxy settings
+nexus_nginx_enable: false
+nexus_nginx_server_name: "_"
+nexus_nginx_use_ssl: false
+# When nginx SSL is enabled, set these to valid paths or manage certs externally
+nexus_nginx_ssl_cert: "/etc/ssl/certs/nexus.crt"
+nexus_nginx_ssl_key: "/etc/ssl/private/nexus.key"
+nexus_nginx_client_max_body_size: "1G"
+
+# Let's Encrypt options
+nexus_nginx_letsencrypt_enable: false
+nexus_nginx_letsencrypt_email: ""
+nexus_nginx_letsencrypt_staging: false

@@ -30,16 +30,16 @@
 - name: Download Nexus archive
   ansible.builtin.get_url:
     url: "{{ nexus_download_url }}"
-    dest: "/tmp/nexus.tar.gz"
+    dest: "/tmp/nexus-{{ nexus_version }}.tar.gz"
     mode: '0644'
     force: false
 
 - name: Extract Nexus archive
   ansible.builtin.unarchive:
-    src: "/tmp/nexus.tar.gz"
+    src: "/tmp/nexus-{{ nexus_version }}.tar.gz"
     dest: "{{ nexus_install_dir }}"
     remote_src: true
-    creates: "{{ nexus_install_dir }}/nexus"
+    creates: "{{ nexus_install_dir }}/nexus-{{ nexus_version }}"
 
 - name: Determine extracted Nexus directory name
   ansible.builtin.command: >
@@ -123,11 +123,44 @@
     - Reload systemd
     - Restart nexus
 
+- name: Ensure nexus directories ownership and permissions
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ nexus_user }}"
+    group: "{{ nexus_group }}"
+    mode: '0755'
+    recurse: yes
+  loop:
+    - "{{ nexus_data_dir }}"
+    - "{{ nexus_extracted_path | default(nexus_install_dir ~ '/nexus-' ~ nexus_version) }}"
+    - "{{ nexus_install_dir }}"
+
+- name: Verify nexus can write to data directory as nexus user
+  ansible.builtin.command: >
+    bash -lc "touch {{ nexus_data_dir }}/.ansible_write_test && rm -f {{ nexus_data_dir }}/.ansible_write_test"
+  become: true
+  become_user: "{{ nexus_user }}"
+  register: nexus_write_test
+  failed_when: nexus_write_test.rc != 0
+
 - name: Enable and start nexus
   ansible.builtin.systemd:
     name: nexus
     enabled: true
     state: started
+
+- name: Wait for Nexus HTTP API to be available after start
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:8081/service/rest/v1/status"
+    method: GET
+    return_content: no
+    status_code: 200
+  register: nexus_up_check_poststart
+  retries: 20
+  delay: 10
+  until: nexus_up_check_poststart.status == 200
+  when: not (nexus_admin_marker.stat.exists | default(false))
 
 # Pre-initialize admin password using common vars if not already set
 - name: Check for admin init marker
@@ -231,4 +264,94 @@
   ansible.builtin.package:
     name: curl
     state: present
+
+# Optional nginx reverse proxy for Nexus
+- name: Install nginx package
+  ansible.builtin.package:
+    name: nginx
+    state: present
+  when: nexus_nginx_enable | bool
+
+- name: Deploy nginx site for Nexus
+  ansible.builtin.template:
+    src: nginx-nexus.conf.j2
+    dest: /etc/nginx/sites-available/nexus
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload nginx
+  when: nexus_nginx_enable | bool
+
+- name: Ensure nginx site enabled
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/nexus
+    dest: /etc/nginx/sites-enabled/nexus
+    state: link
+    force: yes
+  notify: Reload nginx
+  when: nexus_nginx_enable | bool
+
+- name: Remove default nginx site if present
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload nginx
+  when: nexus_nginx_enable | bool
+
+- name: Test nginx configuration
+  ansible.builtin.command: nginx -t
+  register: nginx_test
+  failed_when: nginx_test.rc != 0
+  changed_when: false
+  when: nexus_nginx_enable | bool
+
+# Let's Encrypt certificate provisioning (webroot)
+- name: Ensure ACME webroot directory exists
+  ansible.builtin.file:
+    path: /var/www/letsencrypt
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: nexus_nginx_enable | bool and nexus_nginx_letsencrypt_enable | bool
+
+- name: Install certbot packages
+  ansible.builtin.package:
+    name:
+      - certbot
+      - python3-certbot-nginx
+    state: present
+  when: nexus_nginx_enable | bool and nexus_nginx_letsencrypt_enable | bool
+
+- name: Check for existing Let's Encrypt cert
+  ansible.builtin.stat:
+    path: "/etc/letsencrypt/live/{{ nexus_nginx_server_name }}/fullchain.pem"
+  register: letsencrypt_cert_stat
+  when: nexus_nginx_enable | bool and nexus_nginx_letsencrypt_enable | bool
+
+- name: Obtain Let's Encrypt certificate (webroot)
+  ansible.builtin.command: >
+    certbot certonly --webroot -w /var/www/letsencrypt -d {{ nexus_nginx_server_name }}
+    --email {{ nexus_nginx_letsencrypt_email }} --agree-tos --non-interactive
+    {% if nexus_nginx_letsencrypt_staging | bool %} --staging {% endif %}
+  register: certbot_result
+  changed_when: "'Congratulations' in (certbot_result.stdout + certbot_result.stderr)"
+  failed_when: certbot_result.rc != 0 and not ('Certificate not yet due for renewal' in (certbot_result.stdout + certbot_result.stderr))
+  when: nexus_nginx_enable | bool and nexus_nginx_letsencrypt_enable | bool and not letsencrypt_cert_stat.stat.exists | default(false)
+
+- name: Set LetsEncrypt cert paths facts if present
+  ansible.builtin.set_fact:
+    nexus_nginx_ssl_cert: "/etc/letsencrypt/live/{{ nexus_nginx_server_name }}/fullchain.pem"
+    nexus_nginx_ssl_key: "/etc/letsencrypt/live/{{ nexus_nginx_server_name }}/privkey.pem"
+  when: nexus_nginx_enable | bool and nexus_nginx_letsencrypt_enable | bool and (letsencrypt_cert_stat.stat.exists | default(false) or (certbot_result is defined and certbot_result.rc == 0))
+
+- name: Redeploy nginx site to include obtained certs
+  ansible.builtin.template:
+    src: nginx-nexus.conf.j2
+    dest: /etc/nginx/sites-available/nexus
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload nginx
+  when: nexus_nginx_enable | bool and nexus_nginx_letsencrypt_enable | bool
 

@@ -9,6 +9,18 @@ k3s_external_dns_rfc2136_tsig_keyname_prod: "external-dns-prod"
 nexus_username: "admin"
 nexus_password: "{{ vault_nexus_password | default('admin') }}"
 
+# Nexus nginx reverse-proxy settings (override per-environment as needed)
+# Set to true to enable nginx provisioning and proxy configuration
+# Enable nginx reverse proxy for Nexus
+nexus_nginx_enable: true
+# Public hostname for Nexus (used to issue certificates and nginx server_name)
+nexus_nginx_server_name: "nexus.taylor.lan"
+# If true, nginx will be configured to use HTTPS and certs from the paths below
+nexus_nginx_use_ssl: false
+# Optional: enable Let's Encrypt provisioning via certbot (webroot)
+nexus_nginx_letsencrypt_enable: false
+nexus_nginx_letsencrypt_email: ""
+
 ## Secrets - located in vars/common/secrets.yaml (not committed to Git)
 # vault_technitium_password
 # vault_external_dns_stage_rfc2136_tsig_secret
