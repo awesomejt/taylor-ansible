@@ -1,6 +1,6 @@
 - name: Install common packages
   become: true
-  apt:
+  ansible.builtin.apt:
     name:
       - nano
       - git
@@ -8,6 +8,6 @@
 
 - name: Clean up APT
   become: true
-  apt:
+  ansible.builtin.apt:
     autoclean: true
     autoremove: true

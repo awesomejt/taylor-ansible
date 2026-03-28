@@ -1,46 +1,3 @@
----
-- name: Bootstrap k3s cluster (starter)
-  hosts: "{{ 'k3s_' + env + '_servers' }},{{ 'k3s_' + env + '_agents' }}"
-  gather_facts: yes
-  vars:
-    env: "{{ env | default('stage') }}"
-  vars_files:
-    - vars/{{ env }}/vars.yaml
-    - vars/{{ env }}/secrets.yaml
-  pre_tasks:
-    - name: Announce target environment
-      ansible.builtin.debug:
-        msg: "Bootstrapping k3s for env={{ env }}"
-      run_once: true
-      delegate_to: localhost
-
-    - name: Ensure required env vars are defined
-      ansible.builtin.assert:
-        that:
-          - k3s_server_count is defined
-          - k3s_worker_count is defined
-      run_once: true
-      delegate_to: localhost
-
-    - name: Validate server inventory count
-      ansible.builtin.assert:
-        that:
-          - "(groups['k3s_' + env + '_servers'] | default([]) | length) >= (k3s_server_count | int)"
-        fail_msg: "Inventory group 'k3s_{{ env }}_servers' has fewer hosts than k3s_server_count ({{ k3s_server_count }})."
-      run_once: true
-      delegate_to: localhost
-
-    - name: Validate total hosts for servers+workers
-      ansible.builtin.assert:
-        that:
-          - "((groups['k3s_' + env + '_agents'] | default([]) | length) + (groups['k3s_' + env + '_servers'] | default([]) | length)) >= ((k3s_server_count|int) + (k3s_worker_count|int))"
-        fail_msg: "Inventory doesn't contain enough total hosts for servers+workers for env={{ env }}."
-      run_once: true
-      delegate_to: localhost
-
-  roles:
-    - role: k3s-cluster
-      k3s_env: "{{ env }}"
 - name: Validate K3s inventory and environment settings
   hosts: localhost
   gather_facts: false
@@ -48,8 +5,6 @@
     target_env: "{{ env | default('prod') }}"
     k3s_server_group: "k3s_{{ target_env }}_servers"
   vars_files:
-    - "vars/common/vars.yaml"
-    - "vars/common/secrets.yaml"
     - "vars/{{ env | default('prod') }}/vars.yaml"
     - "vars/{{ env | default('prod') }}/secrets.yaml"
   tasks:
@@ -82,35 +37,15 @@
           - (k3s_registration_address | default('') | string | length) > 0
         fail_msg: "Set k3s_registration_address in vars/{{ env | default('prod') }}/vars.yaml"
 
-    - name: Ensure Reposilite admin credentials are configured
-      ansible.builtin.assert:
-        that:
-          - (reposilite_admin_username | default('') | string | length) > 0
-          - (vault_reposilite_admin_password | default('') | string | length) > 0
-        fail_msg: >-
-          Set reposilite_admin_username in vars/{{ env | default('prod') }}/vars.yaml
-          and vault_reposilite_admin_password in vars/{{ env | default('prod') }}/secrets.yaml
-
-    - name: Ensure Grafana admin credentials are configured
-      ansible.builtin.assert:
-        that:
-          - (grafana_admin_username | default('') | string | length) > 0
-          - (vault_grafana_admin_password | default('') | string | length) > 0
-        fail_msg: >-
-          Set grafana_admin_username in vars/{{ env | default('prod') }}/vars.yaml
-          and vault_grafana_admin_password in vars/{{ env | default('prod') }}/secrets.yaml
-
 - name: Bootstrap first K3s control-plane server
   hosts: "k3s_{{ env | default('prod') }}_servers[0]"
   become: true
   vars_files:
-    - "vars/common/vars.yaml"
-    - "vars/common/secrets.yaml"
     - "vars/{{ env | default('prod') }}/vars.yaml"
     - "vars/{{ env | default('prod') }}/secrets.yaml"
   roles:
     - common
-    - role: k3s-server
+    - role: k3s-cluster
       vars:
         k3s_mode: server
         k3s_server_init: true
@@ -120,13 +55,11 @@
   serial: 1
   become: true
   vars_files:
-    - "vars/common/vars.yaml"
-    - "vars/common/secrets.yaml"
     - "vars/{{ env | default('prod') }}/vars.yaml"
     - "vars/{{ env | default('prod') }}/secrets.yaml"
   roles:
     - common
-    - role: k3s-server
+    - role: k3s-cluster
       vars:
         k3s_mode: server
         k3s_server_init: false
@@ -136,89 +69,10 @@
   serial: 1
   become: true
   vars_files:
-    - "vars/common/vars.yaml"
-    - "vars/common/secrets.yaml"
     - "vars/{{ env | default('prod') }}/vars.yaml"
     - "vars/{{ env | default('prod') }}/secrets.yaml"
   roles:
     - common
-    - role: k3s-server
+    - role: k3s-cluster
       vars:
         k3s_mode: agent
-
-- name: Install cert-manager on first control-plane server when enabled
-  hosts: "k3s_{{ env | default('prod') }}_servers[0]"
-  become: true
-  vars_files:
-    - "vars/common/vars.yaml"
-    - "vars/common/secrets.yaml"
-    - "vars/{{ env | default('prod') }}/vars.yaml"
-    - "vars/{{ env | default('prod') }}/secrets.yaml"
-  tasks:
-    - name: Include cert-manager install tasks
-      ansible.builtin.include_role:
-        name: k3s-server
-        tasks_from: cert-manager
-      when: k3s_enable_cert_manager | bool
-
-- name: Install Argo CD on first control-plane server when enabled
-  hosts: "k3s_{{ env | default('prod') }}_servers[0]"
-  become: true
-  vars_files:
-    - "vars/common/vars.yaml"
-    - "vars/common/secrets.yaml"
-    - "vars/{{ env | default('prod') }}/vars.yaml"
-    - "vars/{{ env | default('prod') }}/secrets.yaml"
-  tasks:
-    - name: Include Argo CD install tasks
-      ansible.builtin.include_role:
-        name: k3s-server
-        tasks_from: argocd
-      when: k3s_enable_argocd | bool
-
-- name: Create Reposilite secrets on first control-plane server
-  hosts: "k3s_{{ env | default('prod') }}_servers[0]"
-  become: true
-  vars_files:
-    - "vars/common/vars.yaml"
-    - "vars/common/secrets.yaml"
-    - "vars/{{ env | default('prod') }}/vars.yaml"
-    - "vars/{{ env | default('prod') }}/secrets.yaml"
-  tasks:
-    - name: Ensure reposilite namespace exists
-      ansible.builtin.shell: |
-        set -euo pipefail
-        k3s kubectl create namespace reposilite --dry-run=client -o yaml | k3s kubectl apply -f -
-      args:
-        executable: /bin/bash
-      register: reposilite_namespace
-      changed_when: "'created' in reposilite_namespace.stdout or 'configured' in reposilite_namespace.stdout"
-
-    - name: Create Reposilite admin secret
-      become: true
-      ansible.builtin.shell: |
-        set -euo pipefail
-        k3s kubectl create secret generic reposilite-admin \
-          --namespace reposilite \
-          --from-literal=username="{{ reposilite_admin_username }}" \
-          --from-literal=password="{{ vault_reposilite_admin_password }}" \
-          --dry-run=client -o yaml | k3s kubectl apply -f -
-      args:
-        executable: /bin/bash
-      register: reposilite_secret
-      changed_when: "'created' in reposilite_secret.stdout or 'configured' in reposilite_secret.stdout"
-
-    - name: Create Grafana admin secret
-      become: true
-      ansible.builtin.shell: |
-        set -euo pipefail
-        k3s kubectl create namespace monitoring --dry-run=client -o yaml | k3s kubectl apply -f -
-        k3s kubectl create secret generic grafana-admin \
-          --namespace monitoring \
-          --from-literal=admin-user="{{ grafana_admin_username }}" \
-          --from-literal=admin-password="{{ vault_grafana_admin_password }}" \
-          --dry-run=client -o yaml | k3s kubectl apply -f -
-      args:
-        executable: /bin/bash
-      register: grafana_secret
-      changed_when: "'created' in grafana_secret.stdout or 'configured' in grafana_secret.stdout"

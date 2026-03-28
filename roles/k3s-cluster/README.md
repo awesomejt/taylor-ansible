@@ -1,4 +1,4 @@
-# k3s-cluster role (starter)
+# k3s-cluster role
 
 Usage:
 
@@ -15,11 +15,12 @@ Required variables (examples):
 - `vault_k3s_token` (in `vars/<env>/secrets.yaml`)
 - `k3s_registration_address` or `k3s_fqdn` / `k3s_server_name` (in `vars/<env>/vars.yaml`)
 
-Inventory groups expected (recommended):
+Inventory groups expected:
 
-- `k3s_servers`: one or more server hosts; the first host is treated as primary.
-- `k3s_workers`: optional worker nodes (or include them in `k3s_servers`/`k3s_agents`).
+- `k3s_<env>_servers`
+- `k3s_<env>_agents`
 
 Notes:
-- This is a minimal, idempotent starter. It uses `curl | sh` installer from k3s and checks for existing `/usr/local/bin/k3s` to avoid re-running.
-- Extend tasks to add TLS SANs, and advanced cluster options, or to use a packaged installer if desired.
+- This role is intentionally limited to K3s installation and node join behavior.
+- It does not install cert-manager, Argo CD, or seed application secrets.
+- Cluster bootstrapping beyond base K3s should happen separately.
