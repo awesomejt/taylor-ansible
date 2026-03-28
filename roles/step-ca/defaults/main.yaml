@@ -7,5 +7,17 @@ step_ca_config_dir: /etc/step
 step_ca_service_name: step-ca
 # Optionally provide a password via vault; leave empty to create interactively
 step_ca_password: ""
-step_ca_hostname: "ca.taylor.lan"
+step_ca_provisioner_password: ""
+step_ca_admin_email: "admin@local"
+step_ca_hostname: "certs.taylor.lan"
+step_ca_address: ":443"
+step_ca_provisioner: "admin"
 step_ca_auto_init: false
+step_ca_init_timeout_seconds: 300
+
+# Package install options for step CLI (Debian/Ubuntu)
+# See https://smallstep.com/docs/step-cli/installation/#debianubuntu
+step_cli_apt_key_url: https://packages.smallstep.com/keys/apt/repo-signing-key.gpg
+step_cli_apt_repo: "deb [signed-by=/etc/apt/keyrings/smallstep.asc] https://packages.smallstep.com/stable/debian debs main"
+# Package name to install via apt (adjust if upstream changes)
+step_cli_package: step-cli

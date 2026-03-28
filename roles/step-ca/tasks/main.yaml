@@ -1,12 +1,14 @@
 ---
+
 - name: Ensure basic packages for installing step-ca are present
   ansible.builtin.apt:
     name:
       - curl
+      - gpg
       - ca-certificates
       - openssl
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Ensure step-ca system group exists
   ansible.builtin.group:
@@ -17,8 +19,8 @@
   ansible.builtin.user:
     name: "{{ step_ca_user }}"
     group: "{{ step_ca_group }}"
-    system: yes
-    create_home: no
+    system: true
+    create_home: false
     shell: /usr/sbin/nologin
 
 - name: Create step-ca directories
@@ -51,7 +53,7 @@
 
 - name: Ensure systemd is aware of new unit
   ansible.builtin.systemd:
-    daemon_reload: yes
+    daemon_reload: true
 
 - name: Print note about manual initialization
   ansible.builtin.debug:
@@ -70,13 +72,42 @@
 - name: Require CA password when auto-init is enabled
   ansible.builtin.fail:
     msg: "vault_step_ca_password is required for non-interactive init (set it in vars/common/secrets.yaml)"
-  when: step_ca_auto_init | bool and (vault_step_ca_password is not defined)
+  when: step_ca_auto_init | bool and (vault_step_ca_password is not defined and (step_ca_password | default('') == ''))
 
-- name: Install smallstep CLI repository + package when missing
-  ansible.builtin.shell: |
-    curl -s https://packagecloud.io/install/repositories/smallstep/cli/script.deb.sh | bash
-    apt-get update -y
-    apt-get install -y step
+- name: Ensure apt keyrings directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: step_cli_check.rc != 0
+
+- name: Download smallstep apt GPG key to keyring
+  ansible.builtin.get_url:
+    url: "{{ step_cli_apt_key_url }}"
+    dest: /etc/apt/keyrings/smallstep.asc
+    mode: '0644'
+    owner: root
+    group: root
+  when: step_cli_check.rc != 0
+
+- name: Add smallstep apt repository
+  ansible.builtin.apt_repository:
+    repo: "{{ step_cli_apt_repo }}"
+    filename: smallstep
+    state: present
+  when: step_cli_check.rc != 0
+
+- name: Ensure apt cache is updated
+  ansible.builtin.apt:
+    update_cache: true
+  when: step_cli_check.rc != 0
+
+- name: Install step CLI package from apt repo
+  ansible.builtin.apt:
+    name: "{{ step_cli_package }}"
+    state: present
   when: step_cli_check.rc != 0
 
 - name: Ensure step CA config dir owned by step user
@@ -84,14 +115,14 @@
     path: "{{ step_ca_config_dir }}"
     owner: "{{ step_ca_user }}"
     group: "{{ step_ca_group }}"
-    recurse: yes
+    recurse: true
 
 - name: Create password file for CA init from vault
   ansible.builtin.copy:
     dest: "{{ step_ca_config_dir }}/ca-password"
-    content: "{{ vault_step_ca_password }}\n"
-    owner: root
-    group: root
+    content: "{{ (vault_step_ca_password | default(step_ca_password)) }}\n"
+    owner: "{{ step_ca_user }}"
+    group: "{{ step_ca_group }}"
     mode: '0600'
   when: step_ca_auto_init | bool and (vault_step_ca_password is defined)
   no_log: true
@@ -99,31 +130,60 @@
 - name: Create provisioner password file for CA init from vault
   ansible.builtin.copy:
     dest: "{{ step_ca_config_dir }}/prov-password"
-    content: "{{ vault_step_ca_provisioner_password | default('') }}\n"
-    owner: root
-    group: root
+    content: "{{ (vault_step_ca_provisioner_password | default(step_ca_provisioner_password | default(''))) }}\n"
+    owner: "{{ step_ca_user }}"
+    group: "{{ step_ca_group }}"
     mode: '0600'
   when: step_ca_auto_init | bool
   no_log: true
 
-- name: Run non-interactive `step ca init` (creates CA material)
-  ansible.builtin.command: >
-    runuser -u {{ step_ca_user }} -- step ca init
-    --name "{{ step_ca_hostname }}"
-    --dns "{{ step_ca_hostname }}"
-    --provisioner admin
-    --password-file "{{ step_ca_config_dir }}/ca-password"
-    --provisioner-password-file "{{ step_ca_config_dir }}/prov-password"
-    --email "{{ vault_step_ca_admin_email | default('admin@local') }}"
-    --yes
-  register: step_ca_init
-  changed_when: "step_ca_init.rc == 0"
-  failed_when: step_ca_init.rc != 0
+- name: Show `step` binary version as step user (diagnostic)
+  ansible.builtin.command:
+    cmd: runuser -u {{ step_ca_user }} -- step version
+  register: step_version
+  changed_when: false
+  failed_when: false
   when: step_ca_auto_init | bool
-  no_log: true
 
-- name: Debug: list step CA config and data directories
-  ansible.builtin.command: ls -la {{ item }}
+- name: Show password files ownership and permissions (diagnostic)
+  ansible.builtin.command:
+    cmd: stat -c "%U %G %a %n" {{ step_ca_config_dir }}/ca-password {{ step_ca_config_dir }}/prov-password || true
+  register: step_pw_stat
+  changed_when: false
+  failed_when: false
+  when: step_ca_auto_init | bool
+
+- name: "Check if CA config already exists"
+  ansible.builtin.stat:
+    path: "{{ step_ca_config_dir }}/certs/root_ca.crt"
+  register: ca_cert_exists
+  when: step_ca_auto_init | bool
+
+- name: "Run non-interactive step ca init (creates CA material)"
+  ansible.builtin.shell:
+    cmd: >-
+      timeout {{ step_ca_init_timeout_seconds | int }}s
+      runuser -u {{ step_ca_user }} -- step ca init
+      --deployment-type standalone
+      --name "{{ step_ca_hostname }}"
+      --address "{{ step_ca_address }}"
+      --dns "{{ step_ca_hostname }}"
+      --provisioner "{{ step_ca_provisioner }}"
+      --password-file "{{ step_ca_config_dir }}/ca-password"
+      --provisioner-password-file "{{ step_ca_config_dir }}/prov-password"
+    chdir: "{{ step_ca_home }}"
+  register: step_ca_init
+  changed_when: step_ca_init.rc == 0
+  failed_when: false
+  when: 
+    - step_ca_auto_init | bool
+    - not ca_cert_exists.stat.exists
+  environment:
+    HOME: "{{ step_ca_home }}"
+    STEPPATH: "{{ step_ca_config_dir }}"
+
+- name: "Debug: list step CA config and data directories"
+  ansible.builtin.command: "ls -la {{ item }}"
   loop:
     - "{{ step_ca_config_dir }}"
     - "{{ step_ca_home }}"
@@ -143,16 +203,44 @@
   ansible.builtin.debug:
     msg:
       - "step-ca init rc: {{ step_ca_init.rc | default('not-run') }}"
+      - "step-ca init status: {{ 'skipped - cert exists' if ca_cert_exists.stat.exists else (step_ca_init.stdout_lines | default(['init task not run'])) }}"
+      - "step-ca init timeout: {{ 'yes' if (step_ca_init.rc is defined and step_ca_init.rc == 124) else 'no' }}"
+      - "step-ca init stdout: {{ step_ca_init.stdout | default('') | trim }}"
+      - "step-ca init stderr: {{ step_ca_init.stderr | default('') | trim }}"
       - "dirs: {{ step_ca_dirs.results | map(attribute='stdout') | list }}"
       - "journal: {{ (step_ca_journal.stdout_lines[:30]) | default([]) }}"
+      - "step binary version: {{ step_version.stdout | default('not-run') }}"
+      - "password file stats: {{ step_pw_stat.stdout | default('not-run') }}"
   when: step_ca_auto_init | bool
+
+- name: Fail with explicit timeout message when init exceeds limit
+  ansible.builtin.fail:
+    msg: >-
+      step ca init exceeded timeout ({{ step_ca_init_timeout_seconds }}s).
+      Check host entropy/network/DNS and review diagnostics in this play output.
+  when:
+    - step_ca_auto_init | bool
+    - step_ca_init is defined
+    - step_ca_init.rc is defined
+    - step_ca_init.rc == 124
+
+- name: Fail when init returns non-zero (non-timeout)
+  ansible.builtin.fail:
+    msg: >-
+      step ca init failed with rc={{ step_ca_init.rc }}.
+      stderr={{ step_ca_init.stderr | default('') | trim }}
+  when:
+    - step_ca_auto_init | bool
+    - step_ca_init is defined
+    - step_ca_init.rc is defined
+    - step_ca_init.rc not in [0, 124]
 
 - name: Secure CA files and set ownership to step user
   ansible.builtin.file:
     path: "{{ item }}"
     owner: "{{ step_ca_user }}"
     group: "{{ step_ca_group }}"
-    mode: '0600'
+    mode: '0700'
   loop:
     - "{{ step_ca_home }}"
     - "{{ step_ca_config_dir }}"

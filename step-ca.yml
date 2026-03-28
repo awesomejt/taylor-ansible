@@ -4,5 +4,8 @@
   become: true
   vars:
     step_ca_install_method: manual
+  vars_files:
+    - "vars/common/vars.yaml"
+    - "vars/common/secrets.yaml"
   roles:
     - step-ca
