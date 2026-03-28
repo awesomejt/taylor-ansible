@@ -19,6 +19,16 @@
           Define vault_postgresql_dbpass in vars/{{ env | default('prod') }}/secrets.yaml
           or set postgresql_users/postgresql_databases in vars/{{ env | default('prod') }}/vars.yaml.
       when: not (postgresql_use_list_bootstrap | bool)
+
+    - name: Ensure vault_postgresql_dbpass is defined when using list bootstrap mode
+      ansible.builtin.assert:
+        that:
+          - vault_postgresql_dbpass is defined
+          - (vault_postgresql_dbpass | string | length) > 0
+        fail_msg: >-
+          Define vault_postgresql_dbpass in vars/{{ env | default('prod') }}/secrets.yaml
+          to set passwords for users in postgresql_users.
+      when: postgresql_use_list_bootstrap | bool
   roles:
     - updates
     - common
@@ -32,7 +42,9 @@
       become_user: postgres
       community.postgresql.postgresql_user:
         name: "{{ item }}"
+        password: "{{ vault_postgresql_dbpass }}"
         role_attr_flags: LOGIN
+      no_log: true
       loop: "{{ postgresql_users | default([]) }}"
       when: postgresql_use_list_bootstrap | bool
 

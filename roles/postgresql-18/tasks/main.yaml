@@ -45,6 +45,54 @@
     state: present
     update_cache: yes
 
+- name: Configure PostgreSQL listen_addresses
+  become: true
+  ansible.builtin.lineinfile:
+    path: "{{ postgresql_conf_dir }}/postgresql.conf"
+    regexp: '^\s*#?\s*listen_addresses\s*='
+    line: "listen_addresses = '{{ postgresql_listen_addresses }}'"
+  register: postgresql_listen_addresses_result
+
+- name: Configure PostgreSQL port
+  become: true
+  ansible.builtin.lineinfile:
+    path: "{{ postgresql_conf_dir }}/postgresql.conf"
+    regexp: '^\s*#?\s*port\s*='
+    line: "port = {{ postgresql_port }}"
+  register: postgresql_port_result
+
+- name: Configure PostgreSQL host-based auth rules for allowed client CIDRs
+  become: true
+  ansible.builtin.blockinfile:
+    path: "{{ postgresql_conf_dir }}/pg_hba.conf"
+    marker: "# {mark} ANSIBLE MANAGED NETWORK ACCESS"
+    block: |
+      {% for cidr in postgresql_allowed_client_cidrs %}
+      host    all             all             {{ cidr }}            {{ postgresql_host_auth_method }}
+      {% endfor %}
+  when: (postgresql_allowed_client_cidrs | length) > 0
+  register: postgresql_hba_present_result
+
+- name: Remove managed PostgreSQL host-based auth block when CIDR list is empty
+  become: true
+  ansible.builtin.blockinfile:
+    path: "{{ postgresql_conf_dir }}/pg_hba.conf"
+    marker: "# {mark} ANSIBLE MANAGED NETWORK ACCESS"
+    state: absent
+  when: (postgresql_allowed_client_cidrs | length) == 0
+  register: postgresql_hba_absent_result
+
+- name: Restart PostgreSQL when network configuration changes
+  become: true
+  ansible.builtin.systemd:
+    name: "{{ postgresql_service_name }}"
+    state: restarted
+  when:
+    - postgresql_listen_addresses_result.changed
+      or postgresql_port_result.changed
+      or (postgresql_hba_present_result is defined and postgresql_hba_present_result.changed)
+      or (postgresql_hba_absent_result is defined and postgresql_hba_absent_result.changed)
+
 - name: Ensure PostgreSQL service is enabled and running
   become: true
   ansible.builtin.systemd:
