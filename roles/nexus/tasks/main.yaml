@@ -225,6 +225,64 @@
     mode: '0600'
   when: (nexus_login_verify is defined) and ((nexus_login_verify.status | default(0)) == 200)
 
+- name: Query Nexus repositories through admin API
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:8081/service/rest/v1/repositories"
+    method: GET
+    user: "{{ nexus_username }}"
+    password: "{{ nexus_password }}"
+    force_basic_auth: yes
+    status_code: 200
+    return_content: yes
+  register: nexus_repositories
+  when: nexus_docker_registry_enable | bool
+  no_log: true
+
+- name: Detect whether Docker hosted repository already exists
+  ansible.builtin.set_fact:
+    nexus_docker_repository_exists: >-
+      {{
+        (nexus_repositories.json | default([])
+        | selectattr('name', 'equalto', nexus_docker_repository_name)
+        | list
+        | length) > 0
+      }}
+  when: nexus_docker_registry_enable | bool
+
+- name: Create Nexus Docker hosted repository
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:8081/service/rest/v1/repositories/docker/hosted"
+    method: POST
+    user: "{{ nexus_username }}"
+    password: "{{ nexus_password }}"
+    force_basic_auth: yes
+    status_code: 201
+    body_format: json
+    body:
+      name: "{{ nexus_docker_repository_name }}"
+      online: true
+      storage:
+        blobStoreName: "{{ nexus_docker_blob_store_name }}"
+        strictContentTypeValidation: "{{ nexus_docker_strict_content_type_validation | bool }}"
+        writePolicy: "{{ nexus_docker_write_policy }}"
+      docker:
+        v1Enabled: "{{ nexus_docker_v1_enabled | bool }}"
+        forceBasicAuth: "{{ nexus_docker_force_basic_auth | bool }}"
+  when:
+    - nexus_docker_registry_enable | bool
+    - not (nexus_docker_repository_exists | default(false))
+  no_log: true
+
+- name: Warn when Docker registry is exposed over plain HTTP
+  ansible.builtin.debug:
+    msg: >-
+      Nexus Docker registry is exposed over HTTP at {{ nexus_docker_registry_host }}.
+      Docker clients must trust this endpoint as an insecure registry until TLS is enabled.
+  when:
+    - nexus_docker_registry_enable | bool
+    - nexus_nginx_enable | bool
+    - not (nexus_nginx_use_ssl | bool)
+
 # Backups: install cron job and backup script when enabled
 - name: Ensure backup directory exists
   ansible.builtin.file:
@@ -302,6 +360,13 @@
   register: nginx_test
   failed_when: nginx_test.rc != 0
   changed_when: false
+  when: nexus_nginx_enable | bool
+
+- name: Enable and start nginx service
+  ansible.builtin.systemd:
+    name: nginx
+    enabled: true
+    state: started
   when: nexus_nginx_enable | bool
 
 # Let's Encrypt certificate provisioning (webroot)

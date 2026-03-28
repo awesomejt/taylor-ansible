@@ -15,6 +15,9 @@ nexus_password: "{{ vault_nexus_password | default('admin') }}"
 nexus_nginx_enable: true
 # Public hostname for Nexus (used to issue certificates and nginx server_name)
 nexus_nginx_server_name: "nexus.taylor.lan"
+nexus_docker_registry_enable: true
+nexus_docker_registry_host: "docker.nexus.taylor.lan"
+nexus_docker_repository_name: "docker-hosted"
 # If true, nginx will be configured to use HTTPS and certs from the paths below
 nexus_nginx_use_ssl: false
 # Optional: enable Let's Encrypt provisioning via certbot (webroot)

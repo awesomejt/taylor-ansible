@@ -34,6 +34,16 @@ nexus_nginx_ssl_cert: "/etc/ssl/certs/nexus.crt"
 nexus_nginx_ssl_key: "/etc/ssl/private/nexus.key"
 nexus_nginx_client_max_body_size: "1G"
 
+# Optional Docker hosted registry in Nexus
+nexus_docker_registry_enable: false
+nexus_docker_registry_host: "docker.{{ nexus_nginx_server_name }}"
+nexus_docker_repository_name: "docker-hosted"
+nexus_docker_blob_store_name: "default"
+nexus_docker_force_basic_auth: true
+nexus_docker_v1_enabled: false
+nexus_docker_strict_content_type_validation: true
+nexus_docker_write_policy: "ALLOW"
+
 # Let's Encrypt options
 nexus_nginx_letsencrypt_enable: false
 nexus_nginx_letsencrypt_email: ""

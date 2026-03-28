@@ -2,6 +2,14 @@
 - name: Install Nexus Repository OSS
   hosts: nexus
   become: true
-  vars_files: []
+  vars_files:
+    - "vars/common/vars.yaml"
+    - "vars/common/secrets.yaml"
+  vars:
+    nexus_nginx_enable: "{{ nexus_nginx_enable | default(true) }}"
+    nexus_nginx_server_name: "{{ nexus_nginx_server_name | default('nexus.taylor.lan') }}"
+    nexus_nginx_use_ssl: "{{ nexus_nginx_use_ssl | default(false) }}"
+    nexus_docker_registry_enable: "{{ nexus_docker_registry_enable | default(true) }}"
+    nexus_docker_registry_host: "{{ nexus_docker_registry_host | default('docker.' ~ nexus_nginx_server_name) }}"
   roles:
     - nexus
