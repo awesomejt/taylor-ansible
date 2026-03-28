@@ -6,6 +6,9 @@ k3s_server_count: 1
 k3s_worker_count: 3
 
 postgresql_db_user: "postgres"
+postgresql_listen_addresses: "*"
+postgresql_allowed_client_cidrs:
+  - "192.168.50.0/24"
 postgresql_users:
   - cman
   - resolve
