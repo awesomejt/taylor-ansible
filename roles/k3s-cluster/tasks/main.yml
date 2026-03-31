@@ -43,6 +43,45 @@
         and (ansible_facts.services[k3s_service_name + '.service'].state == 'running')
       }}
 
+- name: Check installed K3s version
+  become: true
+  ansible.builtin.command: /usr/local/bin/k3s --version
+  register: k3s_version_check
+  changed_when: false
+  failed_when: false
+
+- name: Determine installed K3s version and whether upgrade is needed
+  ansible.builtin.set_fact:
+    k3s_installed_version: >-
+      {{
+        (
+          k3s_version_check.stdout | default('')
+          | regex_findall('k3s version\s+(v[^\s]+)')
+          | first
+          | default('')
+        )
+      }}
+    k3s_upgrade_needed: >-
+      {{
+        (k3s_version | default('') | string | length) > 0
+        and
+        (
+          (
+            k3s_version_check.stdout | default('')
+            | regex_findall('k3s version\s+(v[^\s]+)')
+            | first
+            | default('')
+          ) != (k3s_version | string)
+        )
+      }}
+
+- name: Report K3s version state
+  ansible.builtin.debug:
+    msg: >-
+      host={{ inventory_hostname }} installed={{ k3s_installed_version | default('not-installed') }}
+      desired={{ ((k3s_version | default('') | string | length) > 0) | ternary(k3s_version, 'channel-default') }}
+      upgrade_needed={{ k3s_upgrade_needed | bool }}
+
 - name: Build K3s server install command
   ansible.builtin.set_fact:
     k3s_install_exec: >-
@@ -76,20 +115,39 @@
 - name: Install K3s server
   when:
     - k3s_mode == 'server'
-    - not k3s_service_unit.stat.exists or not k3s_service_active
+    - not k3s_service_unit.stat.exists or not k3s_service_active or k3s_upgrade_needed or (k3s_force_reinstall | bool)
   block:
     - name: Run K3s server installer
       become: true
       ansible.builtin.shell: |
         set -euo pipefail
-        curl -sfL {{ k3s_install_script_url }} | sh -
+        timeout --signal=TERM {{ k3s_task_timeout_seconds | int }}s \
+          bash -o pipefail -c "curl -sfL {{ k3s_install_script_url }} | sh -"
       args:
         executable: /bin/bash
       environment:
         INSTALL_K3S_EXEC: "{{ k3s_install_exec | trim }}"
         INSTALL_K3S_VERSION: "{{ k3s_version }}"
         K3S_TOKEN: "{{ vault_k3s_token }}"
+      register: k3s_server_install
       changed_when: true
+      failed_when: k3s_server_install.rc not in [0, 124]
+
+    - name: Gather service facts after K3s server installer timeout
+      become: true
+      ansible.builtin.service_facts:
+      when: k3s_server_install.rc == 124
+
+    - name: Fail when K3s server installer timed out and service is not active
+      ansible.builtin.fail:
+        msg: >-
+          K3s server installer timed out after {{ k3s_task_timeout_seconds }} seconds
+          on {{ inventory_hostname }} and service is not active.
+          stdout={{ k3s_server_install.stdout | default('') | trim }}
+          stderr={{ k3s_server_install.stderr | default('') | trim }}
+      when:
+        - k3s_server_install.rc == 124
+        - ansible_facts.services['k3s.service'] is not defined or ansible_facts.services['k3s.service'].state != 'running'
   rescue:
     - name: Collect K3s server service status
       become: true
@@ -120,7 +178,8 @@
   become: true
   ansible.builtin.shell: |
     set -euo pipefail
-    curl -sfL {{ k3s_install_script_url }} | sh -
+    timeout --signal=TERM {{ k3s_task_timeout_seconds | int }}s \
+      bash -o pipefail -c "curl -sfL {{ k3s_install_script_url }} | sh -"
   args:
     executable: /bin/bash
   environment:
@@ -128,10 +187,35 @@
     INSTALL_K3S_VERSION: "{{ k3s_version }}"
     K3S_URL: "https://{{ k3s_api_check_host if (k3s_api_check_host | string | length) > 0 else k3s_registration_address }}:6443"
     K3S_TOKEN: "{{ vault_k3s_token }}"
+  register: k3s_agent_install
   when:
     - k3s_mode == 'agent'
-    - not k3s_service_unit.stat.exists or not k3s_service_active
+    - not k3s_service_unit.stat.exists or not k3s_service_active or k3s_upgrade_needed or (k3s_force_reinstall | bool)
   changed_when: true
+  failed_when: k3s_agent_install.rc not in [0, 124]
+
+- name: Gather service facts after K3s agent installer timeout
+  become: true
+  ansible.builtin.service_facts:
+  when:
+    - k3s_mode == 'agent'
+    - k3s_agent_install is defined
+    - k3s_agent_install.rc is defined
+    - k3s_agent_install.rc == 124
+
+- name: Fail when K3s agent installer timed out and service is not active
+  ansible.builtin.fail:
+    msg: >-
+      K3s agent installer timed out after {{ k3s_task_timeout_seconds }} seconds
+      on {{ inventory_hostname }} and service is not active.
+      stdout={{ k3s_agent_install.stdout | default('') | trim }}
+      stderr={{ k3s_agent_install.stderr | default('') | trim }}
+  when:
+    - k3s_mode == 'agent'
+    - k3s_agent_install is defined
+    - k3s_agent_install.rc is defined
+    - k3s_agent_install.rc == 124
+    - ansible_facts.services['k3s-agent.service'] is not defined or ansible_facts.services['k3s-agent.service'].state != 'running'
 
 - name: Ensure K3s service is enabled and running
   become: true

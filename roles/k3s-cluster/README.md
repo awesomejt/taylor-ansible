@@ -15,6 +15,29 @@ Required variables (examples):
 - `vault_k3s_token` (in `vars/<env>/secrets.yaml`)
 - `k3s_registration_address` or `k3s_fqdn` / `k3s_server_name` (in `vars/<env>/vars.yaml`)
 
+Recommended split-domain pattern:
+
+- Use `*.taylor.lan` for cluster API / node join endpoint.
+- Use `*.lab` for workload and ingress hostnames.
+
+Example (dev):
+
+```yaml
+k3s_domain_name: dev.lab
+k3s_server_name: k3s-dev-server
+k3s_fqdn: "{{ k3s_server_name }}.{{ k3s_domain_name }}"
+
+k3s_api_domain_name: taylor.lan
+k3s_api_fqdn: "{{ k3s_server_name }}.{{ k3s_api_domain_name }}"
+k3s_registration_address: "{{ k3s_api_fqdn }}"
+
+k3s_server_tls_sans:
+	- "{{ k3s_registration_address }}"
+	- "{{ k3s_fqdn }}"
+```
+
+This lets kubeconfig and node join target `k3s-<env>-server*.taylor.lan` while app ingress stays on `*.dev.lab`, `*.stage.lab`, etc.
+
 Inventory groups expected:
 
 - `k3s_<env>_servers`

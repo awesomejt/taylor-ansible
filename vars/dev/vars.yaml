@@ -2,8 +2,11 @@
 k3s_domain_name: dev.lab
 k3s_server_name: k3s-dev-server
 k3s_fqdn: "{{ k3s_server_name }}.{{ k3s_domain_name }}"
+k3s_api_domain_name: taylor.lan
+k3s_api_fqdn: "{{ k3s_server_name }}.{{ k3s_api_domain_name }}"
 k3s_server_count: 1
 k3s_worker_count: 0
+k3s_version: "v1.35.1+k3s1"
 
 postgresql_db_user: "postgres"
 postgresql_listen_addresses: "*"
@@ -20,7 +23,7 @@ postgresql_databases:
     owner: resolve
     encoding: UTF-8
 
-k3s_registration_address: "{{ k3s_fqdn }}"
+k3s_registration_address: "{{ k3s_api_fqdn }}"
 k3s_external_dns_rfc2136_tsig_keyname: "external-dns-dev"
 k3s_dev_ha: false
 k3s_enable_cert_manager: true
@@ -38,6 +41,8 @@ k3s_argocd_gitops_repo_target_revision: main
 k3s_server_disable_components: []
 k3s_server_tls_sans:
   - "{{ k3s_registration_address }}"
+  - "{{ k3s_fqdn }}"
+  - "k3s-server.dev.lab"
 k3s_server_extra_args: []
 k3s_agent_extra_args: []
 
