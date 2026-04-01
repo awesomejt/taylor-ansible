@@ -1,0 +1,27 @@
+---
+k3s_argocd_namespace: argocd
+k3s_argocd_version: v2.14.8
+k3s_argocd_install_manifest_url: "https://raw.githubusercontent.com/argoproj/argo-cd/{{ k3s_argocd_version }}/manifests/install.yaml"
+
+k3s_argocd_gitops_repo_url: git@github.com:awesomejt/homelab-k3s.git
+k3s_argocd_gitops_repo_target_revision: main
+k3s_argocd_bootstrap_app_name: homelab
+k3s_argocd_bootstrap_path: clusters/stage
+k3s_argocd_bootstrap_project: default
+k3s_argocd_bootstrap_destination_server: https://kubernetes.default.svc
+k3s_argocd_bootstrap_destination_namespace: argocd
+
+k3s_argocd_repo_secret_name: homelab-gitops-repo
+
+k3s_argocd_ingress_enabled: false
+k3s_argocd_ingress_host: ""
+k3s_argocd_ingress_class_name: traefik
+k3s_argocd_ingress_entrypoints: websecure
+k3s_argocd_ingress_tls: true
+
+k3s_sops_age_secret_name: sops-age
+k3s_sops_age_secret_key_name: keys.txt
+k3s_argocd_ksops_image: viaductoss/ksops:v4.4.0
+k3s_argocd_ksops_download_url: https://github.com/viaduct-ai/kustomize-sops/releases/download/v4.4.0/ksops_4.4.0_Linux_x86_64.tar.gz
+
+k3s_bootstrap_wait_timeout_seconds: 600

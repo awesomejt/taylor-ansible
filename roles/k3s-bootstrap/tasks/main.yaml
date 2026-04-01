@@ -1,0 +1,196 @@
+---
+- name: Validate bootstrap variables
+  ansible.builtin.assert:
+    that:
+      - (vault_argocd_gitops_repo_ssh_private_key | string | trim | length) > 0
+      - (vault_sops_age_key | string | trim | length) > 0
+      - (k3s_argocd_gitops_repo_url | string | trim | length) > 0
+      - (k3s_argocd_bootstrap_path | string | trim | length) > 0
+    fail_msg: >-
+      Missing required bootstrap variables. Ensure vault_argocd_gitops_repo_ssh_private_key,
+      vault_sops_age_key, k3s_argocd_gitops_repo_url, and k3s_argocd_bootstrap_path are set.
+
+- name: Ensure Argo CD namespace exists
+  ansible.builtin.command: >-
+    k3s kubectl create namespace {{ k3s_argocd_namespace }}
+  register: create_argocd_namespace
+  changed_when: "'created' in create_argocd_namespace.stdout"
+  failed_when:
+    - create_argocd_namespace.rc != 0
+    - "'AlreadyExists' not in create_argocd_namespace.stderr"
+
+- name: Install Argo CD
+  ansible.builtin.command: >-
+    k3s kubectl apply -n {{ k3s_argocd_namespace }} -f {{ k3s_argocd_install_manifest_url }}
+  register: install_argocd
+  changed_when: "'created' in install_argocd.stdout or 'configured' in install_argocd.stdout"
+
+- name: Wait for at least one Argo CD repo-server pod to be Ready
+  block:
+    - name: Wait for at least one Argo CD repo-server pod to be Ready
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_argocd_namespace }} wait pod
+        -l app.kubernetes.io/name=argocd-repo-server
+        --for=condition=Ready
+        --timeout={{ k3s_bootstrap_wait_timeout_seconds }}s
+      changed_when: false
+  rescue:
+    - name: Capture Argo CD repo-server pods
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_argocd_namespace }} get pods
+        -l app.kubernetes.io/name=argocd-repo-server -o wide
+      register: argocd_repo_server_pods
+      changed_when: false
+      failed_when: false
+
+    - name: Capture Argo CD repo-server deployment details
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_argocd_namespace }} describe deployment argocd-repo-server
+      register: argocd_repo_server_deploy_describe
+      changed_when: false
+      failed_when: false
+
+    - name: Capture recent Argo CD namespace events
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_argocd_namespace }} get events
+        --sort-by=.lastTimestamp
+      register: argocd_namespace_events
+      changed_when: false
+      failed_when: false
+
+    - name: Fail with Argo CD repo-server diagnostics
+      ansible.builtin.fail:
+        msg: |-
+          Argo CD repo-server pods did not become Ready within {{ k3s_bootstrap_wait_timeout_seconds }} seconds.
+
+          Repo-server pods:
+          {{ argocd_repo_server_pods.stdout | default('') }}
+
+          Deployment describe (argocd-repo-server):
+          {{ argocd_repo_server_deploy_describe.stdout | default('') }}
+
+          Recent events in namespace {{ k3s_argocd_namespace }}:
+          {{ argocd_namespace_events.stdout | default('') }}
+
+- name: Wait for Argo CD server rollout
+  ansible.builtin.command: >-
+    k3s kubectl -n {{ k3s_argocd_namespace }} rollout status deployment/argocd-server
+    --timeout={{ k3s_bootstrap_wait_timeout_seconds }}s
+  changed_when: false
+
+- name: Create temporary directory for bootstrap manifests
+  ansible.builtin.tempfile:
+    state: directory
+    prefix: k3s-bootstrap-
+  register: bootstrap_tmpdir
+
+- name: Render Argo CD repository secret manifest
+  ansible.builtin.template:
+    src: argocd-repository-secret.yaml.j2
+    dest: "{{ bootstrap_tmpdir.path }}/argocd-repository-secret.yaml"
+    mode: "0600"
+
+- name: Apply Argo CD repository secret
+  ansible.builtin.command: >-
+    k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/argocd-repository-secret.yaml
+  register: apply_repo_secret
+  changed_when: "'created' in apply_repo_secret.stdout or 'configured' in apply_repo_secret.stdout"
+
+- name: Render SOPS age key secret manifest
+  ansible.builtin.template:
+    src: sops-age-key-secret.yaml.j2
+    dest: "{{ bootstrap_tmpdir.path }}/sops-age-key-secret.yaml"
+    mode: "0600"
+
+- name: Apply SOPS age key secret
+  ansible.builtin.command: >-
+    k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/sops-age-key-secret.yaml
+  register: apply_sops_secret
+  changed_when: "'created' in apply_sops_secret.stdout or 'configured' in apply_sops_secret.stdout"
+
+- name: Enable kustomize exec plugins in Argo CD
+  ansible.builtin.command: >-
+    k3s kubectl -n {{ k3s_argocd_namespace }} patch configmap argocd-cm
+    --type merge
+    --patch '{"data":{"kustomize.buildOptions":"--enable-alpha-plugins --enable-exec"}}'
+  register: patch_argocd_cm
+  changed_when: "'patched' in patch_argocd_cm.stdout"
+
+- name: Render Argo CD repo-server KSOPS patch manifest
+  ansible.builtin.template:
+    src: argocd-repo-server-ksops-patch.yaml.j2
+    dest: "{{ bootstrap_tmpdir.path }}/argocd-repo-server-ksops-patch.yaml"
+    mode: "0600"
+
+- name: Patch Argo CD repo-server for KSOPS
+  ansible.builtin.command: >-
+    k3s kubectl -n {{ k3s_argocd_namespace }} patch deployment argocd-repo-server
+    --type strategic
+    --patch-file {{ bootstrap_tmpdir.path }}/argocd-repo-server-ksops-patch.yaml
+  register: patch_repo_server
+  changed_when: "'patched' in patch_repo_server.stdout"
+
+- name: Wait for patched Argo CD repo-server rollout
+  block:
+    - name: Wait for patched Argo CD repo-server rollout (initial)
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_argocd_namespace }} rollout status deployment/argocd-repo-server
+        --timeout={{ k3s_bootstrap_wait_timeout_seconds }}s
+      changed_when: false
+  rescue:
+    - name: Find terminating Argo CD repo-server pods
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_argocd_namespace }} get pods
+        -l app.kubernetes.io/name=argocd-repo-server
+        -o jsonpath='{range .items[?(@.metadata.deletionTimestamp)]}{.metadata.name}{"\n"}{end}'
+      register: argocd_repo_server_terminating_pods
+      changed_when: false
+
+    - name: Force delete stuck terminating Argo CD repo-server pods
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_argocd_namespace }} delete pod {{ item }} --grace-period=0 --force
+      loop: "{{ argocd_repo_server_terminating_pods.stdout_lines | reject('equalto', '') | list }}"
+      when: (argocd_repo_server_terminating_pods.stdout_lines | reject('equalto', '') | list | length) > 0
+      register: argocd_repo_server_force_delete
+      changed_when: true
+
+    - name: Wait for patched Argo CD repo-server rollout (after terminating pod cleanup)
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_argocd_namespace }} rollout status deployment/argocd-repo-server
+        --timeout={{ (k3s_bootstrap_wait_timeout_seconds // 2) | int }}s
+      changed_when: false
+
+- name: Render Argo CD ingress manifest
+  ansible.builtin.template:
+    src: argocd-ingress.yaml.j2
+    dest: "{{ bootstrap_tmpdir.path }}/argocd-ingress.yaml"
+    mode: "0600"
+  when:
+    - k3s_argocd_ingress_enabled | bool
+    - (k3s_argocd_ingress_host | string | trim | length) > 0
+
+- name: Apply Argo CD ingress
+  ansible.builtin.command: >-
+    k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/argocd-ingress.yaml
+  register: apply_argocd_ingress
+  changed_when: "'created' in apply_argocd_ingress.stdout or 'configured' in apply_argocd_ingress.stdout"
+  when:
+    - k3s_argocd_ingress_enabled | bool
+    - (k3s_argocd_ingress_host | string | trim | length) > 0
+
+- name: Render Argo CD root application manifest
+  ansible.builtin.template:
+    src: argocd-root-application.yaml.j2
+    dest: "{{ bootstrap_tmpdir.path }}/argocd-root-application.yaml"
+    mode: "0600"
+
+- name: Apply Argo CD root application
+  ansible.builtin.command: >-
+    k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/argocd-root-application.yaml
+  register: apply_root_app
+  changed_when: "'created' in apply_root_app.stdout or 'configured' in apply_root_app.stdout"
+
+- name: Clean up bootstrap temporary directory
+  ansible.builtin.file:
+    path: "{{ bootstrap_tmpdir.path }}"
+    state: absent

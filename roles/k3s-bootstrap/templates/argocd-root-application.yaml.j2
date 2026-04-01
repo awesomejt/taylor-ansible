@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ k3s_argocd_bootstrap_app_name }}
+  namespace: {{ k3s_argocd_namespace }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: {{ k3s_argocd_bootstrap_project }}
+  source:
+    repoURL: {{ k3s_argocd_gitops_repo_url }}
+    targetRevision: {{ k3s_argocd_gitops_repo_target_revision }}
+    path: {{ k3s_argocd_bootstrap_path }}
+  destination:
+    server: {{ k3s_argocd_bootstrap_destination_server }}
+    namespace: {{ k3s_argocd_bootstrap_destination_namespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

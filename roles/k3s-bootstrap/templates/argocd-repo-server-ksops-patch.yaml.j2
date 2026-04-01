@@ -1,0 +1,42 @@
+spec:
+  template:
+    spec:
+      volumes:
+        - name: sops-age
+          secret:
+            secretName: {{ k3s_sops_age_secret_name }}
+        - name: custom-tools
+          emptyDir: {}
+      initContainers:
+        - name: install-ksops
+          image: busybox:1.36.1
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - |
+              set -eu
+              mkdir -p /custom-tools/kustomize/plugin/viaduct.ai/v1/ksops
+              wget -qO /tmp/ksops.tar.gz {{ k3s_argocd_ksops_download_url }}
+              tar -xzf /tmp/ksops.tar.gz -C /tmp
+              cp /tmp/ksops /custom-tools/kustomize/plugin/viaduct.ai/v1/ksops/ksops
+              chmod +x /custom-tools/kustomize/plugin/viaduct.ai/v1/ksops/ksops
+          volumeMounts:
+            - name: custom-tools
+              mountPath: /custom-tools
+      containers:
+        - name: argocd-repo-server
+          env:
+            - name: XDG_CONFIG_HOME
+              value: /.config
+            - name: SOPS_AGE_KEY_FILE
+              value: /etc/sops-age/{{ k3s_sops_age_secret_key_name }}
+          volumeMounts:
+            - name: custom-tools
+              mountPath: /.config/kustomize/plugin
+            - name: sops-age
+              mountPath: /etc/sops-age
+              readOnly: true

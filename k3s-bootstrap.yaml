@@ -1,0 +1,39 @@
+- name: Validate K3s bootstrap inventory and environment settings
+  hosts: localhost
+  gather_facts: false
+  vars:
+    target_env: "{{ env | default('prod') }}"
+    k3s_server_group: "k3s_{{ target_env }}_servers"
+  vars_files:
+    - "vars/{{ env | default('prod') }}/vars.yaml"
+    - "vars/{{ env | default('prod') }}/secrets.yaml"
+  tasks:
+    - name: Ensure K3s server group exists and has hosts
+      ansible.builtin.assert:
+        that:
+          - groups[k3s_server_group] is defined
+          - (groups[k3s_server_group] | length) > 0
+        fail_msg: "Inventory group {{ k3s_server_group }} must exist and include at least one host."
+
+    - name: Ensure Argo CD GitOps repository SSH key is defined
+      ansible.builtin.assert:
+        that:
+          - vault_argocd_gitops_repo_ssh_private_key is defined
+          - (vault_argocd_gitops_repo_ssh_private_key | string | trim | length) > 0
+        fail_msg: "Define vault_argocd_gitops_repo_ssh_private_key in vars/{{ env | default('prod') }}/secrets.yaml"
+
+    - name: Ensure SOPS age private key is defined
+      ansible.builtin.assert:
+        that:
+          - vault_sops_age_key is defined
+          - (vault_sops_age_key | string | trim | length) > 0
+        fail_msg: "Define vault_sops_age_key in vars/{{ env | default('prod') }}/secrets.yaml"
+
+- name: Bootstrap Argo CD and SOPS on first K3s control-plane server
+  hosts: "k3s_{{ env | default('prod') }}_servers[0]"
+  become: true
+  vars_files:
+    - "vars/{{ env | default('prod') }}/vars.yaml"
+    - "vars/{{ env | default('prod') }}/secrets.yaml"
+  roles:
+    - role: k3s-bootstrap

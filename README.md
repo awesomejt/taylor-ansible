@@ -30,27 +30,35 @@ Run K3s cluster setup for stage:
 ansible-playbook -i inventory.ini k3s-cluster.yaml -e env=stage --ask-vault-pass
 ```
 
+Run Argo CD + SOPS bootstrap for prod:
+
+```bash
+ansible-playbook -i inventory.ini k3s-bootstrap.yaml -e env=prod --ask-vault-pass
+```
+
+Run Argo CD + SOPS bootstrap for stage:
+
+```bash
+ansible-playbook -i inventory.ini k3s-bootstrap.yaml -e env=stage --ask-vault-pass
+```
+
 K3s requirements:
 
 - Define hosts in inventory groups: `k3s_prod_servers`, `k3s_prod_agents`, `k3s_stage_servers`, and `k3s_stage_agents`.
 - Set `vault_k3s_token` in `vars/<env>/secrets.yaml`.
 - Set `k3s_registration_address` in `vars/<env>/vars.yaml` to a stable DNS name or VIP used by joining servers/agents.
+- Set `k3s_argocd_gitops_repo_url` and `k3s_argocd_bootstrap_path` in `vars/<env>/vars.yaml` when you need to override defaults used by bootstrap.
 - Set `vault_argocd_gitops_repo_ssh_private_key` in `vars/<env>/secrets.yaml` so Argo CD can clone the GitOps repo over SSH.
-- Set `k3s_argocd_gitops_repo_url` and `k3s_argocd_bootstrap_path` in `vars/<env>/vars.yaml` when you need to override the defaults.
-- Set `k3s_external_dns_rfc2136_tsig_keyname` in `vars/<env>/vars.yaml` (for example `external-dns-stage` / `external-dns-prod`) and set `vault_external_dns_rfc2136_tsig_secret` in `vars/<env>/secrets.yaml` so Ansible can seed the `external-dns-rfc2136` Kubernetes secret used by ExternalDNS.
-- Optional: set `vault_external_dns_rfc2136_tsig_secret_alg` in `vars/<env>/secrets.yaml` (defaults to `hmac-sha256`).
-- Set `reposilite_admin_username` in `vars/<env>/vars.yaml` and `vault_reposilite_admin_password` in `vars/<env>/secrets.yaml` so Ansible can seed the `reposilite-admin` Kubernetes secret used by Reposilite.
-- Set `grafana_admin_username` in `vars/<env>/vars.yaml` and `vault_grafana_admin_password` in `vars/<env>/secrets.yaml` so Ansible can seed the `grafana-admin` Kubernetes secret used by Grafana.
-- Enable cert-manager (`k3s_enable_cert_manager: true`) so GitOps-managed ingresses can resolve certificates via ClusterIssuer `letsencrypt-lab`.
+- Set `vault_sops_age_key` in `vars/<env>/secrets.yaml` so Argo CD can decrypt SOPS-encrypted manifests.
+- Optional: set `k3s_argocd_ingress_enabled` and related ingress variables in `vars/<env>/vars.yaml`.
 - Prod HA validation expects at least 3 hosts in `k3s_prod_servers` when `k3s_prod_ha: true`.
 
 Bootstrap behavior:
 
-- Ansible installs K3s on the control-plane and agent nodes.
-- Ansible optionally installs cert-manager.
-- Ansible installs Argo CD, exposes it with ingress when configured, loads the GitOps repo SSH credential, and creates the root Argo CD application.
-- Ansible seeds cluster secrets required before GitOps reconciliation (including ExternalDNS RFC2136 TSIG credentials, Reposilite admin credentials, and Grafana admin credentials).
+- `k3s-cluster.yaml` installs K3s on control-plane and agent nodes.
+- `k3s-bootstrap.yaml` installs Argo CD on the first control-plane node, configures repo access over SSH, enables SOPS via KSOPS, and creates the root Argo CD application.
 - Argo CD then reconciles the environment path from the `homelab-k3s` repository using the App of Apps pattern.
+- Runtime application secrets should be managed through SOPS-encrypted manifests in the GitOps repository.
 
 Suggested workflow from this workstation:
 
@@ -59,6 +67,7 @@ Suggested workflow from this workstation:
 ssh jason@192.168.50.12
 cd ~/ansible
 ansible-playbook -i inventory.ini k3s-cluster.yaml -e env=stage --ask-vault-pass
+ansible-playbook -i inventory.ini k3s-bootstrap.yaml -e env=stage --ask-vault-pass
 ```
 
 You can swap `stage` for `prod` once the prod inventory and secrets are ready.
@@ -131,6 +140,15 @@ vault_argocd_gitops_repo_ssh_private_key: |
 	-----BEGIN OPENSSH PRIVATE KEY-----
 	...
 	-----END OPENSSH PRIVATE KEY-----
+```
+
+Add your age private key used for SOPS decryption in Argo CD:
+
+```yaml
+vault_sops_age_key: |
+	# created with: age-keygen -o age.agekey
+	# public key: age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+	AGE-SECRET-KEY-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ```
 
 By default the bootstrap points Argo CD at:
