@@ -45,3 +45,32 @@ Optional KSOPS variables:
 ansible-playbook -i inventory.ini k3s-bootstrap.yaml -e env=stage --ask-vault-pass
 ansible-playbook -i inventory.ini k3s-bootstrap.yaml -e env=prod --ask-vault-pass
 ```
+
+## Post-Bootstrap Verification
+
+After the playbook completes successfully (18 tasks, 0 failed), verify that Argo CD is operational:
+
+```bash
+# Check Argo CD pods are running
+k3s kubectl -n argocd get pods
+
+# Check the root Application is synced
+k3s kubectl -n argocd get applications
+
+# Retrieve admin password for UI access
+k3s kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d && echo
+```
+
+If you see:
+- All Argo CD pods in `Running` state
+- Root application with `Synced` status
+- A non-empty admin password
+
+Then bootstrap was successful. The cluster is now ready for GitOps-driven app deployment.
+
+## Next Steps
+
+1. **Access Argo CD UI** – Use the admin password to log into the Argo CD server (via ingress URL or port-forward)
+2. **Add SOPS-encrypted secrets** – Commit encrypted manifests to the `homelab-k3s` repo; Argo CD will decrypt them using the age key seeded during bootstrap
+3. **Bootstrap other environments** – Run `k3s-bootstrap.yaml` with `env=stage` or `env=prod` once those K3s clusters are ready
+4. **Verify app convergence** – Check that applications in `clusters/<env>/kustomization.yaml` are syncing and becoming healthy

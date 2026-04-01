@@ -72,15 +72,82 @@ ansible-playbook -i inventory.ini k3s-bootstrap.yaml -e env=stage --ask-vault-pa
 
 You can swap `stage` for `prod` once the prod inventory and secrets are ready.
 
+## Post-Bootstrap Next Steps
+
+After `k3s-bootstrap.yaml` completes successfully, verify that the bootstrap is working:
+
+### 1. Verify Argo CD pods are running
+
+```bash
+sudo k3s kubectl -n argocd get pods
+```
+
+You should see at least 5 pods: `argocd-server`, `argocd-repo-server`, `argocd-controller-manager`, `argocd-redis`, etc. all in `Running` state.
+
+### 2. Check the root Application sync status
+
+```bash
+sudo k3s kubectl -n argocd get applications
+```
+
+You should see a root application (typically `root-app` or matching `k3s_argocd_bootstrap_app_name`) with `Synced` status. It may take a minute or two after bootstrap to begin syncing.
+
+### 3. Access the Argo CD UI
+
+Retrieve the initial admin password:
+
+```bash
+sudo k3s kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d && echo
+```
+
+If Argo CD ingress is configured, browse to the ingress hostname. Otherwise, use port-forward:
+
+```bash
+sudo k3s kubectl -n argocd port-forward svc/argocd-server 8080:443
+```
+
+Then open `https://localhost:8080` (you'll need to accept the self-signed cert in the browser).
+
+### 4. Add SOPS-encrypted secrets to the GitOps repository
+
+Runtime application secrets (ExternalDNS TSIG, Grafana admin password, Harbor credentials, etc.) should be committed only as SOPS-encrypted manifests in the `homelab-k3s` repository.
+
+Example workflow:
+
+``` bash
+cd ~/projects/homelab-k3s
+
+# Create an encrypted secret for ExternalDNS RFC2136 TSIG
+sops apps/infrastructure/external-dns-secret/base/secret.yaml
+```
+
+Then commit and push. Argo CD will automatically decrypt the secret using the age key seeded in the `argocd` namespace during bootstrap.
+
+### 5. Bootstrap additional environments
+
+Once dev (or stage) is working, run bootstrap on the next environment:
+
+```bash
+ansible-playbook -i inventory.ini k3s-bootstrap.yaml -e env=stage --ask-vault-pass
+```
+
+Then:
+
+```bash
+ansible-playbook -i inventory.ini k3s-bootstrap.yaml -e env=prod --ask-vault-pass
+```
+
+Each environment uses its own Git branch/path (controlled by `k3s_argocd_bootstrap_path` in `vars/<env>/vars.yaml`).
+
 ## Post-Setup Validation
 
-Run the post-bootstrap validation script from this repo:
+Once all environments are bootstrapped and apps are converging, run the validation script:
 
 ```bash
 ./validate-k3s-post-setup.sh prod
 ```
 
-For stage (or when apps are still converging), you can allow `Progressing` app health:
+For stage (or when apps are still converging), allow `Progressing` app health:
 
 ```bash
 ./validate-k3s-post-setup.sh stage --allow-progressing
@@ -117,10 +184,10 @@ If you use the Argo CD CLI through the ingress endpoint, use gRPC-web:
 argocd login argocd.stage.lab --username admin --grpc-web
 ```
 
-If ingress is disabled for an environment, use a port-forward instead:
+Change the initial admin password after first login:
 
 ```bash
-sudo k3s kubectl -n argocd port-forward svc/argocd-server 8080:443
+argocd account update-password --account admin
 ```
 
 ## GitOps Repo SSH Setup
