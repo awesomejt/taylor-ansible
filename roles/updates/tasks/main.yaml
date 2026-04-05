@@ -1,10 +1,12 @@
 - name: Update All Packages
   become: true
-  apt:
+  ansible.builtin.apt:
     upgrade: full
+    lock_timeout: 600
 
 - name: Clean up APT
   become: true
-  apt:
+  ansible.builtin.apt:
     autoclean: true
     autoremove: true
+    lock_timeout: 600

@@ -1,0 +1,7 @@
+.ansible/
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+*.log
+temp/

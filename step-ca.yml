@@ -7,5 +7,18 @@
   vars_files:
     - "vars/common/vars.yaml"
     - "vars/common/secrets.yaml"
+  pre_tasks:
+    - name: Wait for apt locks to be released
+      become: true
+      ansible.builtin.shell: |
+        while fuser /var/lib/apt/lists/lock \
+                    /var/lib/dpkg/lock \
+                    /var/lib/dpkg/lock-frontend \
+                    /var/cache/apt/archives/lock >/dev/null 2>&1; do
+          echo "Waiting for apt lock..."
+          sleep 10
+        done
+      changed_when: false
+      timeout: 600
   roles:
     - step-ca

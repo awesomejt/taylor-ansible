@@ -5,9 +5,11 @@
       - nano
       - git
     state: present
+    lock_timeout: 600
 
 - name: Clean up APT
   become: true
   ansible.builtin.apt:
     autoclean: true
     autoremove: true
+    lock_timeout: 600

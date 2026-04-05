@@ -8,6 +8,7 @@
       - dnsutils
     state: present
     update_cache: true
+    lock_timeout: 600
 
 - name: Disable systemd-resolved so Technitium can bind port 53
   become: true
@@ -189,39 +190,38 @@
   ansible.builtin.uri:
     url: "{{ technitium_api_url }}/api/zones/options/set?token={{ technitium_token }}"
     method: POST
-    body_format: json
-    body: >-
-      {{
-        {
-          'token': technitium_token,
-          'zone': item.name,
-          'queryAccess': item.get('query_access',''),
-          'queryAccessNetworkACL': (
-            ((item.get('query_access_network_acl') or []) | length) > 0
-              and ((item.get('query_access_network_acl') or []) | join(','))
-              or 'false'
-          ),
-          'zoneTransfer': item.get('zone_transfer',''),
-          'zoneTransferNetworkACL': (
-            ((item.get('zone_transfer_network_acl') or []) | length) > 0
-              and ((item.get('zone_transfer_network_acl') or []) | join(','))
-              or 'false'
-          ),
-          'notify': item.get('notify',''),
-          'notifyNameServers': (
-            ((item.get('notify_name_servers') or []) | length) > 0
-              and ((item.get('notify_name_servers') or []) | join(','))
-              or 'false'
-          ),
-          'update': item.get('update',''),
-          'updateNetworkACL': (
-            ((item.get('update_network_acl') or []) | length) > 0
-              and ((item.get('update_network_acl') or []) | join(','))
-              or 'false'
-          ),
-          'updateSecurityPolicies': item.get('update_security_policies',[])
-        }
-      }}
+    body_format: form-urlencoded
+    body:
+      token: "{{ technitium_token }}"
+      zone: "{{ item.name }}"
+      queryAccess: "{{ item.get('query_access', '') }}"
+      queryAccessNetworkACL: >-
+        {{
+          ((item.get('query_access_network_acl') or []) | length) > 0
+            and ((item.get('query_access_network_acl') or []) | join(','))
+            or 'false'
+        }}
+      zoneTransfer: "{{ item.get('zone_transfer', '') }}"
+      zoneTransferNetworkACL: >-
+        {{
+          ((item.get('zone_transfer_network_acl') or []) | length) > 0
+            and ((item.get('zone_transfer_network_acl') or []) | join(','))
+            or 'false'
+        }}
+      notify: "{{ item.get('notify', '') }}"
+      notifyNameServers: >-
+        {{
+          ((item.get('notify_name_servers') or []) | length) > 0
+            and ((item.get('notify_name_servers') or []) | join(','))
+            or 'false'
+        }}
+      update: "{{ item.get('update', '') }}"
+      updateNetworkACL: >-
+        {{
+          ((item.get('update_network_acl') or []) | length) > 0
+            and ((item.get('update_network_acl') or []) | join(','))
+            or 'false'
+        }}
     status_code: 200
   loop: "{{ technitium_zones }}"
   when: technitium_zones | length > 0

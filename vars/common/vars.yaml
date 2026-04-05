@@ -3,6 +3,7 @@ technitium_api_url: "http://192.168.50.53:5380"
 technitium_username: "admin"
 technitium_password: "{{ vault_technitium_password | default('admin') }}"
 
+k3s_external_dns_rfc2136_tsig_keyname_dev: "external-dns-dev"
 k3s_external_dns_rfc2136_tsig_keyname_stage: "external-dns-stage"
 k3s_external_dns_rfc2136_tsig_keyname_prod: "external-dns-prod"
 
@@ -26,6 +27,7 @@ nexus_nginx_letsencrypt_email: ""
 
 ## Secrets - located in vars/common/secrets.yaml (not committed to Git)
 # vault_technitium_password
+# vault_external_dns_dev_rfc2136_tsig_secret
 # vault_external_dns_stage_rfc2136_tsig_secret
 # vault_external_dns_prod_rfc2136_tsig_secret
 # vault_argocd_gitops_admin_password
@@ -42,11 +44,28 @@ nexus_nginx_letsencrypt_email: ""
 # vault_headlamp_oidc_me_user_info_url
 
 technitium_zones: 
+  - name: "dev.lab"
+    type: "Primary"
+    # allow updates authenticated by TSIG `external-dns-dev` key for A/AAAA records
+    update: "UseSpecifiedNetworkACL"
+    update_network_acl:
+      - "192.168.50.0/24"
+      - "10.42.0.0/16"
+    update_security_policies:
+      - tsigKeyName: "{{ k3s_external_dns_rfc2136_tsig_keyname_dev }}"
+        domain: "dev.lab"
+        allowedTypes:
+          - "A"
+          - "AAAA"
+          - "CNAME"
+          - "TXT"
   - name: "prod.lab"
     type: "Primary"
     # allow updates authenticated by TSIG `external-dns-prod` key for A/AAAA records
     update: "UseSpecifiedNetworkACL"
-    update_network_acl: []
+    update_network_acl:
+      - "192.168.50.0/24"
+      - "10.42.0.0/16"
     update_security_policies:
       - tsigKeyName: "{{ k3s_external_dns_rfc2136_tsig_keyname_prod }}"
         domain: "prod.lab"
@@ -54,11 +73,14 @@ technitium_zones:
           - "A"
           - "AAAA"
           - "CNAME"
+          - "TXT"
   - name: "stage.lab"
     type: "Primary"
     # allow updates authenticated by TSIG `external-dns-stage` key for A/AAAA records
     update: "UseSpecifiedNetworkACL"
-    update_network_acl: []
+    update_network_acl:
+      - "192.168.50.0/24"
+      - "10.42.0.0/16"
     update_security_policies:
       - tsigKeyName: "{{ k3s_external_dns_rfc2136_tsig_keyname_stage }}"
         domain: "stage.lab"
@@ -66,7 +88,11 @@ technitium_zones:
           - "A"
           - "AAAA"
           - "CNAME"
+          - "TXT"
 technitium_tsig_keys:
+  - keyName: "{{ k3s_external_dns_rfc2136_tsig_keyname_dev }}"
+    sharedSecret: "{{ vault_external_dns_dev_rfc2136_tsig_secret }}"
+    algorithmName: "hmac-sha256"
   - keyName: "{{ k3s_external_dns_rfc2136_tsig_keyname_stage }}"
     sharedSecret: "{{ vault_external_dns_stage_rfc2136_tsig_secret }}"
     algorithmName: "hmac-sha256"

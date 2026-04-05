@@ -68,6 +68,7 @@ technitium_zones:
     update: "UseSpecifiedNetworkACL"
     update_network_acl:
       - "192.168.50.0/24"
+      - "10.42.0.0/16"
     records:
       - domain: "dns.local"
         type: "A"
@@ -104,20 +105,62 @@ technitium_zones:
 
 ## ExternalDNS Example
 
-To let ExternalDNS update `stage.lab` and `prod.lab` from a K3s cluster running on `192.168.50.0/24`:
+To let ExternalDNS update `dev.lab`, `stage.lab`, and `prod.lab` with TSIG-authenticated RFC2136 updates:
 
 ```yaml
 technitium_zones:
+  - name: "dev.lab"
+    type: "Primary"
+    update: "UseSpecifiedNetworkACL"
+    update_network_acl:
+      - "192.168.50.0/24"
+      - "10.42.0.0/16"
+    update_security_policies:
+      - tsigKeyName: "external-dns-dev"
+        domain: "dev.lab"
+        allowedTypes:
+          - "A"
+          - "AAAA"
+          - "CNAME"
+          - "TXT"
   - name: "stage.lab"
     type: "Primary"
     update: "UseSpecifiedNetworkACL"
     update_network_acl:
       - "192.168.50.0/24"
+      - "10.42.0.0/16"
+    update_security_policies:
+      - tsigKeyName: "external-dns-stage"
+        domain: "stage.lab"
+        allowedTypes:
+          - "A"
+          - "AAAA"
+          - "CNAME"
+          - "TXT"
   - name: "prod.lab"
     type: "Primary"
     update: "UseSpecifiedNetworkACL"
     update_network_acl:
       - "192.168.50.0/24"
+    update_security_policies:
+      - tsigKeyName: "external-dns-prod"
+        domain: "prod.lab"
+        allowedTypes:
+          - "A"
+          - "AAAA"
+          - "CNAME"
+          - "TXT"
+
+technitium_tsig_keys:
+  - keyName: "external-dns-dev"
+    sharedSecret: "<dev-shared-secret>"
+    algorithmName: "hmac-sha256"
+  - keyName: "external-dns-stage"
+    sharedSecret: "<stage-shared-secret>"
+    algorithmName: "hmac-sha256"
+  - keyName: "external-dns-prod"
+    sharedSecret: "<prod-shared-secret>"
+    algorithmName: "hmac-sha256"
 ```
 
 ## Troubleshooting

@@ -157,6 +157,7 @@ sync_with_rsync() {
         --exclude=.git/
         --exclude=.DS_Store
         --exclude=*.swp
+        --exclude=temp/
     )
 
     if [ "${DELETE_REMOTE}" = "true" ]; then
@@ -178,6 +179,7 @@ sync_with_git_bash_fallback() {
         --exclude=.git
         --exclude=.DS_Store
         --exclude=*.swp
+        --exclude=temp/
     )
 
     if [ "${DELETE_REMOTE}" = "true" ]; then
