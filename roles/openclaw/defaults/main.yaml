@@ -2,7 +2,8 @@
 # Runtime selection
 openclaw_nodejs_major_version: "24"
 
-# Python runtime selection (Ubuntu/deadsnakes)
+# Python runtime selection.
+# Ubuntu 26.04+ uses distro packages directly; older Ubuntu releases use deadsnakes PPA.
 openclaw_python_version: "3.14"
 
 # Override if the OpenClaw CLI package name differs.
