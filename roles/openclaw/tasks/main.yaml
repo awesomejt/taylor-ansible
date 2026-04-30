@@ -16,6 +16,26 @@
       - ansible_distribution == "Ubuntu"
     fail_msg: "openclaw role currently supports Ubuntu only"
 
+- name: Ensure openclaw group exists
+  ansible.builtin.group:
+    name: "{{ openclaw_group }}"
+    state: present
+    system: true
+
+- name: Ensure openclaw user exists with SSH key
+  ansible.builtin.user:
+    name: "{{ openclaw_user }}"
+    group: "{{ openclaw_group }}"
+    system: true
+    shell: /bin/bash
+    home: "/home/{{ openclaw_user }}"
+    create_home: true
+    generate_ssh_key: true
+    ssh_key_type: "{{ openclaw_ssh_key_type }}"
+    ssh_key_bits: "{{ openclaw_ssh_key_bits }}"
+    ssh_key_comment: "{{ openclaw_user }}@{{ inventory_hostname }}"
+    state: present
+
 - name: Determine whether deadsnakes PPA is needed for Python {{ openclaw_python_version }}
   ansible.builtin.set_fact:
     openclaw_use_deadsnakes_ppa: "{{ ansible_distribution_version is version('26.04', '<') }}"
@@ -82,6 +102,8 @@
     path: "{{ openclaw_setup_marker | dirname }}"
     state: directory
     mode: "0755"
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_group }}"
 
 - name: Check whether OpenClaw setup already completed
   ansible.builtin.stat:
@@ -90,6 +112,7 @@
 
 - name: Run OpenClaw non-interactive install without onboarding
   ansible.builtin.shell: "{{ openclaw_setup_command }}"
+  become_user: "{{ openclaw_user }}"
   environment:
     CI: "true"
   when: not openclaw_setup_state.stat.exists
@@ -99,4 +122,6 @@
     path: "{{ openclaw_setup_marker }}"
     state: touch
     mode: "0644"
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_group }}"
   when: not openclaw_setup_state.stat.exists

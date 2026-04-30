@@ -1,4 +1,10 @@
 ---
+# Dedicated service user and group
+openclaw_user: "openclaw"
+openclaw_group: "openclaw"
+openclaw_ssh_key_type: "rsa"
+openclaw_ssh_key_bits: 4096
+
 # Runtime selection
 openclaw_nodejs_major_version: "24"
 
