@@ -22,6 +22,13 @@ Run OpenClaw setup against hosts in the `openclaw` inventory group:
 ansible-playbook -i inventory.ini openclaw.yaml
 ```
 
+The OpenClaw playbook follows the project role pattern and uses:
+
+- `roles/openclaw/tasks/main.yaml`
+- `roles/openclaw/defaults/main.yaml`
+
+Override role defaults with `-e` when needed.
+
 Override the CLI npm package or setup command when needed:
 
 ```bash

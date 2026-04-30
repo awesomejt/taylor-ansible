@@ -1,0 +1,15 @@
+---
+# Runtime selection
+openclaw_nodejs_major_version: "24"
+
+# Python runtime selection (Ubuntu/deadsnakes)
+openclaw_python_version: "3.14"
+
+# Override if the OpenClaw CLI package name differs.
+openclaw_cli_npm_package: "openclaw"
+
+# Non-interactive + no-onboarding setup command.
+openclaw_setup_command: "openclaw install --yes --no-onboarding"
+
+# Marker to keep setup idempotent.
+openclaw_setup_marker: "/var/lib/openclaw/.setup-complete"
