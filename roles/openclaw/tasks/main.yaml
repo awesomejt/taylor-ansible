@@ -13,7 +13,7 @@
 - name: Ensure OpenClaw role runs on Ubuntu hosts
   ansible.builtin.assert:
     that:
-      - ansible_distribution == "Ubuntu"
+      - ansible_facts['distribution'] == "Ubuntu"
     fail_msg: "openclaw role currently supports Ubuntu only"
 
 - name: Ensure openclaw group exists
@@ -38,7 +38,7 @@
 
 - name: Determine whether deadsnakes PPA is needed for Python {{ openclaw_python_version }}
   ansible.builtin.set_fact:
-    openclaw_use_deadsnakes_ppa: "{{ ansible_distribution_version is version('26.04', '<') }}"
+    openclaw_use_deadsnakes_ppa: "{{ ansible_facts['distribution_version'] is version('26.04', '<') }}"
 
 - name: Add deadsnakes PPA for Python {{ openclaw_python_version }}
   ansible.builtin.apt_repository:
