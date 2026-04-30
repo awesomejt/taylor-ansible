@@ -4,8 +4,26 @@
     name:
       - nano
       - git
+      - qemu-guest-agent
+      - zip
+      - unzip
+      - curl
+      - wget
+      - net-tools
+      - openssh-server
+      - ca-certificates
+      - gnupg
+      - lsb-release
+      - software-properties-common
     state: present
     lock_timeout: 600
+
+- name: Ensure qemu-guest-agent is enabled and started
+  become: true
+  ansible.builtin.service:
+    name: qemu-guest-agent
+    enabled: true
+    state: started
 
 - name: Clean up APT
   become: true
