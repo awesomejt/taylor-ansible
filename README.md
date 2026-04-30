@@ -16,6 +16,20 @@ Run Technitium DNS setup against hosts in the `dns` inventory group:
 ansible-playbook -i inventory.ini dns.yaml
 ```
 
+Run OpenClaw setup against hosts in the `openclaw` inventory group:
+
+```bash
+ansible-playbook -i inventory.ini openclaw.yaml
+```
+
+Override the CLI npm package or setup command when needed:
+
+```bash
+ansible-playbook -i inventory.ini openclaw.yaml \
+	-e openclaw_cli_npm_package=@your-org/openclaw-cli \
+	-e 'openclaw_setup_command=openclaw install --yes --no-onboarding'
+```
+
 The DNS role installs Technitium DNS Server. Zone and record management is optional and disabled by default. See `roles/technitium-dns/README.md` and `examples/dns-setup-example.yaml` for details on enabling automated DNS zone management, including RFC2136 update ACLs for ExternalDNS.
 
 Run K3s cluster setup for prod (HA):
