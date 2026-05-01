@@ -1,0 +1,7 @@
+services:
+  app:
+    image: {{ docker_compose_example_image }}
+    container_name: {{ docker_compose_project_name }}
+    restart: unless-stopped
+    ports:
+      - "{{ docker_compose_example_port }}:80"

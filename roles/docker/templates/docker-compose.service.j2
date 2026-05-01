@@ -1,0 +1,18 @@
+[Unit]
+Description=Docker Compose application {{ docker_compose_project_name }}
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory={{ docker_compose_project_dir }}
+EnvironmentFile=-{{ docker_compose_env_path }}
+ExecStart=/usr/bin/docker compose -f {{ docker_compose_file_path }} up -d
+ExecStop=/usr/bin/docker compose -f {{ docker_compose_file_path }} down
+ExecReload=/usr/bin/docker compose -f {{ docker_compose_file_path }} up -d
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

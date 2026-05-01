@@ -25,6 +25,12 @@ nexus_nginx_use_ssl: false
 nexus_nginx_letsencrypt_enable: false
 nexus_nginx_letsencrypt_email: ""
 
+openclaw_workspace_dir: "/home/openclaw/workspace"
+openclaw_gateway_bind: "lan"
+openclaw_provider: "ollama"
+openclaw_ollama_host: "192.168.50.94"
+openclaw_ollama_model: "gemma4:31b"
+
 ## Secrets - located in vars/common/secrets.yaml (not committed to Git)
 # vault_technitium_password
 # vault_external_dns_dev_rfc2136_tsig_secret
