@@ -35,9 +35,10 @@
   },
 
   gateway: {
+    mode: "local",
     port: {{ openclaw_gateway_port }},
-    // Gateway is bound to loopback; nginx proxies LAN traffic.
-    bind: "loopback",
+    // Use vars/common/vars.yaml to choose bind mode (loopback or lan).
+    bind: "{{ openclaw_gateway_bind }}",
     controlUi: {
       enabled: true,
       basePath: "/openclaw"
