@@ -1,0 +1,24 @@
+server {
+    listen 80;
+    server_name {{ openclaw_nginx_server_name }};
+
+    # Proxy all traffic to the OpenClaw gateway.
+    # The Control UI dashboard is at: http://{{ openclaw_nginx_server_name }}/openclaw/
+    location / {
+        proxy_pass http://127.0.0.1:{{ openclaw_gateway_port }};
+        proxy_http_version 1.1;
+
+        # Required for WebSocket support (gateway ACP/Control UI).
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Allow long-running agent turns.
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+}

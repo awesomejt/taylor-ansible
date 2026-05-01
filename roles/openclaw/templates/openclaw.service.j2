@@ -1,0 +1,25 @@
+[Unit]
+Description=OpenClaw AI Gateway
+Documentation=https://docs.openclaw.ai/gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ openclaw_user }}
+Group={{ openclaw_group }}
+WorkingDirectory=/home/{{ openclaw_user }}
+
+# Load Discord token and other secrets from the per-user .env file.
+EnvironmentFile=/home/{{ openclaw_user }}/.openclaw/.env
+Environment=HOME=/home/{{ openclaw_user }}
+
+ExecStart={{ openclaw_bin }} gateway
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=openclaw
+
+[Install]
+WantedBy=multi-user.target

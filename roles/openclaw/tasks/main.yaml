@@ -97,31 +97,128 @@
     cmd: npm install -g {{ openclaw_cli_npm_package }}
   changed_when: true
 
-- name: Ensure OpenClaw state directory exists
+### User privileges ###
+
+- name: Grant openclaw user passwordless sudo rights
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/openclaw
+    content: "{{ openclaw_user }} ALL=(ALL) NOPASSWD:ALL\n"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: "visudo -cf %s"
+
+### Directories ###
+
+- name: Ensure openclaw workspace directory exists
   ansible.builtin.file:
-    path: "{{ openclaw_setup_marker | dirname }}"
+    path: "{{ openclaw_workspace_dir }}"
     state: directory
     mode: "0755"
     owner: "{{ openclaw_user }}"
     group: "{{ openclaw_group }}"
 
-- name: Check whether OpenClaw setup already completed
-  ansible.builtin.stat:
-    path: "{{ openclaw_setup_marker }}"
-  register: openclaw_setup_state
-
-- name: Run OpenClaw non-interactive install without onboarding
-  ansible.builtin.shell: "{{ openclaw_setup_command }}"
-  become_user: "{{ openclaw_user }}"
-  environment:
-    CI: "true"
-  when: not openclaw_setup_state.stat.exists
-
-- name: Mark OpenClaw setup complete
+- name: Ensure openclaw state directory exists
   ansible.builtin.file:
-    path: "{{ openclaw_setup_marker }}"
-    state: touch
-    mode: "0644"
+    path: /var/lib/openclaw
+    state: directory
+    mode: "0755"
     owner: "{{ openclaw_user }}"
     group: "{{ openclaw_group }}"
-  when: not openclaw_setup_state.stat.exists
+
+- name: Ensure .openclaw config directory exists
+  ansible.builtin.file:
+    path: "/home/{{ openclaw_user }}/.openclaw"
+    state: directory
+    mode: "0700"
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_group }}"
+
+### Configuration ###
+
+- name: Deploy openclaw.json gateway configuration
+  ansible.builtin.template:
+    src: openclaw.json.j2
+    dest: "/home/{{ openclaw_user }}/.openclaw/openclaw.json"
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_group }}"
+    mode: "0600"
+  notify: Restart openclaw service
+
+- name: Deploy openclaw environment secrets file
+  ansible.builtin.template:
+    src: openclaw.env.j2
+    dest: "/home/{{ openclaw_user }}/.openclaw/.env"
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_group }}"
+    mode: "0600"
+  notify: Restart openclaw service
+
+### Systemd service ###
+
+- name: Discover npm global prefix for openclaw binary path
+  ansible.builtin.command:
+    cmd: npm prefix -g
+  register: _openclaw_npm_prefix
+  changed_when: false
+
+- name: Set openclaw binary path fact
+  ansible.builtin.set_fact:
+    openclaw_bin: "{{ _openclaw_npm_prefix.stdout | trim }}/bin/openclaw"
+
+- name: Deploy openclaw gateway systemd service unit
+  ansible.builtin.template:
+    src: openclaw.service.j2
+    dest: /etc/systemd/system/openclaw.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart openclaw service
+
+- name: Enable and start openclaw gateway service
+  ansible.builtin.systemd:
+    name: openclaw
+    enabled: true
+    state: started
+    daemon_reload: true
+
+### Nginx reverse proxy ###
+
+- name: Install nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    lock_timeout: 600
+  when: openclaw_nginx_enable | bool
+
+- name: Deploy openclaw nginx reverse proxy configuration
+  ansible.builtin.template:
+    src: openclaw-nginx.conf.j2
+    dest: /etc/nginx/sites-available/openclaw
+    owner: root
+    group: root
+    mode: "0644"
+  when: openclaw_nginx_enable | bool
+  notify: Reload nginx
+
+- name: Enable openclaw nginx site
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/openclaw
+    dest: /etc/nginx/sites-enabled/openclaw
+    state: link
+  when: openclaw_nginx_enable | bool
+  notify: Reload nginx
+
+- name: Remove default nginx site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  when: openclaw_nginx_enable | bool
+  notify: Reload nginx
+
+- name: Enable and start nginx
+  ansible.builtin.systemd:
+    name: nginx
+    enabled: true
+    state: started
+  when: openclaw_nginx_enable | bool

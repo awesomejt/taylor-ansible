@@ -1,0 +1,46 @@
+// OpenClaw Gateway Configuration
+// Managed by Ansible — do not edit manually
+// Full reference: https://docs.openclaw.ai/gateway/configuration-reference
+{
+  agents: {
+    defaults: {
+      workspace: "{{ openclaw_workspace_dir }}",
+      model: {
+        primary: "{{ openclaw_provider }}/{{ openclaw_ollama_model }}"
+      }
+    }
+  },
+
+  // Inject the remote Ollama host so the built-in Ollama provider connects correctly.
+  env: {
+    OLLAMA_HOST: "http://{{ openclaw_ollama_host }}:11434"
+  },
+
+  channels: {
+    discord: {
+      enabled: {{ (openclaw_discord_token | default('') | length > 0) | lower }},
+
+      // Bot token read from the .env file at runtime — never stored in plain config.
+      token: { source: "env", provider: "default", id: "DISCORD_BOT_TOKEN" },
+
+      // Only listed user IDs may DM the bot.
+      dmPolicy: "allowlist",
+      allowFrom: {{ openclaw_discord_users | default([]) | to_json }}
+
+      // Guild workspace setup (run interactively after first boot):
+      //   openclaw configure
+      // or tell the agent:
+      //   "Add my Discord Server ID {{ openclaw_discord_server_id }} to the guild allowlist"
+    }
+  },
+
+  gateway: {
+    port: {{ openclaw_gateway_port }},
+    // Gateway is bound to loopback; nginx proxies LAN traffic.
+    bind: "loopback",
+    controlUi: {
+      enabled: true,
+      basePath: "/openclaw"
+    }
+  }
+}
