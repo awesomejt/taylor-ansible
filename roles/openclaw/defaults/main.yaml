@@ -31,6 +31,8 @@ openclaw_nginx_server_name: "openclaw.taylor.lan"
 
 # Control UI access
 openclaw_control_ui_base_path: "/openclaw"
+# Helps reverse-proxy deployments where browser Origin and upstream Host can differ slightly.
+openclaw_control_ui_allow_host_header_origin_fallback: true
 openclaw_control_ui_allowed_origins:
   - "http://{{ openclaw_nginx_server_name }}"
   - "https://{{ openclaw_nginx_server_name }}"
