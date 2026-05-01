@@ -61,6 +61,7 @@
       enabled: true,
       basePath: "{{ openclaw_control_ui_base_path }}",
       allowedOrigins: {{ _openclaw_final_allowed_origins | to_json }},
+      allowInsecureAuth: {{ openclaw_control_ui_allow_insecure_auth | lower }},
       dangerouslyAllowHostHeaderOriginFallback: {{ openclaw_control_ui_allow_host_header_origin_fallback | lower }}
     }
   }

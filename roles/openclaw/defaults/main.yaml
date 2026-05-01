@@ -35,6 +35,8 @@ openclaw_control_ui_base_path: "/openclaw"
 openclaw_control_ui_allow_host_header_origin_fallback: true
 # Allow all origins for Control UI. Disable for stricter production hardening.
 openclaw_control_ui_allow_all_origins: true
+# Allow Control UI login over HTTP (non-secure contexts). Set false when HTTPS is enabled.
+openclaw_control_ui_allow_insecure_auth: true
 openclaw_control_ui_allowed_origins:
   - "http://{{ openclaw_nginx_server_name }}"
   - "https://{{ openclaw_nginx_server_name }}"
