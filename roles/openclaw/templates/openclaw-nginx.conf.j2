@@ -2,8 +2,22 @@ server {
     listen 80;
     server_name {{ openclaw_nginx_server_name }};
 
-    # Proxy all traffic to the OpenClaw gateway.
-    # The Control UI dashboard is at: http://{{ openclaw_nginx_server_name }}/openclaw/
+    # Serve a clean root URL while OpenClaw UI remains mounted at /openclaw upstream.
+    location = / {
+        proxy_pass http://127.0.0.1:{{ openclaw_gateway_port }}/openclaw/;
+        proxy_http_version 1.1;
+
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+
+    # Keep /openclaw path working for deep links and static assets.
     location / {
         proxy_pass http://127.0.0.1:{{ openclaw_gateway_port }};
         proxy_http_version 1.1;

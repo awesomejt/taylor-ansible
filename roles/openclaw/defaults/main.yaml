@@ -30,10 +30,14 @@ openclaw_nginx_enable: true
 openclaw_nginx_server_name: "openclaw.taylor.lan"
 
 # Control UI access
-openclaw_control_ui_base_path: "/"
+openclaw_control_ui_base_path: "/openclaw"
 openclaw_control_ui_allowed_origins:
   - "http://{{ openclaw_nginx_server_name }}"
   - "https://{{ openclaw_nginx_server_name }}"
+  - "http://localhost"
+  - "https://localhost"
+  - "http://{{ ansible_default_ipv4.address | default('127.0.0.1') }}"
+  - "https://{{ ansible_default_ipv4.address | default('127.0.0.1') }}"
 
 # Discord channel — set in vars/common/secrets.yaml (not committed)
 openclaw_discord_token: ""
