@@ -18,6 +18,7 @@
   'https://localhost:443'
 ] %}
 {% set _openclaw_effective_allowed_origins = (_openclaw_default_allowed_origins + (openclaw_control_ui_allowed_origins | default([]))) | unique %}
+{% set _openclaw_final_allowed_origins = ['*'] if (openclaw_control_ui_allow_all_origins | default(false) | bool) else _openclaw_effective_allowed_origins %}
 {
   agents: {
     defaults: {
@@ -59,7 +60,7 @@
     controlUi: {
       enabled: true,
       basePath: "{{ openclaw_control_ui_base_path }}",
-      allowedOrigins: {{ _openclaw_effective_allowed_origins | to_json }},
+      allowedOrigins: {{ _openclaw_final_allowed_origins | to_json }},
       dangerouslyAllowHostHeaderOriginFallback: {{ openclaw_control_ui_allow_host_header_origin_fallback | lower }}
     }
   }
