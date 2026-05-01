@@ -2,19 +2,9 @@ server {
     listen 80;
     server_name {{ openclaw_nginx_server_name }};
 
-    # Serve a clean root URL while OpenClaw UI remains mounted at /openclaw upstream.
+    # Redirect root to OpenClaw's native UI base path.
     location = / {
-        proxy_pass http://127.0.0.1:{{ openclaw_gateway_port }}/openclaw/;
-        proxy_http_version 1.1;
-
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 300s;
-        proxy_send_timeout 300s;
+        return 302 /openclaw/;
     }
 
     # Keep /openclaw path working for deep links and static assets.
