@@ -1,6 +1,23 @@
 // OpenClaw Gateway Configuration
 // Managed by Ansible — do not edit manually
 // Full reference: https://docs.openclaw.ai/gateway/configuration-reference
+{% set _openclaw_host = openclaw_nginx_server_name | default('localhost') %}
+{% set _openclaw_ip = ansible_default_ipv4.address | default('127.0.0.1') %}
+{% set _openclaw_default_allowed_origins = [
+  'http://' ~ _openclaw_host,
+  'http://' ~ _openclaw_host ~ ':80',
+  'https://' ~ _openclaw_host,
+  'https://' ~ _openclaw_host ~ ':443',
+  'http://' ~ _openclaw_ip,
+  'http://' ~ _openclaw_ip ~ ':80',
+  'https://' ~ _openclaw_ip,
+  'https://' ~ _openclaw_ip ~ ':443',
+  'http://localhost',
+  'http://localhost:80',
+  'https://localhost',
+  'https://localhost:443'
+] %}
+{% set _openclaw_effective_allowed_origins = (_openclaw_default_allowed_origins + (openclaw_control_ui_allowed_origins | default([]))) | unique %}
 {
   agents: {
     defaults: {
@@ -42,7 +59,7 @@
     controlUi: {
       enabled: true,
       basePath: "{{ openclaw_control_ui_base_path }}",
-      allowedOrigins: {{ openclaw_control_ui_allowed_origins | to_json }}
+      allowedOrigins: {{ _openclaw_effective_allowed_origins | to_json }}
     }
   }
 }
