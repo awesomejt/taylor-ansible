@@ -1,6 +1,6 @@
 ---
 - name: Install Docker Engine
-  hosts: "{{ target | default('all') }}"
+  hosts: docker
   become: true
   gather_facts: true
   pre_tasks:
