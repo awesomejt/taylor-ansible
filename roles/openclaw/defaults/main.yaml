@@ -29,6 +29,12 @@ openclaw_ollama_model: ""           # Override in vars: e.g. "gemma4:31b"
 openclaw_nginx_enable: true
 openclaw_nginx_server_name: "openclaw.taylor.lan"
 
+# Control UI access
+openclaw_control_ui_base_path: "/"
+openclaw_control_ui_allowed_origins:
+  - "http://{{ openclaw_nginx_server_name }}"
+  - "https://{{ openclaw_nginx_server_name }}"
+
 # Discord channel — set in vars/common/secrets.yaml (not committed)
 openclaw_discord_token: ""
 openclaw_discord_server_id: ""

@@ -41,7 +41,8 @@
     bind: "{{ openclaw_gateway_bind }}",
     controlUi: {
       enabled: true,
-      basePath: "/openclaw"
+      basePath: "{{ openclaw_control_ui_base_path }}",
+      allowedOrigins: {{ openclaw_control_ui_allowed_origins | to_json }}
     }
   }
 }
