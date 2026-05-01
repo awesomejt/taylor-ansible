@@ -1,0 +1,55 @@
+- name: Ensure role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == "Debian"
+    fail_msg: "open-webui role currently supports Debian/Ubuntu only"
+
+- name: Ensure Open WebUI project directory exists
+  ansible.builtin.file:
+    path: "{{ openwebui_project_dir }}"
+    state: directory
+    owner: "{{ openwebui_primary_user }}"
+    group: "{{ openwebui_primary_user }}"
+    mode: "0750"
+
+- name: Ensure Open WebUI data directory exists
+  ansible.builtin.file:
+    path: "{{ openwebui_data_dir }}"
+    state: directory
+    owner: "{{ openwebui_primary_user }}"
+    group: "{{ openwebui_primary_user }}"
+    mode: "0750"
+
+- name: Deploy Open WebUI compose file
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ openwebui_compose_file }}"
+    owner: "{{ openwebui_primary_user }}"
+    group: "{{ openwebui_primary_user }}"
+    mode: "0640"
+  notify: Restart open-webui service
+
+- name: Deploy Open WebUI environment file
+  ansible.builtin.copy:
+    dest: "{{ openwebui_env_file }}"
+    content: "# Open WebUI environment overrides\n# This file is not overwritten on subsequent runs.\n"
+    owner: "{{ openwebui_primary_user }}"
+    group: "{{ openwebui_primary_user }}"
+    mode: "0640"
+    force: false
+
+- name: Deploy Open WebUI systemd unit
+  ansible.builtin.template:
+    src: open-webui.service.j2
+    dest: "{{ openwebui_systemd_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart open-webui service
+
+- name: Ensure Open WebUI service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ openwebui_systemd_unit }}"
+    enabled: true
+    state: started
+    daemon_reload: true

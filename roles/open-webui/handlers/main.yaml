@@ -1,0 +1,5 @@
+- name: Restart open-webui service
+  ansible.builtin.systemd:
+    name: "{{ openwebui_systemd_unit }}"
+    state: restarted
+    daemon_reload: true

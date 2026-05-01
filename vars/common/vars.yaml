@@ -31,6 +31,11 @@ openclaw_provider: "ollama"
 openclaw_ollama_host: "192.168.50.94"
 openclaw_ollama_model: "gemma4:31b"
 
+# Open WebUI shared defaults
+openwebui_primary_user: "jason"
+openwebui_host_port: 3000
+openwebui_ollama_base_url: "http://192.168.50.94:11434"
+
 ## Secrets - located in vars/common/secrets.yaml (not committed to Git)
 # vault_technitium_password
 # vault_external_dns_dev_rfc2136_tsig_secret

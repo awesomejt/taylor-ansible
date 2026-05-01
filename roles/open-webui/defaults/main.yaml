@@ -1,0 +1,13 @@
+openwebui_primary_user: jason
+openwebui_image: ghcr.io/open-webui/open-webui:main
+openwebui_container_name: open-webui
+openwebui_project_dir: /opt/open-webui
+openwebui_compose_file: "{{ openwebui_project_dir }}/compose.yaml"
+openwebui_env_file: "{{ openwebui_project_dir }}/.env"
+openwebui_data_dir: "{{ openwebui_project_dir }}/data"
+# Port exposed on the host; Nginx Proxy Manager reverse proxies to this
+openwebui_host_port: 3000
+# Remote Ollama server base URL - override in host_vars or group_vars
+openwebui_ollama_base_url: "http://127.0.0.1:11434"
+openwebui_systemd_unit: open-webui.service
+openwebui_systemd_unit_path: "/etc/systemd/system/{{ openwebui_systemd_unit }}"

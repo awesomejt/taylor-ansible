@@ -1,0 +1,19 @@
+[Unit]
+Description=Open WebUI Docker Compose service
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User={{ openwebui_primary_user }}
+WorkingDirectory={{ openwebui_project_dir }}
+EnvironmentFile=-{{ openwebui_env_file }}
+ExecStart=/usr/bin/docker compose -f {{ openwebui_compose_file }} up -d
+ExecStop=/usr/bin/docker compose -f {{ openwebui_compose_file }} down
+ExecReload=/usr/bin/docker compose -f {{ openwebui_compose_file }} up -d
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
