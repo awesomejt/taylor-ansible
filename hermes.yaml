@@ -17,5 +17,4 @@
       timeout: 600
   roles:
     - common
-    - docker
-    - hermes
+#    - hermes
