@@ -3,10 +3,33 @@ services:
     image: {{ openwebui_image }}
     container_name: {{ openwebui_container_name }}
     restart: unless-stopped
+{% if not openwebui_nginx_enable | bool %}
     ports:
       - "{{ openwebui_host_port }}:8080"
+{% endif %}
     volumes:
       - {{ openwebui_data_dir }}:/app/backend/data
     environment:
       OLLAMA_BASE_URL: "{{ openwebui_ollama_base_url }}"
     pull_policy: always
+
+{% if openwebui_nginx_enable | bool %}
+  nginx:
+    image: {{ openwebui_nginx_image }}
+    container_name: {{ openwebui_nginx_container_name }}
+    restart: unless-stopped
+    depends_on:
+      - open-webui
+    ports:
+      - "{{ openwebui_nginx_http_port }}:80"
+{% if openwebui_nginx_ssl_enable | bool %}
+      - "{{ openwebui_nginx_https_port }}:443"
+{% endif %}
+    volumes:
+      - {{ openwebui_nginx_conf_path }}:/etc/nginx/conf.d/default.conf:ro
+{% if openwebui_nginx_ssl_enable | bool %}
+      - {{ openwebui_nginx_ssl_cert_path }}:{{ openwebui_nginx_ssl_cert_path }}:ro
+      - {{ openwebui_nginx_ssl_key_path }}:{{ openwebui_nginx_ssl_key_path }}:ro
+{% endif %}
+    pull_policy: always
+{% endif %}

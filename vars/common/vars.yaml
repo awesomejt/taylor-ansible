@@ -29,12 +29,24 @@ openclaw_workspace_dir: "/home/openclaw/workspace"
 openclaw_gateway_bind: "lan"
 openclaw_provider: "ollama"
 openclaw_ollama_host: "192.168.50.94"
-openclaw_ollama_model: "gemma4:31b"
+openclaw_ollama_model: "llama3.2:latest"
+openclaw_ollama_coding_model: "qwen3-coder:latest"
+openclaw_ollama_research_model: "qwen3.6:latest"
+openclaw_discord_server_id: "1499530383316750467"
+openclaw_discord_channel_general_id: "1499530384105541724"
+openclaw_discord_channel_development_id: "1499959791202603180"
+openclaw_discord_channel_research_id: "1499959898291830874"
+openclaw_discord_channel_reports_id: "1499960253163241502"
 
 # Open WebUI shared defaults
 openwebui_primary_user: "jason"
 openwebui_host_port: 3000
 openwebui_ollama_base_url: "http://192.168.50.94:11434"
+openwebui_nginx_enable: true
+openwebui_nginx_server_name: "openwebui.taylor.lan"
+openwebui_nginx_http_port: 80
+openwebui_nginx_https_port: 443
+openwebui_nginx_ssl_enable: false
 
 ## Secrets - located in vars/common/secrets.yaml (not committed to Git)
 # vault_technitium_password

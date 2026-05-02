@@ -1,0 +1,31 @@
+server {
+    listen 80;
+    server_name {{ openwebui_nginx_server_name }};
+
+{% if openwebui_nginx_ssl_enable | bool %}
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name {{ openwebui_nginx_server_name }};
+
+    ssl_certificate {{ openwebui_nginx_ssl_cert_path }};
+    ssl_certificate_key {{ openwebui_nginx_ssl_key_path }};
+{% endif %}
+
+    client_max_body_size 100m;
+
+    location / {
+        proxy_pass http://open-webui:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_read_timeout 3600;
+    }
+}

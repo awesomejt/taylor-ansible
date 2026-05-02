@@ -145,6 +145,15 @@
     mode: "0600"
   notify: Restart openclaw service
 
+- name: Deploy openclaw.json.last-good gateway configuration backup
+  ansible.builtin.template:
+    src: openclaw.json.j2
+    dest: "/home/{{ openclaw_user }}/.openclaw/openclaw.json.last-good"
+    owner: "{{ openclaw_user }}"
+    group: "{{ openclaw_group }}"
+    mode: "0600"
+  notify: Restart openclaw service
+
 - name: Deploy openclaw environment secrets file
   ansible.builtin.template:
     src: openclaw.env.j2

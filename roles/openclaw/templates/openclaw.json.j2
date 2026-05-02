@@ -23,11 +23,77 @@
   agents: {
     defaults: {
       workspace: "{{ openclaw_workspace_dir }}",
+      skipBootstrap: {{ openclaw_skip_bootstrap | lower }},
+      thinkingDefault: "{{ openclaw_thinking_default }}",
       model: {
         primary: "{{ openclaw_provider }}/{{ openclaw_ollama_model }}"
       }
-    }
+    },
+    list: [
+      {
+        id: "main",
+        default: true,
+        name: "Main",
+        model: {
+          primary: "{{ openclaw_provider }}/{{ openclaw_ollama_model }}"
+        }
+      },
+      {
+        id: "coding",
+        name: "Coding",
+        model: {
+          primary: "{{ openclaw_provider }}/{{ openclaw_ollama_coding_model }}"
+        },
+        tools: {
+          profile: "coding",
+          allow: ["browser"]
+        }
+      },
+      {
+        id: "research",
+        name: "Research",
+        thinkingDefault: "high",
+        model: {
+          primary: "{{ openclaw_provider }}/{{ openclaw_ollama_research_model }}"
+        }
+      }
+    ]
   },
+
+  bindings: [
+    {
+      agentId: "main",
+      match: {
+        channel: "discord",
+        guildId: "{{ openclaw_discord_server_id }}",
+        peer: { kind: "channel", id: "{{ openclaw_discord_channel_general_id }}" }
+      }
+    },
+    {
+      agentId: "coding",
+      match: {
+        channel: "discord",
+        guildId: "{{ openclaw_discord_server_id }}",
+        peer: { kind: "channel", id: "{{ openclaw_discord_channel_development_id }}" }
+      }
+    },
+    {
+      agentId: "research",
+      match: {
+        channel: "discord",
+        guildId: "{{ openclaw_discord_server_id }}",
+        peer: { kind: "channel", id: "{{ openclaw_discord_channel_research_id }}" }
+      }
+    },
+    {
+      agentId: "main",
+      match: {
+        channel: "discord",
+        guildId: "{{ openclaw_discord_server_id }}",
+        peer: { kind: "channel", id: "{{ openclaw_discord_channel_reports_id }}" }
+      }
+    }
+  ],
 
   // Inject the remote Ollama host so the built-in Ollama provider connects correctly.
   env: {
@@ -57,6 +123,7 @@
     port: {{ openclaw_gateway_port }},
     // Use vars/common/vars.yaml to choose bind mode (loopback or lan).
     bind: "{{ openclaw_gateway_bind }}",
+    trustedProxies: {{ openclaw_gateway_trusted_proxies | default([]) | to_json }},
     controlUi: {
       enabled: true,
       basePath: "{{ openclaw_control_ui_base_path }}",

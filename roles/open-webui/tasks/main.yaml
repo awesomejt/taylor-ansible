@@ -20,6 +20,33 @@
     group: "{{ openwebui_primary_user }}"
     mode: "0750"
 
+- name: Ensure Open WebUI nginx config directory exists
+  ansible.builtin.file:
+    path: "{{ openwebui_nginx_conf_dir }}"
+    state: directory
+    owner: "{{ openwebui_primary_user }}"
+    group: "{{ openwebui_primary_user }}"
+    mode: "0750"
+  when: openwebui_nginx_enable | bool
+
+- name: Ensure Open WebUI SSL certificate is present when HTTPS is enabled
+  ansible.builtin.assert:
+    that:
+      - (openwebui_nginx_ssl_cert_path | string | length) > 0
+      - (openwebui_nginx_ssl_key_path | string | length) > 0
+    fail_msg: "Set openwebui_nginx_ssl_cert_path and openwebui_nginx_ssl_key_path when enabling HTTPS."
+  when: openwebui_nginx_enable | bool and openwebui_nginx_ssl_enable | bool
+
+- name: Deploy Open WebUI nginx reverse proxy configuration
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: "{{ openwebui_nginx_conf_path }}"
+    owner: "{{ openwebui_primary_user }}"
+    group: "{{ openwebui_primary_user }}"
+    mode: "0640"
+  when: openwebui_nginx_enable | bool
+  notify: Restart open-webui service
+
 - name: Deploy Open WebUI compose file
   ansible.builtin.template:
     src: compose.yaml.j2
