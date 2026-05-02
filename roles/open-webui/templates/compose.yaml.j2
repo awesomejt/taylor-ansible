@@ -10,8 +10,22 @@ services:
     volumes:
       - {{ openwebui_data_dir }}:/app/backend/data
     environment:
+{% if openwebui_ollama_failover_enabled | bool %}
+      OLLAMA_BASE_URL: "http://{{ openwebui_ollama_proxy_container_name }}:{{ openwebui_ollama_proxy_listen_port }}"
+{% else %}
       OLLAMA_BASE_URL: "{{ openwebui_ollama_base_url }}"
+{% endif %}
     pull_policy: always
+
+{% if openwebui_ollama_failover_enabled | bool %}
+  ollama-proxy:
+    image: nginx:stable-alpine
+    container_name: {{ openwebui_ollama_proxy_container_name }}
+    restart: unless-stopped
+    volumes:
+      - {{ openwebui_ollama_proxy_conf_path }}:/etc/nginx/conf.d/default.conf:ro
+    pull_policy: always
+{% endif %}
 
 {% if openwebui_nginx_enable | bool %}
   nginx:

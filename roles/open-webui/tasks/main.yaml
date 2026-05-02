@@ -29,6 +29,23 @@
     mode: "0750"
   when: openwebui_nginx_enable | bool
 
+- name: Ensure Open WebUI ollama proxy config directory exists
+  ansible.builtin.file:
+    path: "{{ openwebui_ollama_proxy_conf_dir }}"
+    state: directory
+    owner: "{{ openwebui_primary_user }}"
+    group: "{{ openwebui_primary_user }}"
+    mode: "0750"
+  when: openwebui_ollama_failover_enabled | bool
+
+- name: Ensure Ollama failover endpoints are set when failover is enabled
+  ansible.builtin.assert:
+    that:
+      - (openwebui_ollama_primary_base_url | string | length) > 0
+      - (openwebui_ollama_fallback_base_url | string | length) > 0
+    fail_msg: "Set openwebui_ollama_primary_base_url and openwebui_ollama_fallback_base_url when openwebui_ollama_failover_enabled=true."
+  when: openwebui_ollama_failover_enabled | bool
+
 - name: Ensure Open WebUI SSL certificate is present when HTTPS is enabled
   ansible.builtin.assert:
     that:
@@ -45,6 +62,16 @@
     group: "{{ openwebui_primary_user }}"
     mode: "0640"
   when: openwebui_nginx_enable | bool
+  notify: Restart open-webui service
+
+- name: Deploy Open WebUI ollama failover proxy configuration
+  ansible.builtin.template:
+    src: ollama-proxy.conf.j2
+    dest: "{{ openwebui_ollama_proxy_conf_path }}"
+    owner: "{{ openwebui_primary_user }}"
+    group: "{{ openwebui_primary_user }}"
+    mode: "0640"
+  when: openwebui_ollama_failover_enabled | bool
   notify: Restart open-webui service
 
 - name: Deploy Open WebUI compose file
@@ -80,3 +107,65 @@
     enabled: true
     state: started
     daemon_reload: true
+
+- name: Check Ollama primary endpoint health (failover mode)
+  ansible.builtin.uri:
+    url: "{{ openwebui_ollama_primary_base_url | regex_replace('/+$', '') }}{{ openwebui_ollama_healthcheck_path }}"
+    method: GET
+    status_code: 200
+    return_content: false
+    timeout: "{{ openwebui_ollama_healthcheck_timeout }}"
+  register: openwebui_ollama_primary_health
+  failed_when: false
+  changed_when: false
+  when:
+    - openwebui_ollama_healthcheck_enabled | bool
+    - openwebui_ollama_failover_enabled | bool
+
+- name: Check Ollama fallback endpoint health (failover mode)
+  ansible.builtin.uri:
+    url: "{{ openwebui_ollama_fallback_base_url | regex_replace('/+$', '') }}{{ openwebui_ollama_healthcheck_path }}"
+    method: GET
+    status_code: 200
+    return_content: false
+    timeout: "{{ openwebui_ollama_healthcheck_timeout }}"
+  register: openwebui_ollama_fallback_health
+  failed_when: false
+  changed_when: false
+  when:
+    - openwebui_ollama_healthcheck_enabled | bool
+    - openwebui_ollama_failover_enabled | bool
+
+- name: Assert at least one Ollama endpoint is healthy (failover mode)
+  ansible.builtin.assert:
+    that:
+      - (openwebui_ollama_primary_health.status | default(0) | int) == 200 or (openwebui_ollama_fallback_health.status | default(0) | int) == 200
+    fail_msg: "Both Ollama endpoints are unhealthy: primary={{ openwebui_ollama_primary_base_url }}, fallback={{ openwebui_ollama_fallback_base_url }}"
+  when:
+    - openwebui_ollama_healthcheck_enabled | bool
+    - openwebui_ollama_failover_enabled | bool
+    - openwebui_ollama_healthcheck_fail_when_all_down | bool
+
+- name: Check Ollama endpoint health (single-endpoint mode)
+  ansible.builtin.uri:
+    url: "{{ openwebui_ollama_base_url | regex_replace('/+$', '') }}{{ openwebui_ollama_healthcheck_path }}"
+    method: GET
+    status_code: 200
+    return_content: false
+    timeout: "{{ openwebui_ollama_healthcheck_timeout }}"
+  register: openwebui_ollama_single_health
+  failed_when: false
+  changed_when: false
+  when:
+    - openwebui_ollama_healthcheck_enabled | bool
+    - not (openwebui_ollama_failover_enabled | bool)
+
+- name: Assert Ollama endpoint is healthy (single-endpoint mode)
+  ansible.builtin.assert:
+    that:
+      - (openwebui_ollama_single_health.status | default(0) | int) == 200
+    fail_msg: "Ollama endpoint is unhealthy: {{ openwebui_ollama_base_url }}"
+  when:
+    - openwebui_ollama_healthcheck_enabled | bool
+    - not (openwebui_ollama_failover_enabled | bool)
+    - openwebui_ollama_healthcheck_fail_when_all_down | bool

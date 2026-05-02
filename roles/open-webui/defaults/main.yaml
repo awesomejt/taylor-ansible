@@ -9,6 +9,24 @@ openwebui_data_dir: "{{ openwebui_project_dir }}/data"
 openwebui_host_port: 3000
 # Remote Ollama server base URL - override in host_vars or group_vars
 openwebui_ollama_base_url: "http://127.0.0.1:11434"
+
+# Optional Ollama failover proxy for Open WebUI.
+# Open WebUI supports one OLLAMA_BASE_URL; enabling this creates an internal
+# nginx proxy that targets primary first and falls back to backup on failures.
+openwebui_ollama_failover_enabled: false
+openwebui_ollama_primary_base_url: ""
+openwebui_ollama_fallback_base_url: ""
+openwebui_ollama_proxy_container_name: open-webui-ollama-proxy
+openwebui_ollama_proxy_conf_dir: "{{ openwebui_project_dir }}/ollama-proxy"
+openwebui_ollama_proxy_conf_path: "{{ openwebui_ollama_proxy_conf_dir }}/default.conf"
+openwebui_ollama_proxy_listen_port: 11434
+
+# Ollama endpoint health checks after deployment
+openwebui_ollama_healthcheck_enabled: true
+openwebui_ollama_healthcheck_path: "/api/tags"
+openwebui_ollama_healthcheck_timeout: 5
+openwebui_ollama_healthcheck_fail_when_all_down: true
+
 openwebui_systemd_unit: open-webui.service
 openwebui_systemd_unit_path: "/etc/systemd/system/{{ openwebui_systemd_unit }}"
 openwebui_nginx_enable: true
