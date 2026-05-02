@@ -1,0 +1,26 @@
+# Hermes config for the active profile: {{ hermes_active_profile }}
+model:
+  default: "{{ hermes_active_profile_config.model }}"
+  provider: "{{ hermes_active_profile_config.provider }}"
+  base_url: "{{ hermes_active_profile_config.base_url }}"
+{% if hermes_active_profile_config.fallback_providers is defined and (hermes_active_profile_config.fallback_providers | length > 0) %}
+  fallback_providers:
+{% for fallback in hermes_active_profile_config.fallback_providers %}
+    - provider: "{{ fallback.provider }}"
+      model: "{{ fallback.model }}"
+{% if fallback.base_url is defined %}
+      base_url: "{{ fallback.base_url }}"
+{% endif %}
+{% endfor %}
+{% endif %}
+
+terminal:
+  backend: "{{ hermes_terminal_backend }}"
+  timeout: {{ hermes_terminal_timeout }}
+  lifetime_seconds: {{ hermes_terminal_lifetime_seconds }}
+
+group_sessions_per_user: true
+
+platform_toolsets:
+  cli: [hermes-cli]
+  discord: [hermes-discord]

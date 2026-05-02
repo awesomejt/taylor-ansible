@@ -4,6 +4,7 @@
     name:
       - ca-certificates
       - curl
+      - git
       - gnupg
       - software-properties-common
     state: present
@@ -117,3 +118,120 @@
     group: root
     mode: "0440"
     validate: "visudo -cf %s"
+
+- name: Validate active Hermes profile exists
+  ansible.builtin.assert:
+    that:
+      - hermes_active_profile in hermes_profiles
+    fail_msg: "Define hermes_profiles.{{ hermes_active_profile }} with provider/base_url/model"
+
+- name: Resolve active Hermes profile configuration
+  ansible.builtin.set_fact:
+    hermes_active_profile_config: "{{ hermes_profiles[hermes_active_profile] }}"
+
+- name: Ensure Hermes install directory exists
+  ansible.builtin.file:
+    path: "{{ hermes_install_dir }}"
+    state: directory
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0755"
+
+- name: Ensure Hermes workspace directory exists
+  ansible.builtin.file:
+    path: "{{ hermes_workspace_dir }}"
+    state: directory
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0755"
+
+- name: Ensure Hermes config directory exists
+  ansible.builtin.file:
+    path: "{{ hermes_config_dir }}"
+    state: directory
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0700"
+
+- name: Clone Hermes agent repository
+  become_user: "{{ hermes_user }}"
+  ansible.builtin.git:
+    repo: "{{ hermes_git_repo }}"
+    dest: "{{ hermes_install_dir }}"
+    version: "{{ hermes_git_version }}"
+    update: true
+
+- name: Ensure Hermes virtualenv exists
+  become_user: "{{ hermes_user }}"
+  ansible.builtin.command:
+    cmd: "python{{ hermes_python_version }} -m venv {{ hermes_venv_dir }}"
+  args:
+    creates: "{{ hermes_venv_dir }}/bin/activate"
+
+- name: Install Hermes agent into virtualenv
+  become_user: "{{ hermes_user }}"
+  ansible.builtin.pip:
+    name: "{{ '.' ~ ('[' ~ hermes_python_extras ~ ']' if (hermes_python_extras | default('') | length > 0) else '') }}"
+    chdir: "{{ hermes_install_dir }}"
+    editable: true
+    virtualenv: "{{ hermes_venv_dir }}"
+    virtualenv_command: "python{{ hermes_python_version }} -m venv"
+
+- name: Link Hermes CLI into /usr/local/bin
+  ansible.builtin.file:
+    src: "{{ hermes_venv_dir }}/bin/hermes"
+    dest: /usr/local/bin/hermes
+    state: link
+    force: true
+
+- name: Deploy Hermes config.yaml
+  ansible.builtin.template:
+    src: hermes-config.yaml.j2
+    dest: "{{ hermes_config_dir }}/config.yaml"
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0600"
+  notify:
+    - Restart hermes gateway service
+    - Restart hermes dashboard service
+
+- name: Deploy Hermes .env file
+  ansible.builtin.template:
+    src: hermes.env.j2
+    dest: "{{ hermes_config_dir }}/.env"
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0600"
+  notify: Restart hermes gateway service
+
+- name: Deploy Hermes gateway systemd unit
+  ansible.builtin.template:
+    src: hermes-gateway.service.j2
+    dest: "/etc/systemd/system/{{ hermes_gateway_service_name }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart hermes gateway service
+
+- name: Deploy Hermes dashboard systemd unit
+  ansible.builtin.template:
+    src: hermes-dashboard.service.j2
+    dest: "/etc/systemd/system/{{ hermes_dashboard_service_name }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart hermes dashboard service
+
+- name: Ensure Hermes gateway service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ hermes_gateway_service_name }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Ensure Hermes dashboard service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ hermes_dashboard_service_name }}"
+    enabled: true
+    state: started
+    daemon_reload: true

@@ -1,0 +1,12 @@
+---
+- name: Restart hermes gateway service
+  ansible.builtin.systemd:
+    name: "{{ hermes_gateway_service_name }}"
+    state: restarted
+    daemon_reload: true
+
+- name: Restart hermes dashboard service
+  ansible.builtin.systemd:
+    name: "{{ hermes_dashboard_service_name }}"
+    state: restarted
+    daemon_reload: true

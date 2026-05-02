@@ -5,6 +5,7 @@
   gather_facts: true
   vars_files:
     - "vars/common/vars.yaml"
+    - "vars/common/secrets.yaml"
   pre_tasks:
     - name: Wait for apt locks to be released
       ansible.builtin.shell: |
@@ -17,6 +18,14 @@
         done
       changed_when: false
       timeout: 600
+
+    - name: Validate Hermes Discord token is defined when Discord is enabled
+      ansible.builtin.assert:
+        that:
+          - (vault_hermes_discord_token | default('') | length) > 0
+        fail_msg: "Define vault_hermes_discord_token in vars/common/secrets.yaml when hermes_discord_enabled=true"
+      when: hermes_discord_enabled | default(false) | bool
   roles:
+    - updates
     - common
     - { role: hermes, tags: ["hermes"] }

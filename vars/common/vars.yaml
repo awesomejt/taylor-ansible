@@ -41,7 +41,10 @@ openclaw_discord_channel_reports_id: "1499960253163241502"
 # Open WebUI shared defaults
 openwebui_primary_user: "jason"
 openwebui_host_port: 3000
-openwebui_ollama_base_url: "http://192.168.50.94:11434"
+openwebui_ollama_base_url: "http://192.168.50.93:11434"
+openwebui_ollama_failover_enabled: true
+openwebui_ollama_primary_base_url: "http://192.168.50.93:11434"
+openwebui_ollama_fallback_base_url: "http://192.168.50.94:11434"
 openwebui_nginx_enable: true
 openwebui_nginx_server_name: "openwebui.taylor.lan"
 openwebui_nginx_http_port: 80
@@ -126,23 +129,58 @@ technitium_tsig_keys:
 # Hermes AI Agent (Nous Research) - https://github.com/NousResearch/hermes-agent
 hermes_git_repo: "https://github.com/NousResearch/hermes-agent.git"
 hermes_git_version: "main"
+hermes_python_extras: "web"
 
-# Default LLM model (OpenRouter format: provider/model)
-hermes_default_model: "anthropic/claude-opus-4.6"
-hermes_model_provider: "auto"
+# Main profile (first validated profile)
+# Switch between profiles by changing hermes_active_profile (e.g. main or test).
+hermes_active_profile: "main"
+hermes_profiles:
+  main:
+    provider: "custom"
+    base_url: "http://192.168.50.93:11434/v1"
+    model: "llama3.1:latest"
+    fallback_providers:
+      - provider: "custom"
+        base_url: "http://192.168.50.94:11434/v1"
+        model: "llama3:latest"
+      - provider: "openrouter"
+        model: "anthropic/claude-opus-4.6"
+  test:
+    provider: "custom"
+    base_url: "http://192.168.50.94:11434/v1"
+    model: "qwen3-coder:latest"
+    fallback_providers:
+      - provider: "custom"
+        base_url: "http://192.168.50.93:11434/v1"
+        model: "llama3.1:latest"
+      - provider: "openrouter"
+        model: "anthropic/claude-opus-4.6"
 
 # Terminal backend for agent tool execution
-hermes_terminal_backend: "docker"
+hermes_terminal_backend: "local"
 
 # Messaging platform toggles (enable and set tokens in secrets.yaml)
 hermes_telegram_enabled: false
 hermes_telegram_allowed_users: []
 hermes_telegram_home_channel: ""
 
-hermes_discord_enabled: false
-hermes_discord_allowed_users: []
+hermes_discord_enabled: true
+hermes_discord_require_mention: false
+hermes_discord_allowed_users:
+  - "822273647568879674"
+hermes_discord_server_id: "1499530383316750467"
+hermes_discord_channel_general_id: "1499530384105541724"
+hermes_discord_channel_development_id: "1499959791202603180"
+hermes_discord_channel_research_id: "1499959898291830874"
+hermes_discord_channel_reports_id: "1499960253163241502"
+hermes_discord_home_channel: "1499530383316750467"
 
 hermes_slack_enabled: false
+
+# Dashboard service binding
+hermes_dashboard_host: "127.0.0.1"
+hermes_dashboard_port: 9119
+hermes_dashboard_no_open: true
 
 # Nginx reverse proxy for dashboard
 hermes_nginx_enable: true
@@ -155,7 +193,7 @@ hermes_nginx_auth_enable: true
 hermes_nginx_auth_user: "admin"
 
 # Hermes secrets (in vars/common/secrets.yaml):
-# vault_hermes_openrouter_api_key  — REQUIRED
+# vault_hermes_openrouter_api_key  — optional fallback provider key
 # vault_hermes_dashboard_password  — REQUIRED if hermes_nginx_auth_enable: true
 # vault_hermes_telegram_bot_token  — if hermes_telegram_enabled: true
 # vault_hermes_discord_token       — if hermes_discord_enabled: true

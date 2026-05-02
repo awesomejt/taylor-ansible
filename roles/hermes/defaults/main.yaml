@@ -14,3 +14,42 @@ hermes_install_uv: true
 
 # User privilege configuration
 hermes_sudo_nopasswd: true
+
+# Hermes source/install paths
+hermes_install_dir: "/opt/hermes-agent"
+hermes_venv_dir: "{{ hermes_install_dir }}/venv"
+hermes_home_dir: "/home/{{ hermes_user }}"
+hermes_config_dir: "{{ hermes_home_dir }}/.hermes"
+hermes_workspace_dir: "{{ hermes_home_dir }}/workspace"
+
+# Hermes package install extras.
+# Use a lean default for VM deployments; "all" pulls optional extras
+# (for example matrix encryption) that require local build tooling.
+hermes_python_extras: "web"
+
+# Profile-aware model settings (main profile enabled first)
+hermes_active_profile: "main"
+hermes_profiles:
+  main:
+    provider: "custom"
+    base_url: "http://127.0.0.1:11434/v1"
+    model: "llama3:latest"
+    fallback_providers: []
+
+# Terminal backend for tool execution
+hermes_terminal_backend: "docker"
+hermes_terminal_timeout: 180
+hermes_terminal_lifetime_seconds: 300
+
+# Discord gateway settings
+hermes_discord_enabled: true
+hermes_discord_require_mention: false
+hermes_discord_allowed_users: []
+hermes_discord_home_channel: ""
+
+# Gateway and dashboard service settings
+hermes_gateway_service_name: "hermes-gateway"
+hermes_dashboard_service_name: "hermes-dashboard"
+hermes_dashboard_host: "127.0.0.1"
+hermes_dashboard_port: 9119
+hermes_dashboard_no_open: true
