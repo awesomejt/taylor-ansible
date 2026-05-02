@@ -3,6 +3,8 @@
   hosts: hermes
   become: true
   gather_facts: true
+  vars_files:
+    - "vars/common/vars.yaml"
   pre_tasks:
     - name: Wait for apt locks to be released
       ansible.builtin.shell: |
@@ -17,4 +19,4 @@
       timeout: 600
   roles:
     - common
-#    - hermes
+    - { role: hermes, tags: ["hermes"] }

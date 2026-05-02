@@ -1,0 +1,119 @@
+---
+- name: Ensure apt dependencies for Hermes repositories are installed
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - software-properties-common
+    state: present
+    update_cache: true
+    lock_timeout: 600
+
+- name: Ensure Hermes role runs on Ubuntu hosts
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['distribution'] == "Ubuntu"
+    fail_msg: "hermes role currently supports Ubuntu only"
+
+- name: Ensure hermes group exists
+  ansible.builtin.group:
+    name: "{{ hermes_group }}"
+    state: present
+    system: true
+
+- name: Ensure hermes user exists with SSH key
+  ansible.builtin.user:
+    name: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    system: true
+    shell: /bin/bash
+    home: "/home/{{ hermes_user }}"
+    create_home: true
+    generate_ssh_key: true
+    ssh_key_type: "{{ hermes_ssh_key_type }}"
+    ssh_key_bits: "{{ hermes_ssh_key_bits }}"
+    ssh_key_comment: "{{ hermes_user }}@{{ inventory_hostname }}"
+    state: present
+
+- name: Determine whether deadsnakes PPA is needed for Python {{ hermes_python_version }}
+  ansible.builtin.set_fact:
+    hermes_use_deadsnakes_ppa: "{{ ansible_facts['distribution_version'] is version('26.04', '<') }}"
+
+- name: Add deadsnakes PPA for Python {{ hermes_python_version }}
+  ansible.builtin.apt_repository:
+    repo: ppa:deadsnakes/ppa
+    state: present
+  when: hermes_use_deadsnakes_ppa | bool
+
+- name: Install Python {{ hermes_python_version }} runtime packages
+  ansible.builtin.apt:
+    name:
+      - "python{{ hermes_python_version }}"
+      - "python{{ hermes_python_version }}-venv"
+      - "python{{ hermes_python_version }}-dev"
+    state: present
+    update_cache: true
+    lock_timeout: 600
+
+- name: Create keyrings directory for APT repositories
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Download NodeSource repository key
+  ansible.builtin.get_url:
+    url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
+    dest: /tmp/nodesource-repo.gpg.key
+    mode: "0644"
+
+- name: Convert NodeSource key to keyring format
+  ansible.builtin.command:
+    cmd: gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg /tmp/nodesource-repo.gpg.key
+  args:
+    creates: /etc/apt/keyrings/nodesource.gpg
+
+- name: Add NodeSource repository for Node.js {{ hermes_nodejs_major_version }}.x
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_{{ hermes_nodejs_major_version }}.x nodistro main"
+    filename: nodesource
+    state: present
+
+- name: Install Node.js {{ hermes_nodejs_major_version }} LTS
+  ansible.builtin.apt:
+    name: nodejs
+    state: present
+    update_cache: true
+    lock_timeout: 600
+
+- name: Upgrade npm to latest
+  ansible.builtin.command:
+    cmd: npm install -g npm@latest
+  register: _hermes_npm_upgrade
+  changed_when: "'up to date' not in (_hermes_npm_upgrade.stdout | default(''))"
+
+- name: Install uv toolchain manager
+  ansible.builtin.get_url:
+    url: https://astral.sh/uv/install.sh
+    dest: /tmp/uv-installer.sh
+    mode: "0755"
+  when: hermes_install_uv | bool
+
+- name: Install uv into /usr/local/bin
+  ansible.builtin.command:
+    cmd: /tmp/uv-installer.sh
+  environment:
+    UV_INSTALL_DIR: /usr/local/bin
+  args:
+    creates: /usr/local/bin/uv
+  when: hermes_install_uv | bool
+
+- name: Grant hermes user sudo rights
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/hermes
+    content: "{{ hermes_user }} ALL=(ALL) {% if hermes_sudo_nopasswd | bool %}NOPASSWD:{% endif %}ALL\n"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: "visudo -cf %s"

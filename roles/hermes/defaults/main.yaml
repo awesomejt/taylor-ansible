@@ -1,0 +1,16 @@
+---
+# Dedicated service user and group
+hermes_user: "hermes"
+hermes_group: "hermes"
+hermes_ssh_key_type: "rsa"
+hermes_ssh_key_bits: 4096
+
+# Runtime selection
+hermes_python_version: "3.14"
+hermes_nodejs_major_version: "24"
+
+# Install uv package manager for Python projects
+hermes_install_uv: true
+
+# User privilege configuration
+hermes_sudo_nopasswd: true
