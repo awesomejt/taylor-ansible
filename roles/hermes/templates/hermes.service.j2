@@ -1,0 +1,24 @@
+[Unit]
+Description={{ hermes_service_description }}
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User={{ hermes_user }}
+Group={{ hermes_group }}
+WorkingDirectory={{ hermes_install_dir }}
+
+ExecStart=/usr/bin/docker compose -f {{ hermes_install_dir }}/docker-compose.yaml up --remove-orphans
+ExecStop=/usr/bin/docker compose -f {{ hermes_install_dir }}/docker-compose.yaml down
+
+Restart=unless-stopped
+RestartSec=10
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hermes
+
+[Install]
+WantedBy=multi-user.target

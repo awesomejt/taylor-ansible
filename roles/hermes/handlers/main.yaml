@@ -1,0 +1,20 @@
+---
+- name: Restart hermes service
+  become: true
+  ansible.builtin.systemd_service:
+    name: "{{ hermes_service_name }}"
+    state: restarted
+    daemon_reload: true
+  listen: restart hermes
+
+- name: Rebuild hermes docker image
+  become: true
+  community.docker.docker_image:
+    name: hermes-agent
+    tag: local
+    source: build
+    build:
+      path: "{{ hermes_install_dir }}/src"
+    state: present
+    force_source: true
+  listen: rebuild hermes image

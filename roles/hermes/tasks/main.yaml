@@ -1,0 +1,134 @@
+---
+- name: Ensure hermes role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == "Debian"
+    fail_msg: "hermes role currently supports Debian/Ubuntu only"
+
+- name: Ensure git is installed
+  become: true
+  ansible.builtin.apt:
+    name: git
+    state: present
+
+- name: Create hermes system group
+  become: true
+  ansible.builtin.group:
+    name: "{{ hermes_group }}"
+    gid: "{{ hermes_gid }}"
+    system: true
+    state: present
+
+- name: Create hermes system user
+  become: true
+  ansible.builtin.user:
+    name: "{{ hermes_user }}"
+    uid: "{{ hermes_uid }}"
+    group: "{{ hermes_group }}"
+    groups: docker
+    append: true
+    shell: /usr/sbin/nologin
+    home: "{{ hermes_install_dir }}"
+    system: true
+    create_home: false
+    state: present
+
+- name: Create hermes directories
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0750"
+  loop:
+    - "{{ hermes_install_dir }}"
+    - "{{ hermes_data_dir }}"
+    - "{{ hermes_data_dir }}/logs"
+    - "{{ hermes_data_dir }}/skills"
+    - "{{ hermes_data_dir }}/memory"
+
+- name: Run docker installation tasks
+  ansible.builtin.include_tasks: install_docker.yaml
+
+- name: Deploy hermes environment file (.env)
+  become: true
+  ansible.builtin.template:
+    src: hermes.env.j2
+    dest: "{{ hermes_data_dir }}/.env"
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0600"
+  notify: restart hermes
+  tags: configuration
+
+- name: Deploy hermes config.yaml
+  become: true
+  ansible.builtin.template:
+    src: hermes.config.j2
+    dest: "{{ hermes_data_dir }}/config.yaml"
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0640"
+  notify: restart hermes
+  tags: configuration
+
+- name: Deploy docker-compose file
+  become: true
+  ansible.builtin.template:
+    src: docker-compose.yaml.j2
+    dest: "{{ hermes_install_dir }}/docker-compose.yaml"
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0640"
+  notify: restart hermes
+  tags: configuration
+
+- name: Deploy nginx reverse proxy configuration
+  become: true
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: "{{ hermes_install_dir }}/nginx.conf"
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0640"
+  notify: restart hermes
+  tags: configuration
+  when: hermes_nginx_enable
+
+- name: Ensure python3-passlib is installed (required for htpasswd)
+  become: true
+  ansible.builtin.apt:
+    name: python3-passlib
+    state: present
+  when: hermes_nginx_enable and hermes_nginx_auth_enable
+
+- name: Create nginx htpasswd file for dashboard authentication
+  become: true
+  community.general.htpasswd:
+    path: "{{ hermes_install_dir }}/.htpasswd"
+    name: "{{ hermes_nginx_auth_user }}"
+    password: "{{ vault_hermes_dashboard_password }}"
+    owner: root
+    group: root
+    mode: "0640"
+  tags: configuration
+  when: hermes_nginx_enable and hermes_nginx_auth_enable
+
+- name: Create hermes systemd service unit
+  become: true
+  ansible.builtin.template:
+    src: hermes.service.j2
+    dest: "/etc/systemd/system/{{ hermes_service_name }}.service"
+    mode: "0644"
+  notify: restart hermes
+  tags: service
+
+- name: Enable and start hermes service
+  become: true
+  ansible.builtin.systemd_service:
+    name: "{{ hermes_service_name }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+

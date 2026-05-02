@@ -122,3 +122,42 @@ technitium_tsig_keys:
   - keyName: "{{ k3s_external_dns_rfc2136_tsig_keyname_prod }}"
     sharedSecret: "{{ vault_external_dns_prod_rfc2136_tsig_secret }}"
     algorithmName: "hmac-sha256"
+
+# Hermes AI Agent (Nous Research) - https://github.com/NousResearch/hermes-agent
+hermes_git_repo: "https://github.com/NousResearch/hermes-agent.git"
+hermes_git_version: "main"
+
+# Default LLM model (OpenRouter format: provider/model)
+hermes_default_model: "anthropic/claude-opus-4.6"
+hermes_model_provider: "auto"
+
+# Terminal backend for agent tool execution
+hermes_terminal_backend: "docker"
+
+# Messaging platform toggles (enable and set tokens in secrets.yaml)
+hermes_telegram_enabled: false
+hermes_telegram_allowed_users: []
+hermes_telegram_home_channel: ""
+
+hermes_discord_enabled: false
+hermes_discord_allowed_users: []
+
+hermes_slack_enabled: false
+
+# Nginx reverse proxy for dashboard
+hermes_nginx_enable: true
+hermes_nginx_server_name: "hermes.taylor.lan"
+hermes_nginx_http_port: 80
+hermes_nginx_https_port: 443
+hermes_nginx_ssl_enable: false
+# Basic auth strongly recommended — dashboard stores all API keys
+hermes_nginx_auth_enable: true
+hermes_nginx_auth_user: "admin"
+
+# Hermes secrets (in vars/common/secrets.yaml):
+# vault_hermes_openrouter_api_key  — REQUIRED
+# vault_hermes_dashboard_password  — REQUIRED if hermes_nginx_auth_enable: true
+# vault_hermes_telegram_bot_token  — if hermes_telegram_enabled: true
+# vault_hermes_discord_token       — if hermes_discord_enabled: true
+# vault_hermes_slack_bot_token     — if hermes_slack_enabled: true
+# vault_hermes_slack_app_token     — if hermes_slack_enabled: true
