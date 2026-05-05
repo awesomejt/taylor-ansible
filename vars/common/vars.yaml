@@ -129,10 +129,27 @@ technitium_tsig_keys:
 # Hermes AI Agent (Nous Research) - https://github.com/NousResearch/hermes-agent
 hermes_git_repo: "https://github.com/NousResearch/hermes-agent.git"
 hermes_git_version: "main"
+hermes_git_user_name: "Rogue Daemon"
+hermes_git_user_email: "hermes@jasongtaylor.com"
+hermes_soul_version: "main"
 hermes_python_extras: "web,messaging"
 hermes_api_timeout_seconds: 45
 hermes_api_stale_timeout_seconds: 60
 hermes_api_max_retries: 1
+hermes_omlx_base_url: "http://192.168.50.93:11434/v1"
+hermes_omlx_api_key: "example"
+
+hermes_cifs_credentials_file: "/etc/samba/credentials/nas"
+hermes_cifs_shares:
+  - path: "/mnt/hermes"
+    src: "//192.168.50.10/Hermes"
+    opts: "credentials={{ hermes_cifs_credentials_file }},uid={{ hermes_user }},gid={{ hermes_group }},iocharset=utf8,vers=3.1.1,_netdev,nofail,x-systemd.automount,x-systemd.idle-timeout=5min,rw"
+  - path: "/mnt/content"
+    src: "//192.168.50.4/Content"
+    opts: "credentials={{ hermes_cifs_credentials_file }},uid={{ hermes_user }},gid={{ hermes_group }},iocharset=utf8,vers=3.1.1,_netdev,nofail,x-systemd.automount,x-systemd.idle-timeout=5min,ro"
+  - path: "/mnt/recordings"
+    src: "//192.168.50.10/Recordings"
+    opts: "credentials={{ hermes_cifs_credentials_file }},uid={{ hermes_user }},gid={{ hermes_group }},iocharset=utf8,vers=3.1.1,_netdev,nofail,x-systemd.automount,ro"
 
 # Concurrent Hermes instances — each runs its own gateway service and cron scheduler.
 # The dashboard connects to hermes_dashboard_instance (the chat instance).
@@ -148,7 +165,7 @@ hermes_instances:
     discord_home_channel: "1499530383316750467"
     fallback_providers:
       - provider: "custom"
-        base_url: "http://192.168.50.93:11434/v1"
+        base_url: "{{ hermes_omlx_base_url }}"
         model: "llama3.1:latest"
       - provider: "openrouter"
         model: "anthropic/claude-opus-4.6"
@@ -161,7 +178,7 @@ hermes_instances:
     discord_home_channel: "1500092836329160744"
     fallback_providers:
       - provider: "custom"
-        base_url: "http://192.168.50.93:11434/v1"
+        base_url: "{{ hermes_omlx_base_url }}"
         model: "qwen3.6:latest"
       - provider: "openrouter"
         model: "anthropic/claude-opus-4.6"
@@ -174,7 +191,7 @@ hermes_instances:
     discord_home_channel: "1500088947441930260"
     fallback_providers:
       - provider: "custom"
-        base_url: "http://192.168.50.93:11434/v1"
+        base_url: "{{ hermes_omlx_base_url }}"
         model: "qwen3-coder:latest"
       - provider: "openrouter"
         model: "anthropic/claude-opus-4.6"
@@ -215,6 +232,7 @@ hermes_nginx_auth_enable: true
 hermes_nginx_auth_user: "admin"
 
 # Hermes secrets (in vars/common/secrets.yaml):
+# vault_hermes_gh_token                — GitHub PAT for cloning private ai-agents repo
 # vault_hermes_openrouter_api_key      — optional fallback provider key
 # vault_hermes_dashboard_password      — REQUIRED if hermes_nginx_auth_enable: true
 # vault_hermes_telegram_bot_token      — if any instance has telegram_enabled: true

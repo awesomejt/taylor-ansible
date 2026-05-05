@@ -4,6 +4,8 @@
     name:
       - ca-certificates
       - curl
+      - cifs-utils
+      - gh
       - git
       - gnupg
       - software-properties-common
@@ -119,6 +121,18 @@
     mode: "0440"
     validate: "visudo -cf %s"
 
+- name: Configure Hermes git user.name
+  become_user: "{{ hermes_user }}"
+  ansible.builtin.command:
+    cmd: "git config --global user.name {{ hermes_git_user_name | quote }}"
+  changed_when: false
+
+- name: Configure Hermes git user.email
+  become_user: "{{ hermes_user }}"
+  ansible.builtin.command:
+    cmd: "git config --global user.email {{ hermes_git_user_email | quote }}"
+  changed_when: false
+
 - name: Validate hermes_instances is defined and non-empty
   ansible.builtin.assert:
     that:
@@ -141,6 +155,36 @@
     owner: "{{ hermes_user }}"
     group: "{{ hermes_group }}"
     mode: "0755"
+
+- name: Ensure CIFS mount point directories exist
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0755"
+  loop: "{{ hermes_cifs_shares }}"
+
+- name: Verify CIFS credentials file exists
+  ansible.builtin.stat:
+    path: "{{ hermes_cifs_credentials_file }}"
+  register: hermes_cifs_credentials_file_stat
+
+- name: Assert CIFS credentials file exists before mounting
+  ansible.builtin.assert:
+    that:
+      - hermes_cifs_credentials_file_stat.stat.exists
+      - hermes_cifs_credentials_file_stat.stat.isreg
+    fail_msg: "Missing CIFS credentials file at {{ hermes_cifs_credentials_file }}"
+
+- name: Configure and mount Hermes CIFS shares
+  ansible.posix.mount:
+    path: "{{ item.path }}"
+    src: "{{ item.src }}"
+    fstype: cifs
+    opts: "{{ item.opts }}"
+    state: mounted
+  loop: "{{ hermes_cifs_shares }}"
 
 - name: Ensure Hermes config directory exists
   ansible.builtin.file:
@@ -200,6 +244,26 @@
   loop_control:
     loop_var: hermes_instance
     label: "{{ hermes_instance.name }}"
+
+- name: Clone AI agent profile repository
+  become_user: "{{ hermes_user }}"
+  ansible.builtin.git:
+    repo: "https://{{ vault_hermes_gh_token }}@github.com/awesomejt/ai-agents.git"
+    dest: "{{ hermes_soul_clone_dir }}"
+    version: "{{ hermes_soul_version }}"
+    update: true
+    accept_newhostkey: true
+
+- name: Install SOUL profile files from AI agent repository
+  ansible.builtin.copy:
+    src: "{{ hermes_soul_clone_dir }}/{{ item.src }}"
+    dest: "{{ item.dest }}"
+    remote_src: true
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0600"
+  loop: "{{ hermes_soul_files }}"
+  when: not ansible_check_mode
 
 # --- Dashboard (single instance pointing at hermes_dashboard_instance) ---
 

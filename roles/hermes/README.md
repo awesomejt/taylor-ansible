@@ -4,13 +4,15 @@ This role bootstraps and deploys Hermes Agent with a Discord-enabled gateway and
 
 Current scope (main profile):
 
-- Install Python runtime, uv, Node.js, and base packages
-- Create hermes system user with sudo access
+- Install Python runtime, uv, Node.js, GitHub CLI, and base packages
+- Create hermes system user with sudo access and managed git identity
 - Clone and install Hermes from source into a dedicated virtual environment
+- Clone AI profile repository (`ai-agents`) and install SOUL profiles
 - Render Hermes config and .env from Ansible variables
 - Configure Discord gateway environment settings
+- Configure CIFS automount shares for Hermes content
 - Install and manage systemd services:
-	- `hermes-gateway` (Discord/messaging gateway)
+	- `hermes-gateway-<instance>` (Discord/messaging gateway per instance)
 	- `hermes-dashboard` (web dashboard)
 - Ensure both services are enabled at boot and running
 
@@ -33,9 +35,13 @@ Key overridable variables:
 - `hermes_install_uv` (default: `true`)
 - `hermes_user` / `hermes_group` (default: `hermes`)
 - `hermes_sudo_nopasswd` (default: `true`)
-- `hermes_profiles` / `hermes_active_profile` (profile-based model config)
-- `hermes_discord_enabled` / `hermes_discord_allowed_users`
+- `hermes_instances` / `hermes_dashboard_instance` (instance-based model config)
+- `hermes_discord_allowed_users`
 - `hermes_dashboard_host` / `hermes_dashboard_port`
+- `hermes_git_user_name` / `hermes_git_user_email`
+- `hermes_soul_repo` / `hermes_soul_files`
+- `hermes_cifs_shares`
+- `hermes_omlx_base_url` / `hermes_omlx_api_key`
 
 ## Secrets
 
@@ -46,4 +52,4 @@ Hermes secrets should be stored in:
 Primary keys for this role:
 
 - `vault_hermes_openrouter_api_key` (optional fallback provider key)
-- `vault_hermes_discord_token` (required when Discord is enabled)
+- `vault_hermes_discord_tokens` (required for Discord-enabled instances)

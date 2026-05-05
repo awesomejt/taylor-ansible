@@ -14,6 +14,8 @@ hermes_install_uv: true
 
 # User privilege configuration
 hermes_sudo_nopasswd: true
+hermes_git_user_name: "Rogue Daemon"
+hermes_git_user_email: "hermes@jasongtaylor.com"
 
 # Hermes source/install paths
 hermes_install_dir: "/opt/hermes-agent"
@@ -21,6 +23,20 @@ hermes_venv_dir: "{{ hermes_install_dir }}/venv"
 hermes_home_dir: "/home/{{ hermes_user }}"
 hermes_config_dir: "{{ hermes_home_dir }}/.hermes"
 hermes_workspace_dir: "{{ hermes_home_dir }}/workspace"
+
+# SOUL profiles source repository and destination mapping.
+# hermes_soul_repo is unused — the git task embeds vault_hermes_gh_token directly.
+hermes_soul_version: "main"
+hermes_soul_clone_dir: "{{ hermes_home_dir }}/ai-agents"
+hermes_soul_files:
+  - src: "main/SOUL.md"
+    dest: "{{ hermes_config_dir }}/SOUL.md"
+  - src: "main/SOUL.md"
+    dest: "{{ hermes_home_dir }}/.hermes-chat/SOUL.md"
+  - src: "researcher/SOUL.md"
+    dest: "{{ hermes_home_dir }}/.hermes-research/SOUL.md"
+  - src: "coder/SOUL.md"
+    dest: "{{ hermes_home_dir }}/.hermes-coding/SOUL.md"
 
 # Hermes package install extras.
 # Use the smallest set needed for the dashboard and Discord gateway.
@@ -51,6 +67,7 @@ hermes_terminal_lifetime_seconds: 300
 hermes_api_timeout_seconds: 45
 hermes_api_stale_timeout_seconds: 60
 hermes_api_max_retries: 1
+hermes_omlx_api_key: "example"
 
 # Shared Discord settings applied to all Discord-enabled instances.
 hermes_discord_allowed_users: []
@@ -61,3 +78,16 @@ hermes_dashboard_service_name: "hermes-dashboard"
 hermes_dashboard_host: "127.0.0.1"
 hermes_dashboard_port: 9119
 hermes_dashboard_no_open: true
+
+# CIFS mounts for shared Hermes content.
+hermes_cifs_credentials_file: "/etc/samba/credentials/nas"
+hermes_cifs_shares:
+  - path: "/mnt/hermes"
+    src: "//192.168.50.10/Hermes"
+    opts: "credentials={{ hermes_cifs_credentials_file }},uid={{ hermes_user }},gid={{ hermes_group }},iocharset=utf8,vers=3.1.1,_netdev,nofail,x-systemd.automount,x-systemd.idle-timeout=5min,rw"
+  - path: "/mnt/content"
+    src: "//192.168.50.4/Content"
+    opts: "credentials={{ hermes_cifs_credentials_file }},uid={{ hermes_user }},gid={{ hermes_group }},iocharset=utf8,vers=3.1.1,_netdev,nofail,x-systemd.automount,x-systemd.idle-timeout=5min,ro"
+  - path: "/mnt/recordings"
+    src: "//192.168.50.10/Recordings"
+    opts: "credentials={{ hermes_cifs_credentials_file }},uid={{ hermes_user }},gid={{ hermes_group }},iocharset=utf8,vers=3.1.1,_netdev,nofail,x-systemd.automount,ro"
