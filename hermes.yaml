@@ -19,12 +19,15 @@
       changed_when: false
       timeout: 600
 
-    - name: Validate Hermes Discord token is defined when Discord is enabled
+    - name: Validate Discord bot tokens exist for all Discord-enabled instances
       ansible.builtin.assert:
         that:
-          - (vault_hermes_discord_token | default('') | length) > 0
-        fail_msg: "Define vault_hermes_discord_token in vars/common/secrets.yaml when hermes_discord_enabled=true"
-      when: hermes_discord_enabled | default(false) | bool
+          - vault_hermes_discord_tokens is defined
+          - (vault_hermes_discord_tokens[item.name] | default('') | length) > 0
+        fail_msg: "Define vault_hermes_discord_tokens.{{ item.name }} in vars/common/secrets.yaml"
+      loop: "{{ hermes_instances | selectattr('discord_enabled', 'equalto', true) | list }}"
+      loop_control:
+        label: "{{ item.name }}"
   roles:
     - updates
     - common

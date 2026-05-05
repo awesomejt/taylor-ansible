@@ -23,32 +23,40 @@ hermes_config_dir: "{{ hermes_home_dir }}/.hermes"
 hermes_workspace_dir: "{{ hermes_home_dir }}/workspace"
 
 # Hermes package install extras.
-# Use a lean default for VM deployments; "all" pulls optional extras
-# (for example matrix encryption) that require local build tooling.
-hermes_python_extras: "web"
+# Use the smallest set needed for the dashboard and Discord gateway.
+# Avoid "all" because it pulls optional matrix extras that require local
+# build tooling (python-olm/libolm).
+hermes_python_extras: "web,messaging"
 
-# Profile-aware model settings (main profile enabled first)
-hermes_active_profile: "main"
-hermes_profiles:
-  main:
+# Multi-instance Hermes deployment.
+# Each instance gets its own HERMES_HOME, gateway service, and cron scheduler.
+# Override hermes_instances in vars/common/vars.yaml with the real instance list.
+hermes_dashboard_instance: "default"
+hermes_instances:
+  - name: default
     provider: "custom"
     base_url: "http://127.0.0.1:11434/v1"
-    model: "llama3:latest"
+    model: "llama3.1:latest"
+    discord_enabled: false
+    discord_require_mention: true
+    discord_home_channel: ""
     fallback_providers: []
 
 # Terminal backend for tool execution
-hermes_terminal_backend: "docker"
+hermes_terminal_backend: "local"
 hermes_terminal_timeout: 180
 hermes_terminal_lifetime_seconds: 300
 
-# Discord gateway settings
-hermes_discord_enabled: true
-hermes_discord_require_mention: false
+# LLM request behavior tuning (helps fail over quickly when a primary endpoint stalls)
+hermes_api_timeout_seconds: 45
+hermes_api_stale_timeout_seconds: 60
+hermes_api_max_retries: 1
+
+# Shared Discord settings applied to all Discord-enabled instances.
 hermes_discord_allowed_users: []
-hermes_discord_home_channel: ""
+hermes_discord_server_id: ""
 
 # Gateway and dashboard service settings
-hermes_gateway_service_name: "hermes-gateway"
 hermes_dashboard_service_name: "hermes-dashboard"
 hermes_dashboard_host: "127.0.0.1"
 hermes_dashboard_port: 9119

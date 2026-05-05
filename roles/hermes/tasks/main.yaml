@@ -119,15 +119,12 @@
     mode: "0440"
     validate: "visudo -cf %s"
 
-- name: Validate active Hermes profile exists
+- name: Validate hermes_instances is defined and non-empty
   ansible.builtin.assert:
     that:
-      - hermes_active_profile in hermes_profiles
-    fail_msg: "Define hermes_profiles.{{ hermes_active_profile }} with provider/base_url/model"
-
-- name: Resolve active Hermes profile configuration
-  ansible.builtin.set_fact:
-    hermes_active_profile_config: "{{ hermes_profiles[hermes_active_profile] }}"
+      - hermes_instances is defined
+      - hermes_instances | length > 0
+    fail_msg: "Define at least one entry in hermes_instances in vars/common/vars.yaml"
 
 - name: Ensure Hermes install directory exists
   ansible.builtin.file:
@@ -184,34 +181,27 @@
     state: link
     force: true
 
-- name: Deploy Hermes config.yaml
-  ansible.builtin.template:
-    src: hermes-config.yaml.j2
-    dest: "{{ hermes_config_dir }}/config.yaml"
-    owner: "{{ hermes_user }}"
-    group: "{{ hermes_group }}"
-    mode: "0600"
-  notify:
-    - Restart hermes gateway service
-    - Restart hermes dashboard service
+- name: Stop and disable legacy single-instance gateway services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+    daemon_reload: true
+  loop:
+    - hermes-gateway
+    - hermes
+  failed_when: false
 
-- name: Deploy Hermes .env file
-  ansible.builtin.template:
-    src: hermes.env.j2
-    dest: "{{ hermes_config_dir }}/.env"
-    owner: "{{ hermes_user }}"
-    group: "{{ hermes_group }}"
-    mode: "0600"
-  notify: Restart hermes gateway service
+# --- Per-instance config, env, and gateway service ---
 
-- name: Deploy Hermes gateway systemd unit
-  ansible.builtin.template:
-    src: hermes-gateway.service.j2
-    dest: "/etc/systemd/system/{{ hermes_gateway_service_name }}.service"
-    owner: root
-    group: root
-    mode: "0644"
-  notify: Restart hermes gateway service
+- name: Deploy per-instance Hermes config, env, and gateway service
+  ansible.builtin.include_tasks: instance.yaml
+  loop: "{{ hermes_instances }}"
+  loop_control:
+    loop_var: hermes_instance
+    label: "{{ hermes_instance.name }}"
+
+# --- Dashboard (single instance pointing at hermes_dashboard_instance) ---
 
 - name: Deploy Hermes dashboard systemd unit
   ansible.builtin.template:
@@ -221,13 +211,6 @@
     group: root
     mode: "0644"
   notify: Restart hermes dashboard service
-
-- name: Ensure Hermes gateway service is enabled and running
-  ansible.builtin.systemd:
-    name: "{{ hermes_gateway_service_name }}"
-    enabled: true
-    state: started
-    daemon_reload: true
 
 - name: Ensure Hermes dashboard service is enabled and running
   ansible.builtin.systemd:

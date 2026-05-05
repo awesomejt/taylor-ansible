@@ -1,0 +1,44 @@
+---
+- name: "[{{ hermes_instance.name }}] Ensure Hermes instance config directory exists"
+  ansible.builtin.file:
+    path: "{{ hermes_home_dir }}/.hermes-{{ hermes_instance.name }}"
+    state: directory
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0700"
+
+- name: "[{{ hermes_instance.name }}] Deploy Hermes config.yaml"
+  ansible.builtin.template:
+    src: hermes-config.yaml.j2
+    dest: "{{ hermes_home_dir }}/.hermes-{{ hermes_instance.name }}/config.yaml"
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0600"
+  notify:
+    - Restart all hermes gateway services
+    - Restart hermes dashboard service
+
+- name: "[{{ hermes_instance.name }}] Deploy Hermes .env file"
+  ansible.builtin.template:
+    src: hermes.env.j2
+    dest: "{{ hermes_home_dir }}/.hermes-{{ hermes_instance.name }}/.env"
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0600"
+  notify: Restart all hermes gateway services
+
+- name: "[{{ hermes_instance.name }}] Deploy Hermes gateway systemd unit"
+  ansible.builtin.template:
+    src: hermes-gateway.service.j2
+    dest: "/etc/systemd/system/hermes-gateway-{{ hermes_instance.name }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart all hermes gateway services
+
+- name: "[{{ hermes_instance.name }}] Ensure gateway service is enabled and running"
+  ansible.builtin.systemd:
+    name: "hermes-gateway-{{ hermes_instance.name }}"
+    enabled: true
+    state: started
+    daemon_reload: true

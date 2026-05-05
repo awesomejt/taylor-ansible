@@ -129,30 +129,53 @@ technitium_tsig_keys:
 # Hermes AI Agent (Nous Research) - https://github.com/NousResearch/hermes-agent
 hermes_git_repo: "https://github.com/NousResearch/hermes-agent.git"
 hermes_git_version: "main"
-hermes_python_extras: "web"
+hermes_python_extras: "web,messaging"
+hermes_api_timeout_seconds: 45
+hermes_api_stale_timeout_seconds: 60
+hermes_api_max_retries: 1
 
-# Main profile (first validated profile)
-# Switch between profiles by changing hermes_active_profile (e.g. main or test).
-hermes_active_profile: "main"
-hermes_profiles:
-  main:
-    provider: "custom"
-    base_url: "http://192.168.50.93:11434/v1"
-    model: "llama3.1:latest"
-    fallback_providers:
-      - provider: "custom"
-        base_url: "http://192.168.50.94:11434/v1"
-        model: "llama3:latest"
-      - provider: "openrouter"
-        model: "anthropic/claude-opus-4.6"
-  test:
+# Concurrent Hermes instances — each runs its own gateway service and cron scheduler.
+# The dashboard connects to hermes_dashboard_instance (the chat instance).
+# Each instance has its own Discord bot; tokens live in vars/common/secrets.yaml.
+hermes_dashboard_instance: "chat"
+hermes_instances:
+  - name: chat
     provider: "custom"
     base_url: "http://192.168.50.94:11434/v1"
-    model: "qwen3-coder:latest"
+    model: "llama3.1:latest"
+    discord_enabled: true
+    discord_require_mention: true
+    discord_home_channel: "1499530383316750467"
     fallback_providers:
       - provider: "custom"
         base_url: "http://192.168.50.93:11434/v1"
         model: "llama3.1:latest"
+      - provider: "openrouter"
+        model: "anthropic/claude-opus-4.6"
+  - name: research
+    provider: "custom"
+    base_url: "http://192.168.50.94:11434/v1"
+    model: "qwen3.6:latest"
+    discord_enabled: true
+    discord_require_mention: true
+    discord_home_channel: "1500092836329160744"
+    fallback_providers:
+      - provider: "custom"
+        base_url: "http://192.168.50.93:11434/v1"
+        model: "qwen3.6:latest"
+      - provider: "openrouter"
+        model: "anthropic/claude-opus-4.6"
+  - name: coding
+    provider: "custom"
+    base_url: "http://192.168.50.94:11434/v1"
+    model: "qwen3-coder:latest"
+    discord_enabled: true
+    discord_require_mention: true
+    discord_home_channel: "1500088947441930260"
+    fallback_providers:
+      - provider: "custom"
+        base_url: "http://192.168.50.93:11434/v1"
+        model: "qwen3-coder:latest"
       - provider: "openrouter"
         model: "anthropic/claude-opus-4.6"
 
@@ -164,8 +187,8 @@ hermes_telegram_enabled: false
 hermes_telegram_allowed_users: []
 hermes_telegram_home_channel: ""
 
-hermes_discord_enabled: true
-hermes_discord_require_mention: false
+# Shared Discord settings — apply to all Discord-enabled Hermes instances.
+# Per-instance bot tokens/home-channel/mention-mode are in secrets.yaml and instance definitions above.
 hermes_discord_allowed_users:
   - "822273647568879674"
 hermes_discord_server_id: "1499530383316750467"
@@ -173,7 +196,6 @@ hermes_discord_channel_general_id: "1499530384105541724"
 hermes_discord_channel_development_id: "1499959791202603180"
 hermes_discord_channel_research_id: "1499959898291830874"
 hermes_discord_channel_reports_id: "1499960253163241502"
-hermes_discord_home_channel: "1499530383316750467"
 
 hermes_slack_enabled: false
 
@@ -193,9 +215,11 @@ hermes_nginx_auth_enable: true
 hermes_nginx_auth_user: "admin"
 
 # Hermes secrets (in vars/common/secrets.yaml):
-# vault_hermes_openrouter_api_key  — optional fallback provider key
-# vault_hermes_dashboard_password  — REQUIRED if hermes_nginx_auth_enable: true
-# vault_hermes_telegram_bot_token  — if hermes_telegram_enabled: true
-# vault_hermes_discord_token       — if hermes_discord_enabled: true
-# vault_hermes_slack_bot_token     — if hermes_slack_enabled: true
-# vault_hermes_slack_app_token     — if hermes_slack_enabled: true
+# vault_hermes_openrouter_api_key      — optional fallback provider key
+# vault_hermes_dashboard_password      — REQUIRED if hermes_nginx_auth_enable: true
+# vault_hermes_telegram_bot_token      — if any instance has telegram_enabled: true
+# vault_hermes_discord_tokens.chat     — Discord bot token for the chat instance
+# vault_hermes_discord_tokens.research — Discord bot token for the research instance
+# vault_hermes_discord_tokens.coding   — Discord bot token for the coding instance
+# vault_hermes_slack_bot_token         — if any instance has slack_enabled: true
+# vault_hermes_slack_app_token         — if any instance has slack_enabled: true

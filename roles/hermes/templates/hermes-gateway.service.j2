@@ -1,5 +1,5 @@
 [Unit]
-Description=Hermes Messaging Gateway
+Description=Hermes Messaging Gateway ({{ hermes_instance.name }})
 Documentation=https://hermes-agent.nousresearch.com/docs/
 After=network-online.target
 Wants=network-online.target
@@ -10,14 +10,14 @@ User={{ hermes_user }}
 Group={{ hermes_group }}
 WorkingDirectory={{ hermes_home_dir }}
 Environment=HOME={{ hermes_home_dir }}
-Environment=HERMES_HOME={{ hermes_config_dir }}
-EnvironmentFile={{ hermes_config_dir }}/.env
+Environment=HERMES_HOME={{ hermes_home_dir }}/.hermes-{{ hermes_instance.name }}
+EnvironmentFile={{ hermes_home_dir }}/.hermes-{{ hermes_instance.name }}/.env
 ExecStart={{ hermes_venv_dir }}/bin/hermes gateway run
 Restart=always
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=hermes-gateway
+SyslogIdentifier=hermes-gateway-{{ hermes_instance.name }}
 
 [Install]
 WantedBy=multi-user.target

@@ -1,11 +1,11 @@
-# Hermes config for the active profile: {{ hermes_active_profile }}
+# Hermes config for instance: {{ hermes_instance.name }}
 model:
-  default: "{{ hermes_active_profile_config.model }}"
-  provider: "{{ hermes_active_profile_config.provider }}"
-  base_url: "{{ hermes_active_profile_config.base_url }}"
-{% if hermes_active_profile_config.fallback_providers is defined and (hermes_active_profile_config.fallback_providers | length > 0) %}
+  default: "{{ hermes_instance.model }}"
+  provider: "{{ hermes_instance.provider }}"
+  base_url: "{{ hermes_instance.base_url }}"
+{% if hermes_instance.fallback_providers is defined and (hermes_instance.fallback_providers | length > 0) %}
   fallback_providers:
-{% for fallback in hermes_active_profile_config.fallback_providers %}
+{% for fallback in hermes_instance.fallback_providers %}
     - provider: "{{ fallback.provider }}"
       model: "{{ fallback.model }}"
 {% if fallback.base_url is defined %}
@@ -21,6 +21,11 @@ terminal:
 
 group_sessions_per_user: true
 
+agent:
+  api_max_retries: {{ hermes_api_max_retries }}
+
 platform_toolsets:
   cli: [hermes-cli]
+{% if hermes_instance.discord_enabled | default(false) | bool %}
   discord: [hermes-discord]
+{% endif %}

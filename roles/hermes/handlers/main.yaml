@@ -1,9 +1,12 @@
 ---
-- name: Restart hermes gateway service
+- name: Restart all hermes gateway services
   ansible.builtin.systemd:
-    name: "{{ hermes_gateway_service_name }}"
+    name: "hermes-gateway-{{ item.name }}"
     state: restarted
     daemon_reload: true
+  loop: "{{ hermes_instances }}"
+  loop_control:
+    label: "{{ item.name }}"
 
 - name: Restart hermes dashboard service
   ansible.builtin.systemd:
