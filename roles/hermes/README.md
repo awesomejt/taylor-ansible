@@ -41,7 +41,8 @@ Key overridable variables:
 - `hermes_git_user_name` / `hermes_git_user_email`
 - `hermes_soul_repo` / `hermes_soul_files`
 - `hermes_cifs_shares`
-- `hermes_omlx_base_url` / `hermes_omlx_api_key`
+- `hermes_omlx_base_url` / `hermes_omlx_api_key` (legacy fallback; prefer vault secret)
+- `hermes_shared_auth_source_dir` (default: `/home/hermes/.hermes`, shared across instance homes)
 
 ## Secrets
 
@@ -52,4 +53,5 @@ Hermes secrets should be stored in:
 Primary keys for this role:
 
 - `vault_hermes_openrouter_api_key` (optional fallback provider key)
+- `vault_hermes_omlx_api_key` (API key for OpenAI-compatible custom endpoints such as oMLX)
 - `vault_hermes_discord_tokens` (required for Discord-enabled instances)

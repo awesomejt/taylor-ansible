@@ -24,8 +24,10 @@ group_sessions_per_user: true
 agent:
   api_max_retries: {{ hermes_api_max_retries }}
 
+{% set _cli_toolsets = hermes_instance.cli_toolsets | default(['hermes-cli']) %}
 platform_toolsets:
-  cli: [hermes-cli]
+  cli: {{ _cli_toolsets | to_json }}
 {% if hermes_instance.discord_enabled | default(false) | bool %}
-  discord: [hermes-discord]
+{% set _discord_toolsets = hermes_instance.discord_toolsets | default(['hermes-discord']) %}
+  discord: {{ _discord_toolsets | to_json }}
 {% endif %}

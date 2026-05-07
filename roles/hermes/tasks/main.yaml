@@ -282,3 +282,72 @@
     enabled: true
     state: started
     daemon_reload: true
+
+# --- Nginx reverse proxy for dashboard ---
+
+- name: Install nginx and apache2-utils for Hermes dashboard proxy
+  ansible.builtin.apt:
+    name:
+      - nginx
+      - apache2-utils
+    state: present
+    lock_timeout: 600
+  when: hermes_nginx_enable | bool
+
+- name: Assert dashboard password is set when nginx auth is enabled
+  ansible.builtin.assert:
+    that:
+      - vault_hermes_dashboard_password is defined
+      - (vault_hermes_dashboard_password | length) > 0
+    fail_msg: "Set vault_hermes_dashboard_password in vars/common/secrets.yaml when hermes_nginx_auth_enable is true"
+  when: hermes_nginx_enable | bool and hermes_nginx_auth_enable | bool
+
+- name: Deploy Hermes dashboard htpasswd file
+  ansible.builtin.command:
+    cmd: >-
+      htpasswd -bc {{ hermes_nginx_htpasswd_file }}
+      {{ hermes_nginx_auth_user | quote }}
+      {{ vault_hermes_dashboard_password | quote }}
+  when: hermes_nginx_enable | bool and hermes_nginx_auth_enable | bool
+  notify: Reload nginx
+
+- name: Set permissions on Hermes dashboard htpasswd file
+  ansible.builtin.file:
+    path: "{{ hermes_nginx_htpasswd_file }}"
+    owner: root
+    group: www-data
+    mode: "0640"
+  when: hermes_nginx_enable | bool and hermes_nginx_auth_enable | bool
+
+- name: Deploy Hermes nginx site config
+  ansible.builtin.template:
+    src: hermes-nginx.conf.j2
+    dest: /etc/nginx/sites-available/hermes
+    owner: root
+    group: root
+    mode: "0644"
+  when: hermes_nginx_enable | bool
+  notify: Reload nginx
+
+- name: Enable Hermes nginx site
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/hermes
+    dest: /etc/nginx/sites-enabled/hermes
+    state: link
+  when: hermes_nginx_enable | bool
+  notify: Reload nginx
+
+- name: Disable nginx default site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  when: hermes_nginx_enable | bool
+  notify: Reload nginx
+
+- name: Ensure nginx is enabled and running
+  ansible.builtin.systemd:
+    name: nginx
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: hermes_nginx_enable | bool

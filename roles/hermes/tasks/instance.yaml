@@ -7,6 +7,28 @@
     group: "{{ hermes_group }}"
     mode: "0700"
 
+- name: "[{{ hermes_instance.name }}] Check for shared Hermes auth files"
+  ansible.builtin.stat:
+    path: "{{ hermes_shared_auth_source_dir }}/{{ item }}"
+  loop:
+    - auth.json
+    - auth.lock
+  register: hermes_shared_auth_files
+
+- name: "[{{ hermes_instance.name }}] Share Hermes auth files from default profile"
+  ansible.builtin.file:
+    src: "{{ hermes_shared_auth_source_dir }}/{{ item.item }}"
+    dest: "{{ hermes_home_dir }}/.hermes-{{ hermes_instance.name }}/{{ item.item }}"
+    state: link
+    force: true
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+  loop: "{{ hermes_shared_auth_files.results }}"
+  when:
+    - hermes_shared_auth_source_dir | default('') | length > 0
+    - hermes_shared_auth_source_dir != (hermes_home_dir ~ '/.hermes-' ~ hermes_instance.name)
+    - item.stat.exists
+
 - name: "[{{ hermes_instance.name }}] Deploy Hermes config.yaml"
   ansible.builtin.template:
     src: hermes-config.yaml.j2

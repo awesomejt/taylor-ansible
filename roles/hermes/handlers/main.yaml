@@ -13,3 +13,8 @@
     name: "{{ hermes_dashboard_service_name }}"
     state: restarted
     daemon_reload: true
+
+- name: Reload nginx
+  ansible.builtin.systemd:
+    name: nginx
+    state: reloaded

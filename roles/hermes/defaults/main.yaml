@@ -68,16 +68,28 @@ hermes_api_timeout_seconds: 45
 hermes_api_stale_timeout_seconds: 60
 hermes_api_max_retries: 1
 hermes_omlx_api_key: "example"
+hermes_shared_auth_source_dir: "{{ hermes_home_dir }}/.hermes"
 
 # Shared Discord settings applied to all Discord-enabled instances.
 hermes_discord_allowed_users: []
 hermes_discord_server_id: ""
+hermes_discord_shared_channels: []
 
 # Gateway and dashboard service settings
 hermes_dashboard_service_name: "hermes-dashboard"
 hermes_dashboard_host: "127.0.0.1"
 hermes_dashboard_port: 9119
 hermes_dashboard_no_open: true
+
+# Nginx reverse proxy for Hermes dashboard
+hermes_nginx_enable: false
+hermes_nginx_server_name: "{{ inventory_hostname }}"
+hermes_nginx_http_port: 80
+hermes_nginx_https_port: 443
+hermes_nginx_ssl_enable: false
+hermes_nginx_auth_enable: false
+hermes_nginx_auth_user: "admin"
+hermes_nginx_htpasswd_file: "/etc/nginx/hermes.htpasswd"
 
 # CIFS mounts for shared Hermes content.
 hermes_cifs_credentials_file: "/etc/samba/credentials/nas"

@@ -1,0 +1,22 @@
+# Managed by Ansible — do not edit manually
+server {
+    listen {{ hermes_nginx_http_port }};
+    server_name {{ hermes_nginx_server_name }};
+
+    location / {
+        proxy_pass http://127.0.0.1:{{ hermes_dashboard_port }};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host 127.0.0.1:{{ hermes_dashboard_port }};
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 86400;
+{% if hermes_nginx_auth_enable | bool %}
+        auth_basic "Hermes Dashboard";
+        auth_basic_user_file {{ hermes_nginx_htpasswd_file }};
+{% endif %}
+    }
+}
