@@ -19,15 +19,22 @@
       changed_when: false
       timeout: 600
 
-    - name: Validate Discord bot tokens exist for all Discord-enabled instances
+    - name: Build effective Hermes profile list for validation
+      ansible.builtin.set_fact:
+        hermes_profiles_effective: "{{ hermes_profiles if (hermes_profiles | default([]) | length > 0) else (hermes_instances | default([])) }}"
+
+    - name: Validate Discord bot tokens exist for Discord-enabled gateway profiles
       ansible.builtin.assert:
         that:
           - vault_hermes_discord_tokens is defined
           - (vault_hermes_discord_tokens[item.name] | default('') | length) > 0
         fail_msg: "Define vault_hermes_discord_tokens.{{ item.name }} in vars/common/secrets.yaml"
-      loop: "{{ hermes_instances | selectattr('discord_enabled', 'equalto', true) | list }}"
+      loop: "{{ hermes_profiles_effective }}"
       loop_control:
         label: "{{ item.name }}"
+      when:
+        - item.discord_enabled | default(false) | bool
+        - item.gateway_enabled | default(true) | bool
   roles:
     - updates
     - common

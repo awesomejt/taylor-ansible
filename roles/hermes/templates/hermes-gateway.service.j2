@@ -10,8 +10,8 @@ User={{ hermes_user }}
 Group={{ hermes_group }}
 WorkingDirectory={{ hermes_home_dir }}
 Environment=HOME={{ hermes_home_dir }}
-Environment=HERMES_HOME={{ hermes_home_dir }}/.hermes-{{ hermes_instance.name }}
-EnvironmentFile={{ hermes_home_dir }}/.hermes-{{ hermes_instance.name }}/.env
+Environment=HERMES_HOME={{ hermes_config_dir }}/profiles/{{ hermes_instance.name }}
+EnvironmentFile={{ hermes_config_dir }}/profiles/{{ hermes_instance.name }}/.env
 ExecStart={{ hermes_venv_dir }}/bin/hermes gateway run
 Restart=always
 RestartSec=10

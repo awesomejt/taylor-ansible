@@ -7,7 +7,7 @@ usage() {
 Usage: sync-to-ansible.sh [host_or_user@host] [remote_path] [--delete] [--dry-run]
 
 Defaults:
-    host_or_user@host: jason@192.168.50.12
+    host_or_user@host: jason@192.168.50.11
   remote_path: ~/ansible
 
 Path rules:
@@ -16,15 +16,15 @@ Path rules:
   my-folder  -> treated as ~/my-folder
 
 Environment overrides:
-    ANSIBLE_SYNC_HOST  (default: 192.168.50.12)
+    ANSIBLE_SYNC_HOST  (default: 192.168.50.11)
     ANSIBLE_SYNC_USER  (default: jason)
   ANSIBLE_SYNC_DEST  (default: ~/ansible)
 
 Examples:
-  ./sync-to-ansible.sh jason@192.168.50.12
-  ./sync-to-ansible.sh 192.168.50.12
-  ./sync-to-ansible.sh jason@192.168.50.12 ansible --delete
-  ANSIBLE_SYNC_HOST=192.168.50.12 ./sync-to-ansible.sh
+  ./sync-to-ansible.sh jason@192.168.50.11
+  ./sync-to-ansible.sh 192.168.50.11
+  ./sync-to-ansible.sh jason@192.168.50.11 ansible --delete
+  ANSIBLE_SYNC_HOST=192.168.50.11 ./sync-to-ansible.sh
 
 Git Bash fallback:
   If rsync is missing on Git Bash for Windows, this script falls back to
@@ -220,7 +220,7 @@ sync_with_git_bash_fallback() {
     fi
 }
 
-DEFAULT_HOST="${ANSIBLE_SYNC_HOST:-192.168.50.12}"
+DEFAULT_HOST="${ANSIBLE_SYNC_HOST:-192.168.50.11}"
 DEFAULT_USER="${ANSIBLE_SYNC_USER:-jason}"
 DEFAULT_DEST="${ANSIBLE_SYNC_DEST:-~/ansible}"
 

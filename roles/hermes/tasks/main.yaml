@@ -133,12 +133,19 @@
     cmd: "git config --global user.email {{ hermes_git_user_email | quote }}"
   changed_when: false
 
-- name: Validate hermes_instances is defined and non-empty
+- name: Build effective Hermes profile list
+  ansible.builtin.set_fact:
+    hermes_profiles_effective: "{{ hermes_profiles if (hermes_profiles | default([]) | length > 0) else (hermes_instances | default([])) }}"
+
+- name: Build effective Hermes dashboard profile
+  ansible.builtin.set_fact:
+    hermes_dashboard_profile_effective: "{{ hermes_primary_profile if (hermes_primary_profile | default('') | length > 0) else (hermes_dashboard_instance | default('default')) }}"
+
+- name: Validate Hermes profile list is non-empty
   ansible.builtin.assert:
     that:
-      - hermes_instances is defined
-      - hermes_instances | length > 0
-    fail_msg: "Define at least one entry in hermes_instances in vars/common/vars.yaml"
+      - hermes_profiles_effective | length > 0
+    fail_msg: "Define at least one entry in hermes_profiles (preferred) or hermes_instances (legacy) in vars/common/vars.yaml"
 
 - name: Ensure Hermes install directory exists
   ansible.builtin.file:
@@ -236,19 +243,27 @@
     - hermes
   failed_when: false
 
-# --- Per-instance config, env, and gateway service ---
+# --- Per-profile config, env, and optional gateway service ---
 
-- name: Deploy per-instance Hermes config, env, and gateway service
+- name: Deploy per-profile Hermes config, env, and optional gateway service
   ansible.builtin.include_tasks: instance.yaml
-  loop: "{{ hermes_instances }}"
+  loop: "{{ hermes_profiles_effective }}"
   loop_control:
     loop_var: hermes_instance
     label: "{{ hermes_instance.name }}"
 
+- name: Deploy GitHub credential file for Hermes user
+  ansible.builtin.template:
+    src: netrc.j2
+    dest: "{{ hermes_home_dir }}/.netrc"
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
+    mode: "0600"
+
 - name: Clone AI agent profile repository
   become_user: "{{ hermes_user }}"
   ansible.builtin.git:
-    repo: "https://{{ vault_hermes_gh_token }}@github.com/awesomejt/ai-agents.git"
+    repo: "https://github.com/awesomejt/ai-agents.git"
     dest: "{{ hermes_soul_clone_dir }}"
     version: "{{ hermes_soul_version }}"
     update: true

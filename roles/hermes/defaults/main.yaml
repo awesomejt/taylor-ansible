@@ -32,11 +32,11 @@ hermes_soul_files:
   - src: "main/SOUL.md"
     dest: "{{ hermes_config_dir }}/SOUL.md"
   - src: "main/SOUL.md"
-    dest: "{{ hermes_home_dir }}/.hermes-chat/SOUL.md"
+    dest: "{{ hermes_config_dir }}/profiles/chat/SOUL.md"
   - src: "researcher/SOUL.md"
-    dest: "{{ hermes_home_dir }}/.hermes-research/SOUL.md"
+    dest: "{{ hermes_config_dir }}/profiles/research/SOUL.md"
   - src: "coder/SOUL.md"
-    dest: "{{ hermes_home_dir }}/.hermes-coding/SOUL.md"
+    dest: "{{ hermes_config_dir }}/profiles/coding/SOUL.md"
 
 # Hermes package install extras.
 # Use the smallest set needed for the dashboard and Discord gateway.
@@ -44,15 +44,21 @@ hermes_soul_files:
 # build tooling (python-olm/libolm).
 hermes_python_extras: "web,messaging"
 
-# Multi-instance Hermes deployment.
-# Each instance gets its own HERMES_HOME, gateway service, and cron scheduler.
-# Override hermes_instances in vars/common/vars.yaml with the real instance list.
+# Hermes profile deployment model.
+# Preferred: define hermes_profiles (profile-centric schema).
+# Backward-compatible fallback: hermes_instances (legacy schema).
+# Each profile can independently enable/disable its gateway process.
+hermes_primary_profile: "default"
 hermes_dashboard_instance: "default"
+hermes_profiles: []
+
+# Legacy schema — only used if hermes_profiles is empty. Kept as a last-resort default.
 hermes_instances:
   - name: default
     provider: "custom"
     base_url: "http://127.0.0.1:11434/v1"
     model: "llama3.1:latest"
+    gateway_enabled: true
     discord_enabled: false
     discord_require_mention: true
     discord_home_channel: ""

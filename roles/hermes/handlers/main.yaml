@@ -4,9 +4,10 @@
     name: "hermes-gateway-{{ item.name }}"
     state: restarted
     daemon_reload: true
-  loop: "{{ hermes_instances }}"
+  loop: "{{ hermes_profiles_effective | default(hermes_instances | default([])) }}"
   loop_control:
     label: "{{ item.name }}"
+  when: item.gateway_enabled | default(true) | bool
 
 - name: Restart hermes dashboard service
   ansible.builtin.systemd:

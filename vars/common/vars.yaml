@@ -153,15 +153,20 @@ hermes_cifs_shares:
     src: "//192.168.50.10/Recordings"
     opts: "credentials={{ hermes_cifs_credentials_file }},uid={{ hermes_user }},gid={{ hermes_group }},iocharset=utf8,vers=3.1.1,_netdev,nofail,x-systemd.automount,ro"
 
-# Concurrent Hermes instances — each runs its own gateway service and cron scheduler.
-# The dashboard connects to hermes_dashboard_instance (the chat instance).
-# Each instance has its own Discord bot; tokens live in vars/common/secrets.yaml.
+# Profile-first Hermes deployment.
+# Single-bot-first approach: only primary ingress profile runs gateway + Discord.
+# Worker profiles stay available for Kanban/task delegation with isolated state.
+hermes_primary_profile: "chat"
 hermes_dashboard_instance: "chat"
-hermes_instances:
+hermes_profiles:
   - name: chat
+    gateway_enabled: true
     provider: "custom"
     base_url: "{{ hermes_omlx_base_url }}"
     model: "gpt-oss-20b-MXFP4-Q8"
+    cli_toolsets:
+      - "hermes-cli"
+      - "kanban-orchestrator"
     discord_enabled: true
     discord_require_mention: true
     discord_home_channel: "1501437705236643902"
@@ -174,12 +179,16 @@ hermes_instances:
       - provider: "openrouter"
         model: "anthropic/claude-opus-4.6"
   - name: research
+    gateway_enabled: false
     provider: "custom"
     base_url: "{{ hermes_omlx_base_url }}"
     model: "gpt-oss-20b-MXFP4-Q8"
-    discord_enabled: true
+    cli_toolsets:
+      - "hermes-cli"
+      - "kanban-worker"
+    discord_enabled: false
     discord_require_mention: true
-    discord_home_channel: "1501437705236643902"
+    discord_home_channel: ""
     fallback_providers:
       - provider: "custom"
         base_url: "{{ hermes_ollama_base_url }}"
@@ -189,12 +198,16 @@ hermes_instances:
       - provider: "openrouter"
         model: "anthropic/claude-opus-4.6"
   - name: coding
+    gateway_enabled: false
     provider: "custom"
     base_url: "{{ hermes_omlx_base_url }}"
     model: "Qwen3.6-35B-A3B-4bit"
-    discord_enabled: true
+    cli_toolsets:
+      - "hermes-cli"
+      - "kanban-worker"
+    discord_enabled: false
     discord_require_mention: true
-    discord_home_channel: "1501437705236643902"
+    discord_home_channel: ""
     fallback_providers:
       - provider: "custom"
         base_url: "{{ hermes_ollama_base_url }}"
@@ -204,15 +217,16 @@ hermes_instances:
       - provider: "openrouter"
         model: "anthropic/claude-opus-4.6"
   - name: admin
+    gateway_enabled: false
     provider: "custom"
     base_url: "{{ hermes_omlx_base_url }}"
     model: "gpt-oss-20b-MXFP4-Q8"
     cli_toolsets:
       - "hermes-cli"
       - "kanban-orchestrator"
-    discord_enabled: true
+    discord_enabled: false
     discord_require_mention: false
-    discord_home_channel: "1501464029221093477"
+    discord_home_channel: ""
     fallback_providers:
       - provider: "custom"
         base_url: "{{ hermes_ollama_base_url }}"
@@ -222,12 +236,16 @@ hermes_instances:
       - provider: "openrouter"
         model: "anthropic/claude-opus-4.6"
   - name: jessica
+    gateway_enabled: false
     provider: "custom"
     base_url: "{{ hermes_omlx_base_url }}"
     model: "gpt-oss-20b-MXFP4-Q8"
-    discord_enabled: true
+    cli_toolsets:
+      - "hermes-cli"
+      - "kanban-worker"
+    discord_enabled: false
     discord_require_mention: false
-    discord_home_channel: "1501437705236643902"
+    discord_home_channel: ""
     fallback_providers:
       - provider: "custom"
         base_url: "{{ hermes_ollama_base_url }}"
@@ -245,8 +263,8 @@ hermes_telegram_enabled: false
 hermes_telegram_allowed_users: []
 hermes_telegram_home_channel: ""
 
-# Shared Discord settings — apply to all Discord-enabled Hermes instances.
-# Per-instance bot tokens/home-channel/mention-mode are in secrets.yaml and instance definitions above.
+# Shared Discord settings — apply to all Discord-enabled gateway profiles.
+# Per-profile bot tokens/home-channel/mention-mode are in secrets.yaml and profile definitions above.
 hermes_discord_allowed_users:
   - "822273647568879674"
   - "808734001204035615"
@@ -281,9 +299,8 @@ hermes_nginx_auth_user: "admin"
 # vault_hermes_gh_token                — GitHub PAT for cloning private ai-agents repo
 # vault_hermes_openrouter_api_key      — optional fallback provider key
 # vault_hermes_dashboard_password      — REQUIRED if hermes_nginx_auth_enable: true
-# vault_hermes_telegram_bot_token      — if any instance has telegram_enabled: true
-# vault_hermes_discord_tokens.chat     — Discord bot token for the chat instance
-# vault_hermes_discord_tokens.research — Discord bot token for the research instance
-# vault_hermes_discord_tokens.coding   — Discord bot token for the coding instance
-# vault_hermes_slack_bot_token         — if any instance has slack_enabled: true
-# vault_hermes_slack_app_token         — if any instance has slack_enabled: true
+# vault_hermes_telegram_bot_token      — if any profile enables telegram
+# vault_hermes_discord_tokens.chat     — Discord bot token for chat ingress profile
+# vault_hermes_discord_tokens.<name>   — optional token for future gateway-enabled profile bots
+# vault_hermes_slack_bot_token         — if any profile enables slack
+# vault_hermes_slack_app_token         — if any profile enables slack

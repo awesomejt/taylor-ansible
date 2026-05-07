@@ -1,7 +1,7 @@
 ---
-- name: "[{{ hermes_instance.name }}] Ensure Hermes instance config directory exists"
+- name: "[{{ hermes_instance.name }}] Ensure Hermes profile home directory exists"
   ansible.builtin.file:
-    path: "{{ hermes_home_dir }}/.hermes-{{ hermes_instance.name }}"
+    path: "{{ hermes_config_dir }}/profiles/{{ hermes_instance.name }}"
     state: directory
     owner: "{{ hermes_user }}"
     group: "{{ hermes_group }}"
@@ -18,7 +18,7 @@
 - name: "[{{ hermes_instance.name }}] Share Hermes auth files from default profile"
   ansible.builtin.file:
     src: "{{ hermes_shared_auth_source_dir }}/{{ item.item }}"
-    dest: "{{ hermes_home_dir }}/.hermes-{{ hermes_instance.name }}/{{ item.item }}"
+    dest: "{{ hermes_config_dir }}/profiles/{{ hermes_instance.name }}/{{ item.item }}"
     state: link
     force: true
     owner: "{{ hermes_user }}"
@@ -26,13 +26,13 @@
   loop: "{{ hermes_shared_auth_files.results }}"
   when:
     - hermes_shared_auth_source_dir | default('') | length > 0
-    - hermes_shared_auth_source_dir != (hermes_home_dir ~ '/.hermes-' ~ hermes_instance.name)
+    - hermes_shared_auth_source_dir != (hermes_config_dir ~ '/profiles/' ~ hermes_instance.name)
     - item.stat.exists
 
 - name: "[{{ hermes_instance.name }}] Deploy Hermes config.yaml"
   ansible.builtin.template:
     src: hermes-config.yaml.j2
-    dest: "{{ hermes_home_dir }}/.hermes-{{ hermes_instance.name }}/config.yaml"
+    dest: "{{ hermes_config_dir }}/profiles/{{ hermes_instance.name }}/config.yaml"
     owner: "{{ hermes_user }}"
     group: "{{ hermes_group }}"
     mode: "0600"
@@ -43,7 +43,7 @@
 - name: "[{{ hermes_instance.name }}] Deploy Hermes .env file"
   ansible.builtin.template:
     src: hermes.env.j2
-    dest: "{{ hermes_home_dir }}/.hermes-{{ hermes_instance.name }}/.env"
+    dest: "{{ hermes_config_dir }}/profiles/{{ hermes_instance.name }}/.env"
     owner: "{{ hermes_user }}"
     group: "{{ hermes_group }}"
     mode: "0600"
@@ -57,6 +57,7 @@
     group: root
     mode: "0644"
   notify: Restart all hermes gateway services
+  when: hermes_instance.gateway_enabled | default(true) | bool
 
 - name: "[{{ hermes_instance.name }}] Ensure gateway service is enabled and running"
   ansible.builtin.systemd:
@@ -64,3 +65,4 @@
     enabled: true
     state: started
     daemon_reload: true
+  when: hermes_instance.gateway_enabled | default(true) | bool

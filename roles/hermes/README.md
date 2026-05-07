@@ -2,7 +2,7 @@
 
 This role bootstraps and deploys Hermes Agent with a Discord-enabled gateway and a web dashboard.
 
-Current scope (main profile):
+Current scope (profile-first with legacy compatibility):
 
 - Install Python runtime, uv, Node.js, GitHub CLI, and base packages
 - Create hermes system user with sudo access and managed git identity
@@ -12,9 +12,10 @@ Current scope (main profile):
 - Configure Discord gateway environment settings
 - Configure CIFS automount shares for Hermes content
 - Install and manage systemd services:
-	- `hermes-gateway-<instance>` (Discord/messaging gateway per instance)
+	- `hermes-gateway-<profile>` for profiles where `gateway_enabled: true`
 	- `hermes-dashboard` (web dashboard)
-- Ensure both services are enabled at boot and running
+- Ensure enabled services are running
+- Support both `hermes_profiles` (preferred) and legacy `hermes_instances` fallback
 
 ## Files
 
@@ -35,14 +36,16 @@ Key overridable variables:
 - `hermes_install_uv` (default: `true`)
 - `hermes_user` / `hermes_group` (default: `hermes`)
 - `hermes_sudo_nopasswd` (default: `true`)
-- `hermes_instances` / `hermes_dashboard_instance` (instance-based model config)
+- `hermes_profiles` (preferred profile-centric schema)
+- `hermes_instances` (legacy fallback schema)
+- `hermes_primary_profile` / `hermes_dashboard_instance` (dashboard target)
 - `hermes_discord_allowed_users`
 - `hermes_dashboard_host` / `hermes_dashboard_port`
 - `hermes_git_user_name` / `hermes_git_user_email`
 - `hermes_soul_repo` / `hermes_soul_files`
 - `hermes_cifs_shares`
 - `hermes_omlx_base_url` / `hermes_omlx_api_key` (legacy fallback; prefer vault secret)
-- `hermes_shared_auth_source_dir` (default: `/home/hermes/.hermes`, shared across instance homes)
+- `hermes_shared_auth_source_dir` (default: `/home/hermes/.hermes`, shared across profile homes)
 
 ## Secrets
 
@@ -54,4 +57,4 @@ Primary keys for this role:
 
 - `vault_hermes_openrouter_api_key` (optional fallback provider key)
 - `vault_hermes_omlx_api_key` (API key for OpenAI-compatible custom endpoints such as oMLX)
-- `vault_hermes_discord_tokens` (required for Discord-enabled instances)
+- `vault_hermes_discord_tokens` (required only for Discord-enabled gateway profiles)
