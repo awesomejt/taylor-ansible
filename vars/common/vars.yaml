@@ -136,8 +136,13 @@ hermes_python_extras: "web,messaging"
 hermes_api_timeout_seconds: 45
 hermes_api_stale_timeout_seconds: 60
 hermes_api_max_retries: 1
-hermes_omlx_base_url: "http://192.168.50.93:8000/v1"
-hermes_ollama_base_url: "http://192.168.50.94:11434/v1"
+# oMLX servers (OpenAI-compatible). MacBook Pro = primary, Mac Mini = hot standby.
+hermes_omlx_macbook_url: "http://192.168.50.93:8000/v1"
+hermes_omlx_macmini_url: "http://192.168.50.94:8000/v1"
+# Convenience alias for primary server (used in profile base_url).
+hermes_omlx_base_url: "{{ hermes_omlx_macbook_url }}"
+# Legacy Ollama alias retained for any non-hermes playbooks that still reference it.
+hermes_ollama_base_url: "{{ hermes_omlx_macmini_url }}"
 # Legacy fallback only; store the real key in vault_hermes_omlx_api_key.
 hermes_omlx_api_key: "example"
 
@@ -162,7 +167,7 @@ hermes_profiles:
   - name: chat
     gateway_enabled: true
     provider: "custom"
-    base_url: "{{ hermes_omlx_base_url }}"
+    base_url: "{{ hermes_omlx_macbook_url }}"
     model: "gpt-oss-20b-MXFP4-Q8"
     cli_toolsets:
       - "hermes-cli"
@@ -172,8 +177,8 @@ hermes_profiles:
     discord_home_channel: "1501437705236643902"
     fallback_providers:
       - provider: "custom"
-        base_url: "{{ hermes_ollama_base_url }}"
-        model: "gpt-oss:latest"
+        base_url: "{{ hermes_omlx_macmini_url }}"
+        model: "gpt-oss-20b-MLX-8bit"
       - provider: "openai"
         model: "gpt-5.4-mini"
       - provider: "openrouter"
@@ -181,8 +186,8 @@ hermes_profiles:
   - name: research
     gateway_enabled: false
     provider: "custom"
-    base_url: "{{ hermes_omlx_base_url }}"
-    model: "gpt-oss-20b-MXFP4-Q8"
+    base_url: "{{ hermes_omlx_macbook_url }}"
+    model: "Qwen3.5-27B-Claude-4.6-Opus-Distilled-MLX-6bit"
     cli_toolsets:
       - "hermes-cli"
       - "kanban-worker"
@@ -191,8 +196,8 @@ hermes_profiles:
     discord_home_channel: ""
     fallback_providers:
       - provider: "custom"
-        base_url: "{{ hermes_ollama_base_url }}"
-        model: "gpt-oss:latest"
+        base_url: "{{ hermes_omlx_macmini_url }}"
+        model: "Qwen3.6-27B-6bit"
       - provider: "openai"
         model: "gpt-5.5"
       - provider: "openrouter"
@@ -200,8 +205,8 @@ hermes_profiles:
   - name: coding
     gateway_enabled: false
     provider: "custom"
-    base_url: "{{ hermes_omlx_base_url }}"
-    model: "Qwen3.6-35B-A3B-4bit"
+    base_url: "{{ hermes_omlx_macbook_url }}"
+    model: "Qwen3.6-35B-A3B-6bit"
     cli_toolsets:
       - "hermes-cli"
       - "kanban-worker"
@@ -210,8 +215,8 @@ hermes_profiles:
     discord_home_channel: ""
     fallback_providers:
       - provider: "custom"
-        base_url: "{{ hermes_ollama_base_url }}"
-        model: "qwen3-coder:latest"
+        base_url: "{{ hermes_omlx_macmini_url }}"
+        model: "Qwen3.6-35B-A3B-6bit"
       - provider: "openai"
         model: "gpt-5.3-codex"
       - provider: "openrouter"
@@ -219,7 +224,7 @@ hermes_profiles:
   - name: admin
     gateway_enabled: false
     provider: "custom"
-    base_url: "{{ hermes_omlx_base_url }}"
+    base_url: "{{ hermes_omlx_macbook_url }}"
     model: "gpt-oss-20b-MXFP4-Q8"
     cli_toolsets:
       - "hermes-cli"
@@ -229,8 +234,8 @@ hermes_profiles:
     discord_home_channel: ""
     fallback_providers:
       - provider: "custom"
-        base_url: "{{ hermes_ollama_base_url }}"
-        model: "gpt-oss:latest"
+        base_url: "{{ hermes_omlx_macmini_url }}"
+        model: "gpt-oss-20b-MLX-8bit"
       - provider: "openai"
         model: "gpt-5.4-mini"
       - provider: "openrouter"
@@ -238,8 +243,8 @@ hermes_profiles:
   - name: jessica
     gateway_enabled: false
     provider: "custom"
-    base_url: "{{ hermes_omlx_base_url }}"
-    model: "gpt-oss-20b-MXFP4-Q8"
+    base_url: "{{ hermes_omlx_macbook_url }}"
+    model: "Qwen3.5-27B-Claude-4.6-Opus-Distilled-MLX-6bit"
     cli_toolsets:
       - "hermes-cli"
       - "kanban-worker"
@@ -248,8 +253,8 @@ hermes_profiles:
     discord_home_channel: ""
     fallback_providers:
       - provider: "custom"
-        base_url: "{{ hermes_ollama_base_url }}"
-        model: "gpt-oss:latest"
+        base_url: "{{ hermes_omlx_macmini_url }}"
+        model: "gemma-4-26b-a4b-it-6bit"
       - provider: "openai"
         model: "gpt-5.5"
       - provider: "openrouter"

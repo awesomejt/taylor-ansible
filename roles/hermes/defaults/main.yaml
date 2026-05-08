@@ -97,6 +97,10 @@ hermes_nginx_auth_enable: false
 hermes_nginx_auth_user: "admin"
 hermes_nginx_htpasswd_file: "/etc/nginx/hermes.htpasswd"
 
+# oMLX server availability monitor.
+# Polls both oMLX endpoints every 5 minutes and sends a Discord webhook alert on state transitions.
+hermes_omlx_monitor_enable: true
+
 # CIFS mounts for shared Hermes content.
 hermes_cifs_credentials_file: "/etc/samba/credentials/nas"
 hermes_cifs_shares:
