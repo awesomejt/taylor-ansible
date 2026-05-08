@@ -419,3 +419,15 @@
       >> /var/log/hermes-monitor.log 2>&1
     user: root
     state: "{{ 'present' if hermes_omlx_monitor_enable | default(true) | bool else 'absent' }}"
+
+- name: Install oMLX monitor daily heartbeat cron job
+  ansible.builtin.cron:
+    name: "oMLX server daily heartbeat"
+    minute: "{{ hermes_omlx_monitor_heartbeat_minute }}"
+    hour: "{{ hermes_omlx_monitor_heartbeat_hour }}"
+    job: >-
+      . /etc/hermes/omlx-monitor.env && /usr/local/bin/omlx-monitor.sh --heartbeat
+      >> /var/log/hermes-monitor.log 2>&1
+    user: root
+    state: "{{ 'present' if hermes_omlx_monitor_enable | default(true) | bool else 'absent' }}"
+  when: hermes_omlx_monitor_heartbeat_enable | bool

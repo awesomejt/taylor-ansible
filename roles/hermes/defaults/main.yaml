@@ -100,6 +100,9 @@ hermes_nginx_htpasswd_file: "/etc/nginx/hermes.htpasswd"
 # oMLX server availability monitor.
 # Polls both oMLX endpoints every 5 minutes and sends a Discord webhook alert on state transitions.
 hermes_omlx_monitor_enable: true
+hermes_omlx_monitor_heartbeat_enable: true
+hermes_omlx_monitor_heartbeat_hour: "09"
+hermes_omlx_monitor_heartbeat_minute: "00"
 
 # CIFS mounts for shared Hermes content.
 hermes_cifs_credentials_file: "/etc/samba/credentials/nas"

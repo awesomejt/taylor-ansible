@@ -8,6 +8,17 @@
 
 set -euo pipefail
 
+MODE="${1:-}"
+if [[ -n "$MODE" && "$MODE" != "--heartbeat" ]]; then
+  echo "Usage: $0 [--heartbeat]" >&2
+  exit 2
+fi
+
+HEARTBEAT_MODE=false
+if [[ "$MODE" == "--heartbeat" ]]; then
+  HEARTBEAT_MODE=true
+fi
+
 SERVERS=(
   "macbook:http://192.168.50.93:8000"
   "macmini:http://192.168.50.94:8000"
@@ -21,7 +32,7 @@ TIMEOUT=5  # seconds per curl attempt
 mkdir -p "$STATE_DIR"
 
 log() {
-  echo "[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] $*" | tee -a "$LOG_FILE"
+  echo "[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] $*" >> "$LOG_FILE"
 }
 
 send_alert() {
@@ -53,6 +64,36 @@ send_alert() {
     -d "$payload" >/dev/null || log "WARNING: webhook POST failed"
 }
 
+send_heartbeat() {
+  local summary="$1" down_count="$2" color title
+
+  if [[ "$down_count" -eq 0 ]]; then
+    color=3066993
+    title=":heartbeat: oMLX Daily Heartbeat (all healthy)"
+  else
+    color=15158332
+    title=":warning: oMLX Daily Heartbeat (${down_count} down)"
+  fi
+
+  log "HEARTBEAT: daily summary generated (down=$down_count)"
+
+  if [[ -z "$WEBHOOK_URL" ]]; then
+    log "WARNING: HERMES_OMLX_MONITOR_WEBHOOK not set — cannot send Discord heartbeat"
+    return
+  fi
+
+  local payload
+  payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d}]}' \
+    "$title" "$summary" "$color")
+
+  curl -sf -X POST "$WEBHOOK_URL" \
+    -H "Content-Type: application/json" \
+    -d "$payload" >/dev/null || log "WARNING: webhook POST failed for heartbeat"
+}
+
+heartbeat_summary=""
+heartbeat_down_count=0
+
 for entry in "${SERVERS[@]}"; do
   name="${entry%%:*}"
   base_url="${entry#*:}"
@@ -75,9 +116,20 @@ for entry in "${SERVERS[@]}"; do
   # Write current state regardless (creates file on first run)
   echo -n "$cur_status" > "$state_file"
 
-  if [[ "$cur_status" != "$prev_status" ]]; then
+  if [[ "$cur_status" == "up" ]]; then
+    heartbeat_summary+="- ${name}: UP\\n"
+  else
+    heartbeat_summary+="- ${name}: DOWN\\n"
+    heartbeat_down_count=$((heartbeat_down_count + 1))
+  fi
+
+  if [[ "$HEARTBEAT_MODE" == "false" && "$cur_status" != "$prev_status" ]]; then
     send_alert "$name" "$cur_status" "$prev_status"
   else
     log "OK: $name is $cur_status (no change)"
   fi
 done
+
+if [[ "$HEARTBEAT_MODE" == "true" ]]; then
+  send_heartbeat "$heartbeat_summary" "$heartbeat_down_count"
+fi
