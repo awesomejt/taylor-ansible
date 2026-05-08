@@ -66,3 +66,32 @@
     state: started
     daemon_reload: true
   when: hermes_instance.gateway_enabled | default(true) | bool
+
+- name: "[{{ hermes_instance.name }}] Ensure gateway service is stopped and disabled when not enabled"
+  ansible.builtin.systemd:
+    name: "hermes-gateway-{{ hermes_instance.name }}"
+    enabled: false
+    state: stopped
+  failed_when: false
+  when: not (hermes_instance.gateway_enabled | default(true) | bool)
+
+- name: "[{{ hermes_instance.name }}] Remove gateway systemd unit when not enabled"
+  ansible.builtin.file:
+    path: "/etc/systemd/system/hermes-gateway-{{ hermes_instance.name }}.service"
+    state: absent
+  register: hermes_gateway_unit_removed
+  when: not (hermes_instance.gateway_enabled | default(true) | bool)
+
+- name: "[{{ hermes_instance.name }}] Reload systemd after removing gateway unit"
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when:
+    - not (hermes_instance.gateway_enabled | default(true) | bool)
+    - hermes_gateway_unit_removed is defined
+    - hermes_gateway_unit_removed.changed
+
+- name: "[{{ hermes_instance.name }}] Clear stale failed state for removed gateway unit"
+  ansible.builtin.command: "systemctl reset-failed hermes-gateway-{{ hermes_instance.name }}.service"
+  changed_when: false
+  failed_when: false
+  when: not (hermes_instance.gateway_enabled | default(true) | bool)

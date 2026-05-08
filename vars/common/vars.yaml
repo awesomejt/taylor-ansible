@@ -174,7 +174,7 @@ hermes_profiles:
       - "kanban-orchestrator"
     discord_enabled: true
     discord_require_mention: true
-    discord_home_channel: "1501437705236643902"
+    discord_home_channel: "1500086740352766063"
     fallback_providers:
       - provider: "custom"
         base_url: "{{ hermes_omlx_macmini_url }}"
@@ -241,16 +241,16 @@ hermes_profiles:
       - provider: "openrouter"
         model: "anthropic/claude-opus-4.6"
   - name: jessica
-    gateway_enabled: false
+    gateway_enabled: true
     provider: "custom"
     base_url: "{{ hermes_omlx_macbook_url }}"
     model: "Qwen3.5-27B-Claude-4.6-Opus-Distilled-MLX-6bit"
     cli_toolsets:
       - "hermes-cli"
       - "kanban-worker"
-    discord_enabled: false
-    discord_require_mention: false
-    discord_home_channel: ""
+    discord_enabled: true
+    discord_require_mention: true
+    discord_home_channel: "1501437705236643902"
     fallback_providers:
       - provider: "custom"
         base_url: "{{ hermes_omlx_macmini_url }}"
