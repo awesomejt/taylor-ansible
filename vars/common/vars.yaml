@@ -66,7 +66,7 @@ openwebui_qdrant_port: 6333
 openwebui_qdrant_grpc_port: 6334
 openwebui_ollama_port: 11434
 
-openwebui_image: ghcr.io/open-webui/open-webui:main
+openwebui_image: ghcr.io/open-webui/open-webui:v0.9.5
 openwebui_container_name: ai-stack-open-webui
 openwebui_litellm_image: ghcr.io/berriai/litellm:main-stable
 openwebui_litellm_container_name: ai-stack-litellm
@@ -80,6 +80,18 @@ openwebui_litellm_omlx_secondary_model_name: "omlx-secondary"
 openwebui_litellm_omlx_secondary_model: "gpt-oss-20b-MLX-8bit"
 openwebui_litellm_omlx_secondary_base_url: "{{ hermes_omlx_macmini_url | default('http://192.168.50.94:8000/v1') }}"
 openwebui_litellm_omlx_api_key: "{{ vault_openwebui_omlx_api_key | default(vault_hermes_omlx_api_key | default('example')) }}"
+openwebui_litellm_omlx_primary_chat_model: "Qwen3.6-27B-6bit"
+openwebui_litellm_omlx_primary_coding_model: "Qwen3.5-27B-Claude-4.6-Opus-Distilled-MLX-6bit"
+openwebui_litellm_omlx_primary_thinking_model: "gpt-oss-20b-MXFP4-Q8"
+openwebui_litellm_omlx_secondary_chat_model: "Qwen3.6-27B-6bit"
+openwebui_litellm_omlx_secondary_coding_model: "Qwen3.6-35B-A3B-6bit"
+openwebui_litellm_omlx_secondary_thinking_model: "gpt-oss-20b-MLX-8bit"
+openwebui_litellm_ollama_chat_model: "llama3.1:latest"
+openwebui_litellm_ollama_coding_model: "qwen2.5-coder:latest"
+openwebui_litellm_ollama_thinking_model: "ministral-3:latest"
+openwebui_litellm_alias_chat: "use-chat"
+openwebui_litellm_alias_coding: "use-coding"
+openwebui_litellm_alias_thinking: "use-thinking"
 openwebui_ollama_image: ollama/ollama:latest
 openwebui_ollama_container_name: ai-stack-ollama
 openwebui_searxng_image: ghcr.io/searxng/searxng:latest

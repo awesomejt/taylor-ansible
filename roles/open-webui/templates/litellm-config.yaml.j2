@@ -12,8 +12,147 @@ router_settings:
     - "{{ openwebui_litellm_model_name }}":
         - "{{ openwebui_litellm_omlx_primary_model_name }}"
         - "{{ openwebui_litellm_omlx_secondary_model_name }}"
+    - "{{ openwebui_litellm_alias_chat }}":
+        - "omlx-secondary-chat"
+        - "ollama-chat"
+    - "{{ openwebui_litellm_alias_coding }}":
+        - "omlx-secondary-coding"
+        - "ollama-coding"
+    - "{{ openwebui_litellm_alias_thinking }}":
+        - "omlx-secondary-thinking"
+        - "ollama-thinking"
 
 model_list:
+  - model_name: "{{ openwebui_litellm_alias_chat }}"
+    litellm_params:
+      model: "openai/{{ openwebui_litellm_omlx_primary_chat_model }}"
+      api_base: "{{ openwebui_litellm_omlx_primary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "{{ openwebui_litellm_alias_coding }}"
+    litellm_params:
+      model: "openai/{{ openwebui_litellm_omlx_primary_coding_model }}"
+      api_base: "{{ openwebui_litellm_omlx_primary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "{{ openwebui_litellm_alias_thinking }}"
+    litellm_params:
+      model: "openai/{{ openwebui_litellm_omlx_primary_thinking_model }}"
+      api_base: "{{ openwebui_litellm_omlx_primary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "omlx-primary-chat"
+    litellm_params:
+      model: "openai/{{ openwebui_litellm_omlx_primary_chat_model }}"
+      api_base: "{{ openwebui_litellm_omlx_primary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "omlx-primary-coding"
+    litellm_params:
+      model: "openai/{{ openwebui_litellm_omlx_primary_coding_model }}"
+      api_base: "{{ openwebui_litellm_omlx_primary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "omlx-primary-thinking"
+    litellm_params:
+      model: "openai/{{ openwebui_litellm_omlx_primary_thinking_model }}"
+      api_base: "{{ openwebui_litellm_omlx_primary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "omlx-secondary-chat"
+    litellm_params:
+      model: "openai/{{ openwebui_litellm_omlx_secondary_chat_model }}"
+      api_base: "{{ openwebui_litellm_omlx_secondary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "omlx-secondary-coding"
+    litellm_params:
+      model: "openai/{{ openwebui_litellm_omlx_secondary_coding_model }}"
+      api_base: "{{ openwebui_litellm_omlx_secondary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "omlx-secondary-thinking"
+    litellm_params:
+      model: "openai/{{ openwebui_litellm_omlx_secondary_thinking_model }}"
+      api_base: "{{ openwebui_litellm_omlx_secondary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "ollama-chat"
+    litellm_params:
+      model: "ollama/{{ openwebui_litellm_ollama_chat_model }}"
+      api_base: "{{ openwebui_litellm_ollama_base_url }}"
+      api_key: "none"
+  - model_name: "ollama-coding"
+    litellm_params:
+      model: "ollama/{{ openwebui_litellm_ollama_coding_model }}"
+      api_base: "{{ openwebui_litellm_ollama_base_url }}"
+      api_key: "none"
+  - model_name: "ollama-thinking"
+    litellm_params:
+      model: "ollama/{{ openwebui_litellm_ollama_thinking_model }}"
+      api_base: "{{ openwebui_litellm_ollama_base_url }}"
+      api_key: "none"
+  - model_name: "omlx-primary-gpt-oss-20b"
+    litellm_params:
+      model: "openai/gpt-oss-20b-MXFP4-Q8"
+      api_base: "{{ openwebui_litellm_omlx_primary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "omlx-primary-qwen3-6-27b"
+    litellm_params:
+      model: "openai/Qwen3.6-27B-6bit"
+      api_base: "{{ openwebui_litellm_omlx_primary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "omlx-primary-qwen3-6-35b"
+    litellm_params:
+      model: "openai/Qwen3.6-35B-A3B-6bit"
+      api_base: "{{ openwebui_litellm_omlx_primary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "omlx-primary-gemma4-31b"
+    litellm_params:
+      model: "openai/gemma-4-31b-it-6bit"
+      api_base: "{{ openwebui_litellm_omlx_primary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "omlx-primary-glm-4-7-flash"
+    litellm_params:
+      model: "openai/GLM-4.7-Flash-MLX-6bit"
+      api_base: "{{ openwebui_litellm_omlx_primary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "omlx-primary-qwen3-5-opus-distilled"
+    litellm_params:
+      model: "openai/Qwen3.5-27B-Claude-4.6-Opus-Distilled-MLX-6bit"
+      api_base: "{{ openwebui_litellm_omlx_primary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "omlx-secondary-gpt-oss-20b"
+    litellm_params:
+      model: "openai/gpt-oss-20b-MLX-8bit"
+      api_base: "{{ openwebui_litellm_omlx_secondary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "omlx-secondary-qwen3-6-27b"
+    litellm_params:
+      model: "openai/Qwen3.6-27B-6bit"
+      api_base: "{{ openwebui_litellm_omlx_secondary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "omlx-secondary-qwen3-6-35b"
+    litellm_params:
+      model: "openai/Qwen3.6-35B-A3B-6bit"
+      api_base: "{{ openwebui_litellm_omlx_secondary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "omlx-secondary-gemma4-26b"
+    litellm_params:
+      model: "openai/gemma-4-26b-a4b-it-6bit"
+      api_base: "{{ openwebui_litellm_omlx_secondary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "ollama-llama3-2"
+    litellm_params:
+      model: "ollama/llama3.2:latest"
+      api_base: "{{ openwebui_litellm_ollama_base_url }}"
+      api_key: "none"
+  - model_name: "ollama-llama3-1"
+    litellm_params:
+      model: "ollama/llama3.1:latest"
+      api_base: "{{ openwebui_litellm_ollama_base_url }}"
+      api_key: "none"
+  - model_name: "ollama-ministral-3"
+    litellm_params:
+      model: "ollama/ministral-3:latest"
+      api_base: "{{ openwebui_litellm_ollama_base_url }}"
+      api_key: "none"
+  - model_name: "ollama-qwen2-5-coder"
+    litellm_params:
+      model: "ollama/qwen2.5-coder:latest"
+      api_base: "{{ openwebui_litellm_ollama_base_url }}"
+      api_key: "none"
   - model_name: "{{ openwebui_litellm_model_name }}"
     litellm_params:
       model: "ollama/{{ openwebui_litellm_ollama_model }}"

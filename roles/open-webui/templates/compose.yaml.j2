@@ -124,6 +124,7 @@ services:
       WEBUI_URL: "{{ openwebui_webui_base_url }}"
       OPENAI_API_BASE_URL: "{{ openwebui_openai_base_url }}"
       OPENAI_API_KEY: "{{ openwebui_openai_api_key }}"
+      OLLAMA_BASE_URL: "http://{{ openwebui_ollama_container_name }}:{{ openwebui_ollama_port }}"
       ENABLE_WEB_SEARCH: "true"
       WEB_SEARCH_ENGINE: searxng
       SEARXNG_QUERY_URL: "{{ openwebui_searxng_query_url }}"
