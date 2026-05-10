@@ -1,49 +1,147 @@
 services:
+  ollama:
+    image: {{ openwebui_ollama_image }}
+    container_name: {{ openwebui_ollama_container_name }}
+    restart: unless-stopped
+    ports:
+      - "{{ openwebui_ollama_port }}:11434"
+    volumes:
+      - {{ openwebui_ollama_dir }}:/root/.ollama
+    environment:
+      OLLAMA_HOST: "0.0.0.0:11434"
+    pull_policy: always
+
+  valkey:
+    image: {{ openwebui_valkey_image }}
+    container_name: {{ openwebui_valkey_container_name }}
+    restart: unless-stopped
+    command:
+      - valkey-server
+      - --appendonly
+      - "yes"
+    volumes:
+      - {{ openwebui_searxng_dir }}/valkey:/data
+    pull_policy: always
+
+  qdrant:
+    image: {{ openwebui_qdrant_image }}
+    container_name: {{ openwebui_qdrant_container_name }}
+    restart: unless-stopped
+    ports:
+      - "{{ openwebui_qdrant_port }}:6333"
+      - "{{ openwebui_qdrant_grpc_port }}:6334"
+    volumes:
+      - {{ openwebui_qdrant_storage_dir }}:/qdrant/storage
+    pull_policy: always
+
+  litellm:
+    image: {{ openwebui_litellm_image }}
+    container_name: {{ openwebui_litellm_container_name }}
+    restart: unless-stopped
+    depends_on:
+      - ollama
+    ports:
+      - "{{ openwebui_litellm_port }}:4000"
+    volumes:
+      - {{ openwebui_litellm_config_path }}:/app/config.yaml:ro
+    environment:
+      CONFIG_FILE_PATH: /app/config.yaml
+      LITELLM_MASTER_KEY: "{{ openwebui_litellm_master_key }}"
+    pull_policy: always
+
+  searxng:
+    image: {{ openwebui_searxng_image }}
+    container_name: {{ openwebui_searxng_container_name }}
+    restart: unless-stopped
+    depends_on:
+      - valkey
+    ports:
+      - "{{ openwebui_searxng_port }}:8080"
+    volumes:
+      - {{ openwebui_searxng_config_path }}:/etc/searxng/settings.yml:ro
+      - {{ openwebui_searxng_dir }}/cache:/var/cache/searxng
+    environment:
+      SEARXNG_SETTINGS_PATH: /etc/searxng/settings.yml
+    pull_policy: always
+
+  anythingllm:
+    image: {{ openwebui_anythingllm_image }}
+    container_name: {{ openwebui_anythingllm_container_name }}
+    restart: unless-stopped
+    depends_on:
+      - litellm
+      - ollama
+      - qdrant
+    ports:
+      - "{{ openwebui_anythingllm_port }}:3001"
+    volumes:
+      - {{ openwebui_anythingllm_storage_dir }}:/app/server/storage
+    environment:
+      ANYTHING_LLM_RUNTIME: docker
+      STORAGE_DIR: /app/server/storage
+      LLM_PROVIDER: generic-openai
+      GENERIC_OPEN_AI_BASE_PATH: "{{ openwebui_anythingllm_openai_base_url }}"
+      GENERIC_OPEN_AI_API_KEY: "{{ openwebui_litellm_master_key }}"
+      GENERIC_OPEN_AI_MODEL_PREF: "{{ openwebui_litellm_model_name }}"
+      EMBEDDING_ENGINE: ollama
+      EMBEDDING_BASE_PATH: "{{ openwebui_anythingllm_embedding_base_url }}"
+      EMBEDDING_MODEL_PREF: nomic-embed-text:latest
+      VECTOR_DB: qdrant
+      QDRANT_ENDPOINT: "{{ openwebui_qdrant_endpoint }}"
+      QDRANT_API_KEY: ""
+    pull_policy: always
+
+  n8n:
+    image: {{ openwebui_n8n_image }}
+    container_name: {{ openwebui_n8n_container_name }}
+    restart: unless-stopped
+    ports:
+      - "{{ openwebui_n8n_port }}:5678"
+    volumes:
+      - {{ openwebui_n8n_data_dir }}:/home/node/.n8n
+    environment:
+      N8N_ENCRYPTION_KEY: "{{ openwebui_n8n_encryption_key }}"
+      N8N_HOST: "{{ openwebui_n8n_host }}"
+      N8N_PORT: "5678"
+      N8N_PROTOCOL: "{{ openwebui_n8n_protocol }}"
+      N8N_EDITOR_BASE_URL: "{{ openwebui_n8n_webhook_url }}"
+      WEBHOOK_URL: "{{ openwebui_n8n_webhook_url }}"
+      N8N_SECURE_COOKIE: "false"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+    pull_policy: always
+
   open-webui:
     image: {{ openwebui_image }}
     container_name: {{ openwebui_container_name }}
     restart: unless-stopped
-{% if not openwebui_nginx_enable | bool %}
-    ports:
-      - "{{ openwebui_host_port }}:8080"
-{% endif %}
+    depends_on:
+      - litellm
+      - qdrant
+      - searxng
     volumes:
       - {{ openwebui_data_dir }}:/app/backend/data
     environment:
-{% if openwebui_ollama_failover_enabled | bool %}
-      OLLAMA_BASE_URL: "http://{{ openwebui_ollama_proxy_container_name }}:{{ openwebui_ollama_proxy_listen_port }}"
-{% else %}
-      OLLAMA_BASE_URL: "{{ openwebui_ollama_base_url }}"
-{% endif %}
+      WEBUI_URL: "{{ openwebui_webui_base_url }}"
+      OPENAI_API_BASE_URL: "{{ openwebui_openai_base_url }}"
+      OPENAI_API_KEY: "{{ openwebui_openai_api_key }}"
+      ENABLE_WEB_SEARCH: "true"
+      WEB_SEARCH_ENGINE: searxng
+      SEARXNG_QUERY_URL: "{{ openwebui_searxng_query_url }}"
+      SEARXNG_LANGUAGE: all
+      QDRANT_URI: "{{ openwebui_qdrant_endpoint }}"
+      QDRANT_PREFER_GRPC: "false"
+      QDRANT_COLLECTION_PREFIX: "{{ openwebui_qdrant_collection_prefix }}"
+      ENABLE_QDRANT_MULTITENANCY_MODE: "true"
     pull_policy: always
 
-{% if openwebui_ollama_failover_enabled | bool %}
-  ollama-proxy:
-    image: nginx:stable-alpine
-    container_name: {{ openwebui_ollama_proxy_container_name }}
-    restart: unless-stopped
-    volumes:
-      - {{ openwebui_ollama_proxy_conf_path }}:/etc/nginx/conf.d/default.conf:ro
-    pull_policy: always
-{% endif %}
-
-{% if openwebui_nginx_enable | bool %}
   nginx:
-    image: {{ openwebui_nginx_image }}
-    container_name: {{ openwebui_nginx_container_name }}
+    image: nginx:stable-alpine
+    container_name: ai-stack-nginx
     restart: unless-stopped
     depends_on:
       - open-webui
     ports:
-      - "{{ openwebui_nginx_http_port }}:80"
-{% if openwebui_nginx_ssl_enable | bool %}
-      - "{{ openwebui_nginx_https_port }}:443"
-{% endif %}
+      - "80:80"
     volumes:
-      - {{ openwebui_nginx_conf_path }}:/etc/nginx/conf.d/default.conf:ro
-{% if openwebui_nginx_ssl_enable | bool %}
-      - {{ openwebui_nginx_ssl_cert_path }}:{{ openwebui_nginx_ssl_cert_path }}:ro
-      - {{ openwebui_nginx_ssl_key_path }}:{{ openwebui_nginx_ssl_key_path }}:ro
-{% endif %}
+      - {{ openwebui_project_dir }}/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     pull_policy: always
-{% endif %}

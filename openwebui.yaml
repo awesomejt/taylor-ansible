@@ -1,11 +1,21 @@
 ---
-- name: Deploy Open WebUI
-  hosts: "{{ target | default('openwebui') }}"
+- name: Deploy AI Stack
+  hosts: "{{ target | default('ai_stack') }}"
   become: true
   gather_facts: true
   vars_files:
     - "vars/common/vars.yaml"
   pre_tasks:
+    - name: Load AI stack secrets
+      ansible.builtin.include_vars:
+        file: "{{ lookup('ansible.builtin.first_found', ai_stack_secret_file_candidates) }}"
+      vars:
+        ai_stack_secret_file_candidates:
+          files:
+            - vars/common/secrets.yaml
+            - vars/common/example-secrets.yaml
+          paths:
+            - "{{ playbook_dir }}"
     - name: Wait for apt locks to be released
       ansible.builtin.shell: |
         while fuser /var/lib/apt/lists/lock \

@@ -16,6 +16,15 @@ Run Technitium DNS setup against hosts in the `dns` inventory group:
 ansible-playbook -i inventory.ini dns.yaml
 ```
 
+Run the AI stack setup against hosts in the `ai_stack` inventory group:
+
+```bash
+ansible-playbook -i inventory.ini openwebui.yaml
+```
+
+The AI stack deploys Open WebUI, LiteLLM, Ollama, AnythingLLM, n8n, Qdrant, SearXNG, and Valkey on the same VM.
+Secrets for this stack are loaded from vars/common/secrets.yaml on the control host, with vars/common/example-secrets.yaml as the fallback template.
+
 Run OpenClaw setup against hosts in the `openclaw` inventory group:
 
 ```bash

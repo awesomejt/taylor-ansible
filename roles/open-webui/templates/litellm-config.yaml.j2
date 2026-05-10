@@ -1,0 +1,31 @@
+general_settings:
+  master_key: "{{ openwebui_litellm_master_key }}"
+
+router_settings:
+  fallbacks:
+    - "{{ openwebui_litellm_omlx_primary_model_name }}":
+        - "{{ openwebui_litellm_omlx_secondary_model_name }}"
+        - "{{ openwebui_litellm_model_name }}"
+    - "{{ openwebui_litellm_omlx_secondary_model_name }}":
+        - "{{ openwebui_litellm_omlx_primary_model_name }}"
+        - "{{ openwebui_litellm_model_name }}"
+    - "{{ openwebui_litellm_model_name }}":
+        - "{{ openwebui_litellm_omlx_primary_model_name }}"
+        - "{{ openwebui_litellm_omlx_secondary_model_name }}"
+
+model_list:
+  - model_name: "{{ openwebui_litellm_model_name }}"
+    litellm_params:
+      model: "ollama/{{ openwebui_litellm_ollama_model }}"
+      api_base: "{{ openwebui_litellm_ollama_base_url }}"
+      api_key: "none"
+  - model_name: "{{ openwebui_litellm_omlx_primary_model_name }}"
+    litellm_params:
+      model: "openai/{{ openwebui_litellm_omlx_primary_model }}"
+      api_base: "{{ openwebui_litellm_omlx_primary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"
+  - model_name: "{{ openwebui_litellm_omlx_secondary_model_name }}"
+    litellm_params:
+      model: "openai/{{ openwebui_litellm_omlx_secondary_model }}"
+      api_base: "{{ openwebui_litellm_omlx_secondary_base_url }}"
+      api_key: "{{ openwebui_litellm_omlx_api_key }}"

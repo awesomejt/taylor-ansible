@@ -1,4 +1,4 @@
-- name: Restart open-webui service
+- name: Restart ai-stack service
   ansible.builtin.systemd:
     name: "{{ openwebui_systemd_unit }}"
     state: restarted

@@ -38,14 +38,80 @@ openclaw_discord_channel_development_id: "1499959791202603180"
 openclaw_discord_channel_research_id: "1499959898291830874"
 openclaw_discord_channel_reports_id: "1499960253163241502"
 
-# Open WebUI shared defaults
+# AI stack shared defaults
 openwebui_primary_user: "jason"
-openwebui_host_port: 3000
+openwebui_project_name: "ai-stack"
+openwebui_project_dir: "/opt/ai-stack"
+openwebui_compose_file: "{{ openwebui_project_dir }}/compose.yaml"
+openwebui_env_file: "{{ openwebui_project_dir }}/.env"
+openwebui_data_dir: "{{ openwebui_project_dir }}/open-webui"
+openwebui_litellm_dir: "{{ openwebui_project_dir }}/litellm"
+openwebui_litellm_config_path: "{{ openwebui_litellm_dir }}/config.yaml"
+openwebui_ollama_dir: "{{ openwebui_project_dir }}/ollama"
+openwebui_searxng_dir: "{{ openwebui_project_dir }}/searxng"
+openwebui_searxng_config_path: "{{ openwebui_searxng_dir }}/settings.yml"
+openwebui_anythingllm_dir: "{{ openwebui_project_dir }}/anythingllm"
+openwebui_anythingllm_storage_dir: "{{ openwebui_anythingllm_dir }}/storage"
+openwebui_n8n_dir: "{{ openwebui_project_dir }}/n8n"
+openwebui_n8n_data_dir: "{{ openwebui_n8n_dir }}/data"
+openwebui_qdrant_dir: "{{ openwebui_project_dir }}/qdrant"
+openwebui_qdrant_storage_dir: "{{ openwebui_qdrant_dir }}/storage"
+
+openwebui_host_port: 80
+openwebui_litellm_port: 4000
+openwebui_anythingllm_port: 3001
+openwebui_n8n_port: 5678
+openwebui_searxng_port: 8081
+openwebui_qdrant_port: 6333
+openwebui_qdrant_grpc_port: 6334
+openwebui_ollama_port: 11434
+
+openwebui_image: ghcr.io/open-webui/open-webui:main
+openwebui_container_name: ai-stack-open-webui
+openwebui_litellm_image: ghcr.io/berriai/litellm:main-stable
+openwebui_litellm_container_name: ai-stack-litellm
+openwebui_litellm_master_key: "{{ vault_openwebui_litellm_master_key | default('change-me') }}"
+openwebui_litellm_model_name: "local-ollama"
+openwebui_litellm_ollama_model: "llama3.2:latest"
+openwebui_litellm_omlx_primary_model_name: "omlx-primary"
+openwebui_litellm_omlx_primary_model: "gpt-oss-20b-MXFP4-Q8"
+openwebui_litellm_omlx_primary_base_url: "{{ hermes_omlx_macbook_url | default('http://192.168.50.93:8000/v1') }}"
+openwebui_litellm_omlx_secondary_model_name: "omlx-secondary"
+openwebui_litellm_omlx_secondary_model: "gpt-oss-20b-MLX-8bit"
+openwebui_litellm_omlx_secondary_base_url: "{{ hermes_omlx_macmini_url | default('http://192.168.50.94:8000/v1') }}"
+openwebui_litellm_omlx_api_key: "{{ vault_openwebui_omlx_api_key | default(vault_hermes_omlx_api_key | default('example')) }}"
+openwebui_ollama_image: ollama/ollama:latest
+openwebui_ollama_container_name: ai-stack-ollama
+openwebui_searxng_image: ghcr.io/searxng/searxng:latest
+openwebui_searxng_container_name: ai-stack-searxng
+openwebui_searxng_secret_key: "{{ vault_openwebui_searxng_secret_key | default('change-me') }}"
+openwebui_valkey_image: valkey/valkey:8-alpine
+openwebui_valkey_container_name: ai-stack-valkey
+openwebui_anythingllm_image: mintplexlabs/anythingllm:latest
+openwebui_anythingllm_container_name: ai-stack-anythingllm
+openwebui_n8n_image: n8nio/n8n:latest
+openwebui_n8n_container_name: ai-stack-n8n
+openwebui_n8n_encryption_key: "{{ vault_openwebui_n8n_encryption_key | default('change-me') }}"
+openwebui_qdrant_image: qdrant/qdrant:latest
+openwebui_qdrant_container_name: ai-stack-qdrant
+openwebui_qdrant_collection_prefix: "ai-stack"
+
+openwebui_litellm_ollama_base_url: "http://{{ openwebui_ollama_container_name }}:{{ openwebui_ollama_port }}"
+openwebui_anythingllm_openai_base_url: "http://{{ openwebui_litellm_container_name }}:{{ openwebui_litellm_port }}/v1"
+openwebui_anythingllm_embedding_base_url: "http://{{ openwebui_ollama_container_name }}:{{ openwebui_ollama_port }}"
+openwebui_qdrant_endpoint: "http://{{ openwebui_qdrant_container_name }}:{{ openwebui_qdrant_port }}"
+openwebui_searxng_query_url: "http://{{ openwebui_searxng_container_name }}:8080/search?q=<query>&format=json"
+openwebui_webui_base_url: "http://192.168.50.91:{{ openwebui_host_port }}"
+openwebui_n8n_host: "192.168.50.91"
+openwebui_n8n_protocol: "http"
+openwebui_n8n_webhook_url: "http://192.168.50.91:{{ openwebui_n8n_port }}"
+
+# Legacy Open WebUI reverse-proxy settings retained for compatibility with older overrides.
 openwebui_ollama_base_url: "http://192.168.50.93:11434"
 openwebui_ollama_failover_enabled: true
 openwebui_ollama_primary_base_url: "http://192.168.50.93:11434"
 openwebui_ollama_fallback_base_url: "http://192.168.50.94:11434"
-openwebui_nginx_enable: true
+openwebui_nginx_enable: false
 openwebui_nginx_server_name: "openwebui.taylor.lan"
 openwebui_nginx_http_port: 80
 openwebui_nginx_https_port: 443

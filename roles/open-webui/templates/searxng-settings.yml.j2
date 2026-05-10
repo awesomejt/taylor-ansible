@@ -1,0 +1,13 @@
+use_default_settings: true
+
+server:
+  secret_key: "{{ openwebui_searxng_secret_key }}"
+  bind_address: "0.0.0.0"
+
+search:
+  formats:
+    - html
+    - json
+
+valkey:
+  url: "valkey://{{ openwebui_valkey_container_name }}:6379/0"
