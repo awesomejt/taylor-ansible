@@ -34,12 +34,30 @@ services:
       - {{ openwebui_qdrant_storage_dir }}:/qdrant/storage
     pull_policy: always
 
+  postgres:
+    image: {{ openwebui_postgres_image }}
+    container_name: {{ openwebui_postgres_container_name }}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "{{ openwebui_postgres_user }}"
+      POSTGRES_PASSWORD: "{{ openwebui_postgres_password }}"
+      POSTGRES_DB: "{{ openwebui_postgres_db }}"
+    volumes:
+      - ai-stack-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{ openwebui_postgres_user }} -d {{ openwebui_postgres_db }}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    pull_policy: always
+
   litellm:
     image: {{ openwebui_litellm_image }}
     container_name: {{ openwebui_litellm_container_name }}
     restart: unless-stopped
     depends_on:
       - ollama
+      - postgres
     ports:
       - "{{ openwebui_litellm_port }}:4000"
     volumes:
@@ -47,6 +65,8 @@ services:
     environment:
       CONFIG_FILE_PATH: /app/config.yaml
       LITELLM_MASTER_KEY: "{{ openwebui_litellm_master_key }}"
+      DATABASE_URL: "postgresql://{{ openwebui_postgres_user }}:{{ openwebui_postgres_password }}@{{ openwebui_postgres_container_name }}:5432/{{ openwebui_postgres_db }}"
+      STORE_MODEL_IN_DB: "true"
     pull_policy: always
 
   searxng:
@@ -146,3 +166,6 @@ services:
     volumes:
       - {{ openwebui_project_dir }}/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     pull_policy: always
+
+volumes:
+  ai-stack-postgres-data:

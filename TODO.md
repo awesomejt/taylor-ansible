@@ -1,5 +1,16 @@
 # TODO
 
+## LiteLLM Dashboard DB Auth Fix (2026-05-10)
+
+- [x] Confirm runtime root cause from logs (`Not connected to DB`).
+- [x] Add Postgres service and LiteLLM `DATABASE_URL` wiring in AI stack compose template.
+- [x] Add secrets-backed Postgres password variable for AI stack.
+- [x] Add sanitized secret placeholder entry in example-secrets.
+- [x] Validate with syntax check.
+- [x] Sync to Ansible host.
+- [x] Run playbook on Ansible host.
+- [x] Verify LiteLLM auth endpoints no longer return DB-not-connected.
+
 ## Hermes Migration Plan
 
 ### Goals

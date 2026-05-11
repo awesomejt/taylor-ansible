@@ -107,6 +107,11 @@ openwebui_n8n_encryption_key: "{{ vault_openwebui_n8n_encryption_key | default('
 openwebui_qdrant_image: qdrant/qdrant:latest
 openwebui_qdrant_container_name: ai-stack-qdrant
 openwebui_qdrant_collection_prefix: "ai-stack"
+openwebui_postgres_image: postgres:16-alpine
+openwebui_postgres_container_name: ai-stack-postgres
+openwebui_postgres_user: litellm
+openwebui_postgres_db: litellm
+openwebui_postgres_password: "{{ vault_openwebui_postgres_password | default('change-me') }}"
 
 openwebui_litellm_ollama_base_url: "http://{{ openwebui_ollama_container_name }}:{{ openwebui_ollama_port }}"
 openwebui_anythingllm_openai_base_url: "http://{{ openwebui_litellm_container_name }}:{{ openwebui_litellm_port }}/v1"
@@ -146,6 +151,7 @@ openwebui_nginx_ssl_enable: false
 # vault_headlamp_oidc_use_access_token
 # vault_headlamp_oidc_use_pkce
 # vault_headlamp_oidc_me_user_info_url
+# vault_openwebui_postgres_password
 
 technitium_zones: 
   - name: "dev.lab"

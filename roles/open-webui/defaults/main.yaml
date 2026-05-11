@@ -67,6 +67,12 @@ openwebui_qdrant_grpc_port: 6334
 openwebui_qdrant_endpoint: "http://{{ openwebui_qdrant_container_name }}:{{ openwebui_qdrant_port }}"
 openwebui_qdrant_collection_prefix: ai-stack
 
+openwebui_postgres_image: postgres:16-alpine
+openwebui_postgres_container_name: ai-stack-postgres
+openwebui_postgres_user: litellm
+openwebui_postgres_db: litellm
+openwebui_postgres_password: "{{ vault_openwebui_postgres_password | default('change-me') }}"
+
 openwebui_anythingllm_image: mintplexlabs/anythingllm:latest
 openwebui_anythingllm_container_name: ai-stack-anythingllm
 openwebui_anythingllm_dir: "{{ openwebui_project_dir }}/anythingllm"
