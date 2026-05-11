@@ -220,6 +220,11 @@ hermes_python_extras: "web,messaging"
 hermes_api_timeout_seconds: 45
 hermes_api_stale_timeout_seconds: 60
 hermes_api_max_retries: 1
+hermes_litellm_base_url: "http://192.168.50.91:4000/v1"
+hermes_searxng_url: "http://192.168.50.91:8081"
+hermes_web_backend: "searxng"
+hermes_web_search_backend: "searxng"
+hermes_web_extract_backend: ""
 # oMLX servers (OpenAI-compatible). MacBook Pro = primary, Mac Mini = hot standby.
 hermes_omlx_macbook_url: "http://192.168.50.93:8000/v1"
 hermes_omlx_macmini_url: "http://192.168.50.94:8000/v1"
@@ -251,8 +256,8 @@ hermes_profiles:
   - name: chat
     gateway_enabled: true
     provider: "custom"
-    base_url: "{{ hermes_omlx_macbook_url }}"
-    model: "gpt-oss-20b-MXFP4-Q8"
+    base_url: "{{ hermes_litellm_base_url }}"
+    model: "use-chat"
     cli_toolsets:
       - "hermes-cli"
       - "kanban-orchestrator"
@@ -261,17 +266,13 @@ hermes_profiles:
     discord_home_channel: "1500086740352766063"
     fallback_providers:
       - provider: "custom"
-        base_url: "{{ hermes_omlx_macmini_url }}"
-        model: "gpt-oss-20b-MLX-8bit"
-      - provider: "openai"
-        model: "gpt-5.4-mini"
-      - provider: "openrouter"
-        model: "anthropic/claude-opus-4.6"
+        base_url: "{{ hermes_litellm_base_url }}"
+        model: "use-thinking"
   - name: research
     gateway_enabled: false
     provider: "custom"
-    base_url: "{{ hermes_omlx_macbook_url }}"
-    model: "Qwen3.5-27B-Claude-4.6-Opus-Distilled-MLX-6bit"
+    base_url: "{{ hermes_litellm_base_url }}"
+    model: "use-thinking"
     cli_toolsets:
       - "hermes-cli"
       - "kanban-worker"
@@ -280,17 +281,13 @@ hermes_profiles:
     discord_home_channel: ""
     fallback_providers:
       - provider: "custom"
-        base_url: "{{ hermes_omlx_macmini_url }}"
-        model: "Qwen3.6-27B-6bit"
-      - provider: "openai"
-        model: "gpt-5.5"
-      - provider: "openrouter"
-        model: "anthropic/claude-opus-4.6"
+        base_url: "{{ hermes_litellm_base_url }}"
+        model: "use-chat"
   - name: coding
     gateway_enabled: false
     provider: "custom"
-    base_url: "{{ hermes_omlx_macbook_url }}"
-    model: "Qwen3.6-35B-A3B-6bit"
+    base_url: "{{ hermes_litellm_base_url }}"
+    model: "use-coding"
     cli_toolsets:
       - "hermes-cli"
       - "kanban-worker"
@@ -299,17 +296,13 @@ hermes_profiles:
     discord_home_channel: ""
     fallback_providers:
       - provider: "custom"
-        base_url: "{{ hermes_omlx_macmini_url }}"
-        model: "Qwen3.6-35B-A3B-6bit"
-      - provider: "openai"
-        model: "gpt-5.3-codex"
-      - provider: "openrouter"
-        model: "anthropic/claude-opus-4.6"
+        base_url: "{{ hermes_litellm_base_url }}"
+        model: "use-chat"
   - name: admin
     gateway_enabled: false
     provider: "custom"
-    base_url: "{{ hermes_omlx_macbook_url }}"
-    model: "gpt-oss-20b-MXFP4-Q8"
+    base_url: "{{ hermes_litellm_base_url }}"
+    model: "use-thinking"
     cli_toolsets:
       - "hermes-cli"
       - "kanban-orchestrator"
@@ -318,17 +311,13 @@ hermes_profiles:
     discord_home_channel: ""
     fallback_providers:
       - provider: "custom"
-        base_url: "{{ hermes_omlx_macmini_url }}"
-        model: "gpt-oss-20b-MLX-8bit"
-      - provider: "openai"
-        model: "gpt-5.4-mini"
-      - provider: "openrouter"
-        model: "anthropic/claude-opus-4.6"
+        base_url: "{{ hermes_litellm_base_url }}"
+        model: "use-chat"
   - name: jessica
     gateway_enabled: true
     provider: "custom"
-    base_url: "{{ hermes_omlx_macbook_url }}"
-    model: "Qwen3.5-27B-Claude-4.6-Opus-Distilled-MLX-6bit"
+    base_url: "{{ hermes_litellm_base_url }}"
+    model: "use-chat"
     cli_toolsets:
       - "hermes-cli"
       - "kanban-worker"
@@ -337,12 +326,8 @@ hermes_profiles:
     discord_home_channel: "1501437705236643902"
     fallback_providers:
       - provider: "custom"
-        base_url: "{{ hermes_omlx_macmini_url }}"
-        model: "gemma-4-26b-a4b-it-6bit"
-      - provider: "openai"
-        model: "gpt-5.5"
-      - provider: "openrouter"
-        model: "anthropic/claude-opus-4.6"
+        base_url: "{{ hermes_litellm_base_url }}"
+        model: "use-thinking"
 
 # Terminal backend for agent tool execution
 hermes_terminal_backend: "local"

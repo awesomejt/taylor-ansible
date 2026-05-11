@@ -1,5 +1,15 @@
 # TODO
 
+## Hermes LiteLLM + SearXNG Migration (2026-05-10)
+
+- [x] Switch Hermes profile model routing to LiteLLM endpoint aliases.
+- [x] Configure Hermes web backend to use SearXNG search.
+- [x] Add SearXNG URL and LiteLLM key wiring in Hermes env template.
+- [x] Validate with syntax check.
+- [x] Sync to Ansible host.
+- [x] Run playbook on Ansible host.
+- [x] Verify Hermes gateway/dashboard healthy after restart.
+
 ## LiteLLM Dashboard DB Auth Fix (2026-05-10)
 
 - [x] Confirm runtime root cause from logs (`Not connected to DB`).

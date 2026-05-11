@@ -73,6 +73,11 @@ hermes_terminal_lifetime_seconds: 300
 hermes_api_timeout_seconds: 45
 hermes_api_stale_timeout_seconds: 60
 hermes_api_max_retries: 1
+hermes_litellm_base_url: "http://127.0.0.1:4000/v1"
+hermes_searxng_url: "http://127.0.0.1:8080"
+hermes_web_backend: "searxng"
+hermes_web_search_backend: "searxng"
+hermes_web_extract_backend: ""
 hermes_omlx_api_key: "example"
 hermes_shared_auth_source_dir: "{{ hermes_home_dir }}/.hermes"
 

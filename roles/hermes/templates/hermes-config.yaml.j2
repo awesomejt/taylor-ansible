@@ -24,6 +24,13 @@ group_sessions_per_user: true
 agent:
   api_max_retries: {{ hermes_api_max_retries }}
 
+web:
+  backend: "{{ hermes_web_backend }}"
+  search_backend: "{{ hermes_web_search_backend }}"
+{% if hermes_web_extract_backend | default('') | length > 0 %}
+  extract_backend: "{{ hermes_web_extract_backend }}"
+{% endif %}
+
 {% set _cli_toolsets = hermes_instance.cli_toolsets | default(['hermes-cli']) %}
 platform_toolsets:
   cli: {{ _cli_toolsets | to_json }}

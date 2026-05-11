@@ -45,6 +45,9 @@ Key overridable variables:
 - `hermes_soul_repo` / `hermes_soul_files`
 - `hermes_cifs_shares`
 - `hermes_omlx_base_url` / `hermes_omlx_api_key` (legacy fallback; prefer vault secret)
+- `hermes_litellm_base_url` (OpenAI-compatible LiteLLM endpoint, e.g. `http://192.168.50.91:4000/v1`)
+- `hermes_searxng_url` (SearXNG base URL, e.g. `http://192.168.50.91:8081`)
+- `hermes_web_backend` / `hermes_web_search_backend` / `hermes_web_extract_backend`
 - `hermes_shared_auth_source_dir` (default: `/home/hermes/.hermes`, shared across profile homes)
 
 ## Secrets
@@ -57,4 +60,5 @@ Primary keys for this role:
 
 - `vault_hermes_openrouter_api_key` (optional fallback provider key)
 - `vault_hermes_omlx_api_key` (API key for OpenAI-compatible custom endpoints such as oMLX)
+- `vault_openwebui_litellm_master_key` (preferred key for LiteLLM-backed Hermes profiles)
 - `vault_hermes_discord_tokens` (required only for Discord-enabled gateway profiles)
