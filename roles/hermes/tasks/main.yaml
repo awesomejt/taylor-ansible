@@ -252,6 +252,27 @@
     loop_var: hermes_instance
     label: "{{ hermes_instance.name }}"
 
+# --- Global default Hermes config (used when no profile is specified) ---
+
+- name: Ensure SEARXNG_URL is set in global Hermes .env
+  ansible.builtin.lineinfile:
+    path: "{{ hermes_config_dir }}/.env"
+    regexp: '^SEARXNG_URL='
+    line: "SEARXNG_URL={{ hermes_searxng_url }}"
+    create: false
+  when: hermes_config_dir is defined
+
+- name: Ensure web search backend is configured in global Hermes config.yaml
+  ansible.builtin.blockinfile:
+    path: "{{ hermes_config_dir }}/config.yaml"
+    marker: "# {mark} ANSIBLE MANAGED - web search backend"
+    block: |
+      web:
+        backend: "{{ hermes_web_backend }}"
+        search_backend: "{{ hermes_web_search_backend }}"
+    create: false
+  when: hermes_config_dir is defined
+
 - name: Deploy GitHub credential file for Hermes user
   ansible.builtin.template:
     src: netrc.j2
