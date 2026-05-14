@@ -31,6 +31,16 @@ Run OpenClaw setup against hosts in the `openclaw` inventory group:
 ansible-playbook -i inventory.ini openclaw.yaml
 ```
 
+Run step-ca setup against hosts in the `step_ca` inventory group:
+
+```bash
+ansible-playbook -i inventory.ini step-ca.yml --vault-password-file ~/avpass
+```
+
+The step-ca role supports automated non-interactive initialization when vaulted
+password variables are present. See `roles/step-ca/README.md` for full apply
+workflow, validation commands, and remaining manual backup steps.
+
 The OpenClaw playbook follows the project role pattern and uses:
 
 - `roles/openclaw/tasks/main.yaml`

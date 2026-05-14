@@ -1,5 +1,17 @@
 # TODO
 
+## Step CA Automation And Rollout (2026-05-13)
+
+- [x] Review current step-ca playbook and role state.
+- [x] Enable automated non-interactive init in playbook defaults.
+- [x] Add/refresh role documentation for apply workflow and manual steps.
+- [x] Update main README with step-ca usage reference.
+- [x] Validate with syntax check.
+- [x] Sync to Ansible host.
+- [x] Ensure required step-ca secrets exist in vaulted vars/common/secrets.yaml.
+- [x] Run playbook on Ansible host.
+- [x] Verify step-ca service and CA health on 192.168.50.9.
+
 ## Hermes LiteLLM + SearXNG Migration (2026-05-10)
 
 - [x] Switch Hermes profile model routing to LiteLLM endpoint aliases.

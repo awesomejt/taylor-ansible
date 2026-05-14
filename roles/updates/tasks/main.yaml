@@ -1,4 +1,5 @@
-- name: Update All Packages
+---
+- name: Upgrade all packages
   become: true
   ansible.builtin.apt:
     upgrade: full

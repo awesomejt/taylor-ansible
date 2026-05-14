@@ -4,6 +4,10 @@
   become: true
   vars:
     step_ca_install_method: manual
+    step_ca_auto_init: true
+    step_ca_hostname: certs.taylor.lan
+    step_ca_address: ":443"
+    step_ca_provisioner: admin
   vars_files:
     - "vars/common/vars.yaml"
     - "vars/common/secrets.yaml"
@@ -21,4 +25,6 @@
       changed_when: false
       timeout: 600
   roles:
+    - updates
+    - common
     - step-ca
