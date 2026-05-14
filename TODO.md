@@ -8,9 +8,9 @@
 - [x] Add Nginx reverse proxy in front of the registry with TLS-ready configuration.
 - [x] Validate with syntax check.
 - [x] Validate with ansible-lint.
-- [ ] Sync to Ansible host.
-- [ ] Run playbook on Ansible host.
-- [ ] Verify registry endpoint (`/v2/`) behavior from host/network.
+- [x] Sync to Ansible host.
+- [x] Run playbook on Ansible host.
+- [x] Verify registry endpoint (`/v2/`) behavior from host/network.
 
 ## Step CA Automation And Rollout (2026-05-13)
 
