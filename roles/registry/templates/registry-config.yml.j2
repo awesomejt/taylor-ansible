@@ -1,0 +1,15 @@
+version: 0.1
+log:
+  level: {{ registry_log_level }}
+storage:
+  filesystem:
+    rootdirectory: /var/lib/registry
+  delete:
+    enabled: {{ registry_storage_delete_enabled | bool | lower }}
+http:
+  addr: 0.0.0.0:{{ registry_internal_port }}
+{% if registry_http_secret | length > 0 %}
+  secret: {{ registry_http_secret }}
+{% endif %}
+  headers:
+    X-Content-Type-Options: [nosniff]

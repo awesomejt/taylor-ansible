@@ -1,5 +1,17 @@
 # TODO
 
+## Docker Registry Role + Playbook (2026-05-14)
+
+- [x] Review current Docker Registry v3 deployment guidance.
+- [x] Create `registry.yaml` playbook using updates/common/docker as the foundation.
+- [x] Implement `roles/registry` with Docker Compose deployment for `registry:3`.
+- [x] Add Nginx reverse proxy in front of the registry with TLS-ready configuration.
+- [x] Validate with syntax check.
+- [x] Validate with ansible-lint.
+- [ ] Sync to Ansible host.
+- [ ] Run playbook on Ansible host.
+- [ ] Verify registry endpoint (`/v2/`) behavior from host/network.
+
 ## Step CA Automation And Rollout (2026-05-13)
 
 - [x] Review current step-ca playbook and role state.

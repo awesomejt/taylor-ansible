@@ -1,0 +1,19 @@
+[Unit]
+Description=Docker Registry Compose service
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User={{ registry_primary_user }}
+WorkingDirectory={{ registry_project_dir }}
+EnvironmentFile=-{{ registry_env_file }}
+ExecStart=/usr/bin/docker compose -f {{ registry_compose_file }} up -d
+ExecStop=/usr/bin/docker compose -f {{ registry_compose_file }} down
+ExecReload=/usr/bin/docker compose -f {{ registry_compose_file }} up -d
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

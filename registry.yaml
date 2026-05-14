@@ -1,6 +1,6 @@
 ---
-- name: Install Docker Engine
-  hosts: docker
+- name: Deploy Docker Registry
+  hosts: "{{ target | default('docker') }}"
   become: true
   gather_facts: true
   pre_tasks:
@@ -16,6 +16,7 @@
       changed_when: false
       timeout: 600
   roles:
-    - updatess
+    - updates
     - common
     - docker
+    - registry

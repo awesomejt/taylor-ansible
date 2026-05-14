@@ -1,0 +1,94 @@
+- name: Ensure registry role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == 'Debian'
+    fail_msg: "registry role currently supports Debian/Ubuntu only"
+
+- name: Ensure Docker Registry project directory exists
+  ansible.builtin.file:
+    path: "{{ registry_project_dir }}"
+    state: directory
+    owner: "{{ registry_primary_user }}"
+    group: "{{ registry_primary_user }}"
+    mode: "0750"
+
+- name: Ensure Docker Registry directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ registry_primary_user }}"
+    group: "{{ registry_primary_user }}"
+    mode: "0750"
+  loop:
+    - "{{ registry_data_dir }}"
+    - "{{ registry_config_dir }}"
+    - "{{ registry_nginx_dir }}"
+    - "{{ registry_certs_dir }}"
+
+- name: Deploy Docker Registry configuration
+  ansible.builtin.template:
+    src: registry-config.yml.j2
+    dest: "{{ registry_config_path }}"
+    owner: "{{ registry_primary_user }}"
+    group: "{{ registry_primary_user }}"
+    mode: "0640"
+  notify: Restart docker registry service
+
+- name: Deploy Nginx reverse proxy configuration for registry
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: "{{ registry_nginx_conf_path }}"
+    owner: "{{ registry_primary_user }}"
+    group: "{{ registry_primary_user }}"
+    mode: "0640"
+  notify: Restart docker registry service
+
+- name: Deploy Docker Registry compose file
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ registry_compose_file }}"
+    owner: "{{ registry_primary_user }}"
+    group: "{{ registry_primary_user }}"
+    mode: "0640"
+  notify: Restart docker registry service
+
+- name: Deploy Docker Registry environment file
+  ansible.builtin.copy:
+    dest: "{{ registry_env_file }}"
+    content: "# Docker Registry environment overrides\n# This file is not overwritten on subsequent runs.\n"
+    owner: "{{ registry_primary_user }}"
+    group: "{{ registry_primary_user }}"
+    mode: "0640"
+    force: false
+
+- name: Deploy Docker Registry systemd unit
+  ansible.builtin.template:
+    src: docker-registry.service.j2
+    dest: "{{ registry_systemd_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart docker registry service
+
+- name: Ensure Docker Registry service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ registry_service_name }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Validate registry API endpoint from host
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ registry_proxy_http_port }}/v2/"
+    method: GET
+    return_content: false
+    status_code:
+      - 200
+      - 401
+  register: registry_api_check
+  retries: 12
+  delay: 5
+  until: registry_api_check.status in [200, 401]
+  when: not (registry_proxy_tls_enabled | bool)

@@ -1,0 +1,34 @@
+registry_primary_user: root
+registry_project_name: docker-registry
+registry_project_dir: "/opt/{{ registry_project_name }}"
+registry_compose_file: "{{ registry_project_dir }}/compose.yaml"
+registry_env_file: "{{ registry_project_dir }}/.env"
+registry_service_name: "{{ registry_project_name }}.service"
+registry_systemd_unit_path: "/etc/systemd/system/{{ registry_service_name }}"
+
+registry_image: registry:3
+registry_container_name: docker-registry
+registry_nginx_image: nginx:1.27-alpine
+registry_nginx_container_name: docker-registry-nginx
+
+registry_config_dir: "{{ registry_project_dir }}/config"
+registry_config_path: "{{ registry_config_dir }}/config.yml"
+registry_data_dir: "{{ registry_project_dir }}/data"
+registry_nginx_dir: "{{ registry_project_dir }}/nginx"
+registry_nginx_conf_path: "{{ registry_nginx_dir }}/default.conf"
+registry_certs_dir: "{{ registry_project_dir }}/certs"
+
+registry_proxy_bind_address: 0.0.0.0
+registry_proxy_http_port: 5000
+registry_proxy_tls_enabled: false
+registry_proxy_tls_port: 5443
+registry_proxy_tls_force_https: false
+registry_proxy_server_name: _
+registry_proxy_tls_cert_path: "/certs/registry.crt"
+registry_proxy_tls_key_path: "/certs/registry.key"
+
+registry_internal_port: 5000
+registry_http_secret: ""
+registry_otel_traces_exporter: none
+registry_storage_delete_enabled: true
+registry_log_level: info
