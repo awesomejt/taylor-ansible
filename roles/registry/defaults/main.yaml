@@ -23,7 +23,7 @@ registry_proxy_http_port: 5000
 registry_proxy_tls_enabled: false
 registry_proxy_tls_port: 5443
 registry_proxy_tls_force_https: false
-registry_proxy_server_name: _
+registry_proxy_server_name: registry.taylor.lan
 registry_proxy_tls_cert_path: "/certs/registry.crt"
 registry_proxy_tls_key_path: "/certs/registry.key"
 

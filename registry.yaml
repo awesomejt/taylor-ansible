@@ -1,6 +1,6 @@
 ---
 - name: Deploy Docker Registry
-  hosts: "{{ target | default('docker') }}"
+  hosts: "{{ target | default('registry') }}"
   become: true
   gather_facts: true
   pre_tasks:
