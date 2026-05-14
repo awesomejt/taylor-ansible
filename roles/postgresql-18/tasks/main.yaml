@@ -14,7 +14,7 @@
       - gnupg
       - lsb-release
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Create PGDG key directory
   become: true
@@ -36,14 +36,14 @@
     repo: "deb [signed-by={{ postgresql_repo_key_path }}] https://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main"
     state: present
     filename: pgdg
-    update_cache: yes
+    update_cache: true
 
 - name: Install PostgreSQL 18 packages
   become: true
   ansible.builtin.apt:
     name: "{{ postgresql_packages }}"
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Configure PostgreSQL listen_addresses
   become: true
