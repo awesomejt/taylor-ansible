@@ -16,12 +16,26 @@ services:
     depends_on:
       - registry
     ports:
-      - "{{ registry_proxy_bind_address }}:{{ registry_proxy_http_port }}:80"
+      - "{{ registry_proxy_bind_address }}:80:80"
 {% if registry_proxy_tls_enabled | bool %}
-      - "{{ registry_proxy_bind_address }}:{{ registry_proxy_tls_port }}:443"
+      - "{{ registry_proxy_bind_address }}:443:443"
 {% endif %}
     volumes:
       - {{ registry_nginx_conf_path }}:/etc/nginx/conf.d/default.conf:ro
 {% if registry_proxy_tls_enabled | bool %}
       - {{ registry_certs_dir }}:/certs:ro
 {% endif %}
+
+
+  ui:
+    image: {{ registry_ui_image }}
+    container_name: {{ registry_ui_container_name }}
+    restart: unless-stopped
+    environment:
+{% for env in registry_ui_env %}
+      - {{ env }}
+{% endfor %}
+    ports:
+      - "{{ registry_ui_port }}:80"
+    depends_on:
+      - registry

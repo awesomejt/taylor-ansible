@@ -92,3 +92,18 @@
   delay: 5
   until: registry_api_check.status in [200, 401]
   when: not (registry_proxy_tls_enabled | bool)
+
+- name: Validate registry API endpoint from host over TLS
+  ansible.builtin.uri:
+    url: "https://127.0.0.1:{{ registry_proxy_tls_port }}/v2/"
+    method: GET
+    return_content: false
+    validate_certs: false
+    status_code:
+      - 200
+      - 401
+  register: registry_api_tls_check
+  retries: 12
+  delay: 5
+  until: registry_api_tls_check.status in [200, 401]
+  when: registry_proxy_tls_enabled | bool

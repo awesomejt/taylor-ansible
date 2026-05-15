@@ -4,3 +4,4 @@
 - 2026-05-10: AI stack now includes a Postgres service for LiteLLM with `DATABASE_URL` wired via vault-backed `vault_openwebui_postgres_password`.
 - 2026-05-10: Hermes profiles were moved to LiteLLM (`hermes_litellm_base_url`) with model aliases (`use-chat`, `use-coding`, `use-thinking`) and web search configured to SearXNG via `SEARXNG_URL` + `web.search_backend=searxng`.
 - 2026-05-14: Added `registry.yaml` + `roles/registry` for Docker Distribution `registry:3` behind an Nginx reverse proxy; role includes TLS-ready toggle variables and uses Docker Compose managed by systemd.
+- 2026-05-14: Registry proxy routing now serves UI at `/` and Docker Registry API at `/v2/`; HTTPS server block is configured to use the same split routing when TLS is enabled.
