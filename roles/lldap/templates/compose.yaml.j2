@@ -1,0 +1,35 @@
+services:
+  lldap:
+    image: {{ lldap_image }}
+    container_name: {{ lldap_container_name }}
+    restart: unless-stopped
+    ports:
+      - "{{ lldap_proxy_bind_address }}:{{ lldap_ldap_port }}:{{ lldap_ldap_port }}"
+    volumes:
+      - {{ lldap_data_dir }}:/data
+    environment:
+      LLDAP_VERBOSE: "{{ lldap_verbose | lower }}"
+      LLDAP_JWT_SECRET: "{{ lldap_jwt_secret }}"
+      LLDAP_LDAP_USER_DN: "{{ lldap_ldap_user_dn }}"
+      LLDAP_LDAP_USER_PASS: "{{ lldap_ldap_user_pass }}"
+      LLDAP_LDAP_BASE_DN: "{{ lldap_base_dn }}"
+      LLDAP_HTTP_URL: "{{ lldap_http_url }}"
+      LLDAP_DATABASE_URL: "postgresql://{{ lldap_db_user }}:{{ lldap_db_password }}@{{ lldap_db_host }}:{{ lldap_db_port }}/{{ lldap_db_name }}"
+      LLDAP_HTTP_PORT: "{{ lldap_web_port }}"
+
+  nginx:
+    image: {{ lldap_nginx_image }}
+    container_name: {{ lldap_nginx_container_name }}
+    restart: unless-stopped
+    depends_on:
+      - lldap
+    ports:
+      - "{{ lldap_proxy_bind_address }}:{{ lldap_proxy_http_port }}:80"
+{% if lldap_proxy_tls_enabled | bool %}
+      - "{{ lldap_proxy_bind_address }}:{{ lldap_proxy_tls_port }}:443"
+{% endif %}
+    volumes:
+      - {{ lldap_nginx_conf_path }}:/etc/nginx/conf.d/default.conf:ro
+{% if lldap_proxy_tls_enabled | bool %}
+      - {{ lldap_certs_dir }}:/certs:ro
+{% endif %}

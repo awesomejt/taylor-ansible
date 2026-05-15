@@ -1,0 +1,61 @@
+---
+- name: Provision LLDAP PostgreSQL database
+  hosts: postgres_prod
+  become: true
+  vars_files:
+    - vars/common/secrets.yaml
+  vars:
+    lldap_db_name: lldap
+    lldap_db_user: lldap
+  tasks:
+    - name: Ensure LLDAP PostgreSQL user exists
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_user:
+        name: "{{ lldap_db_user }}"
+        password: "{{ vault_lldap_db_password }}"
+        role_attr_flags: LOGIN
+        state: present
+      no_log: true
+
+    - name: Ensure LLDAP PostgreSQL database exists
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: "{{ lldap_db_name }}"
+        owner: "{{ lldap_db_user }}"
+        state: present
+
+    - name: Grant all privileges on LLDAP database to LLDAP user
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_privs:
+        db: "{{ lldap_db_name }}"
+        roles: "{{ lldap_db_user }}"
+        privs: ALL
+        type: database
+        state: present
+
+- name: Deploy LLDAP
+  hosts: "{{ target | default('lldap') }}"
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/common/secrets.yaml
+  pre_tasks:
+    - name: Wait for apt locks to be released
+      ansible.builtin.shell: |
+        while fuser /var/lib/apt/lists/lock \
+                    /var/lib/dpkg/lock \
+                    /var/lib/dpkg/lock-frontend \
+                    /var/cache/apt/archives/lock >/dev/null 2>&1; do
+          echo "Waiting for apt lock..."
+          sleep 10
+        done
+      changed_when: false
+      timeout: 600
+  roles:
+    - updates
+    - common
+    - docker
+    - lldap

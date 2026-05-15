@@ -1,0 +1,54 @@
+upstream lldap_backend {
+  server lldap:{{ lldap_web_port }};
+}
+
+{% if not (lldap_proxy_tls_enabled | bool and lldap_proxy_tls_force_https | bool) %}
+server {
+  listen 80;
+  server_name {{ lldap_proxy_server_name }};
+
+  client_max_body_size 16m;
+
+  location / {
+    proxy_pass http://lldap_backend;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_http_version 1.1;
+    proxy_read_timeout 120;
+  }
+}
+{% else %}
+server {
+  listen 80;
+  server_name {{ lldap_proxy_server_name }};
+  return 301 https://$host$request_uri;
+}
+{% endif %}
+
+{% if lldap_proxy_tls_enabled | bool %}
+server {
+  listen 443 ssl;
+  server_name {{ lldap_proxy_server_name }};
+
+  ssl_certificate     {{ lldap_proxy_tls_cert_path }};
+  ssl_certificate_key {{ lldap_proxy_tls_key_path }};
+  ssl_protocols       TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers on;
+  ssl_session_cache   shared:SSL:10m;
+  ssl_session_timeout 10m;
+
+  client_max_body_size 16m;
+
+  location / {
+    proxy_pass http://lldap_backend;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_http_version 1.1;
+    proxy_read_timeout 120;
+  }
+}
+{% endif %}

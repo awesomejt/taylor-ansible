@@ -1,5 +1,19 @@
 # TODO
 
+## LLDAP Role + Playbook (2026-05-15)
+
+- [x] Review existing role and playbook scaffolding.
+- [x] Fix compose dependency ordering for lldap/nginx services.
+- [x] Ensure playbook provisions PostgreSQL database/user on `postgres_prod`.
+- [x] Add sanitized LLDAP secret placeholders in `vars/common/example-secrets.yaml`.
+- [x] Add LLDAP secrets to vaulted `vars/common/secrets.yaml` on 192.168.50.11.
+- [x] Validate with syntax check.
+- [x] Validate with ansible-lint.
+- [x] Sync to Ansible host.
+- [x] Run playbook on Ansible host.
+- [x] Verify UI and LDAP endpoints by IP (`http://192.168.50.51`, `ldap://192.168.50.51:3890`).
+- [ ] Verify DNS-based endpoint from Ansible host (`ldap.taylor.lan`) after DNS record propagation/fix.
+
 ## HashiCorp Vault Role + Playbook (2026-05-14)
 
 - [x] Design role structure (native binary + Raft storage + Nginx proxy).

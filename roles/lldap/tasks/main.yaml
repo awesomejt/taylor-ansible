@@ -1,0 +1,92 @@
+- name: Ensure lldap role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == 'Debian'
+    fail_msg: "lldap role currently supports Debian/Ubuntu only"
+
+- name: Ensure required secrets are defined
+  ansible.builtin.assert:
+    that:
+      - lldap_jwt_secret != 'change-me-jwt'
+      - lldap_ldap_user_pass != 'change-me-ldap'
+      - lldap_db_password != 'change-me-db'
+    fail_msg: "Set vault_lldap_jwt_secret, vault_lldap_ldap_user_pass, and vault_lldap_db_password in vars/common/secrets.yaml"
+
+# --- Directories ----------------------------------------------------------
+
+- name: Ensure LLDAP project directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ lldap_primary_user }}"
+    group: "{{ lldap_primary_user }}"
+    mode: "0750"
+  loop:
+    - "{{ lldap_project_dir }}"
+    - "{{ lldap_data_dir }}"
+    - "{{ lldap_nginx_dir }}"
+    - "{{ lldap_certs_dir }}"
+
+# --- Templates ------------------------------------------------------------
+
+- name: Deploy Nginx reverse proxy configuration
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: "{{ lldap_nginx_conf_path }}"
+    owner: "{{ lldap_primary_user }}"
+    group: "{{ lldap_primary_user }}"
+    mode: "0640"
+  notify: Restart lldap service
+
+- name: Deploy Docker Compose file
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ lldap_compose_file }}"
+    owner: "{{ lldap_primary_user }}"
+    group: "{{ lldap_primary_user }}"
+    mode: "0640"
+  notify: Restart lldap service
+
+- name: Deploy environment file (no-overwrite guard)
+  ansible.builtin.copy:
+    dest: "{{ lldap_env_file }}"
+    content: "# LLDAP environment overrides\n# Managed by Ansible — regenerate with care.\n"
+    owner: "{{ lldap_primary_user }}"
+    group: "{{ lldap_primary_user }}"
+    mode: "0640"
+    force: false
+
+# --- Systemd unit ---------------------------------------------------------
+
+- name: Deploy LLDAP systemd unit
+  ansible.builtin.template:
+    src: lldap.service.j2
+    dest: "{{ lldap_systemd_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart lldap service
+
+- name: Ensure LLDAP service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ lldap_service_name }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+# --- Health check ---------------------------------------------------------
+
+- name: Wait for LLDAP web UI to be reachable
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ lldap_proxy_http_port }}/"
+    method: GET
+    status_code:
+      - 200
+      - 301
+      - 302
+  register: lldap_ui_check
+  retries: 15
+  delay: 5
+  until: lldap_ui_check.status in [200, 301, 302]
