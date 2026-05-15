@@ -1,5 +1,7 @@
 # MEMORY
 
+- 2026-05-15: Technitium DNS Server is currently pinned to version 15.2 in `roles/technitium-dns/defaults/main.yaml`; upstream site also reports 15.2 as the latest version. The upgrade flow now creates backups under `/var/backups/technitium` before running the installer.
+
 - 2026-05-15: Added `lldap.yaml` + `roles/lldap` for LLDAP on 192.168.50.51 (`ldap.taylor.lan`) with Docker Compose and Nginx reverse proxy for web UI; LDAP remains direct on TCP 3890. Backend persistence is PostgreSQL on `postgres_prod` (192.168.50.15), provisioned by the first play in `lldap.yaml`.
 - 2026-05-15: Applied `lldap.yaml` successfully from Ansible host; DB/user were created on `postgres_prod` and LLDAP came up on 192.168.50.51. From 192.168.50.11, direct IP checks passed (`http://192.168.50.51` and `:3890`), but `ldap.taylor.lan` did not resolve at verification time.
 - 2026-05-15: DNS for `ldap.taylor.lan` was later fixed; from 192.168.50.11, `getent hosts ldap.taylor.lan` resolves to 192.168.50.51 and both HTTP (`200`) and LDAP TCP (`:3890`) checks pass by hostname.

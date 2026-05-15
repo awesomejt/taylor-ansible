@@ -1,5 +1,16 @@
 # TODO
 
+## Technitium DNS Update (2026-05-15)
+
+- [x] Confirm latest upstream Technitium DNS version.
+- [x] Repair the Technitium role upgrade/backup block.
+- [x] Validate with syntax check.
+- [x] Validate with ansible-lint.
+- [x] Sync to Ansible host.
+- [x] Run DNS playbook on Ansible host.
+- [x] Confirm the backup was created before upgrade.
+- [ ] Commit changes locally.
+
 ## LLDAP Role + Playbook (2026-05-15)
 
 - [x] Review existing role and playbook scaffolding.

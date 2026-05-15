@@ -1,4 +1,5 @@
 technitium_install_script_url: https://download.technitium.com/dns/install.sh
+technitium_version: "15.2"
 technitium_force_upgrade: false
 
 technitium_bootstrap_nameserver_primary: 1.1.1.1

@@ -32,7 +32,7 @@
     path: /opt/technitium/dns/start.sh
   register: technitium_install_stat
 
-- name: Install or upgrade Technitium DNS
+- name: Install Technitium DNS (initial install)
   become: true
   ansible.builtin.shell: |
     set -euo pipefail
@@ -40,7 +40,7 @@
   args:
     executable: /bin/bash
   changed_when: false
-  when: technitium_force_upgrade | bool or not technitium_install_stat.stat.exists
+  when: not technitium_install_stat.stat.exists
 
 - name: Ensure Technitium dns.service is enabled and running
   become: true
@@ -75,10 +75,9 @@
       pass: "{{ technitium_password }}"
     status_code: 200
   register: technitium_login
-  when: technitium_zones | length > 0
 
 - name: Set API token fact
-  when: technitium_zones | length > 0 and technitium_login is succeeded
+  when: technitium_login is succeeded
   block:
     - name: Set API token from top-level json.token
       ansible.builtin.set_fact:
@@ -93,6 +92,106 @@
     - name: Fail if API token could not be found in login response
       ansible.builtin.fail:
         msg: "Technitium login did not return an API token. Response: {{ technitium_login.json | default(technitium_login) }}"
+      when: technitium_login is succeeded and (technitium_token is not defined or technitium_token == '')
+
+# Version check and upgrade
+- name: Check current Technitium DNS version
+  ansible.builtin.uri:
+    url: "{{ technitium_api_url }}/api/user/checkForUpdate"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ technitium_token }}"
+    status_code: 200
+  register: technitium_version_check
+  when: technitium_install_stat.stat.exists and technitium_token is defined
+
+- name: Set upgrade needed fact
+  ansible.builtin.set_fact:
+    technitium_needs_upgrade: >-
+      {{
+        technitium_version_check is defined
+        and not (technitium_version_check.skipped | default(false))
+        and technitium_version_check.json is defined
+        and technitium_version_check.json.response.currentVersion is defined
+        and technitium_version_check.json.response.currentVersion != technitium_version
+      }}
+
+- name: Set Technitium backup destination
+  ansible.builtin.set_fact:
+    _technitium_backup_dest: "/var/backups/technitium/technitium-{{ ansible_facts.date_time.iso8601_basic_short }}.zip"
+  when: technitium_install_stat.stat.exists and (technitium_needs_upgrade | default(false) | bool or technitium_force_upgrade | bool)
+
+- name: Ensure backup directory exists
+  become: true
+  ansible.builtin.file:
+    path: /var/backups/technitium
+    state: directory
+    mode: '0750'
+  when: technitium_install_stat.stat.exists and (technitium_needs_upgrade | default(false) | bool or technitium_force_upgrade | bool)
+
+- name: Back up Technitium DNS data before upgrade
+  become: true
+  ansible.builtin.uri:
+    url: >-
+      {{ technitium_api_url }}/api/settings/backup?zones=true&allowedZones=true&blockedZones=true&dnsSettings=true&authConfig=true&scopes=true&logSettings=true
+    method: GET
+    headers:
+      Authorization: "Bearer {{ technitium_token }}"
+    dest: "{{ _technitium_backup_dest }}"
+    status_code: 200
+  when: >-
+    technitium_install_stat.stat.exists
+    and technitium_token is defined
+    and (technitium_needs_upgrade | default(false) | bool or technitium_force_upgrade | bool)
+
+- name: Upgrade Technitium DNS to v{{ technitium_version }}
+  become: true
+  ansible.builtin.shell: |
+    set -euo pipefail
+    curl -sSL {{ technitium_install_script_url }} | bash
+  args:
+    executable: /bin/bash
+  changed_when: true
+  register: technitium_upgrade_result
+  when: >-
+    technitium_install_stat.stat.exists
+    and (technitium_force_upgrade | bool or technitium_needs_upgrade | default(false) | bool)
+
+- name: Restart Technitium DNS after upgrade
+  become: true
+  ansible.builtin.systemd:
+    name: dns.service
+    state: restarted
+  when: technitium_upgrade_result is defined and technitium_upgrade_result.changed | default(false)
+
+- name: Re-login to Technitium DNS API after upgrade
+  ansible.builtin.uri:
+    url: "{{ technitium_api_url }}/api/user/login"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      user: "{{ technitium_username }}"
+      pass: "{{ technitium_password }}"
+    status_code: 200
+  register: technitium_login
+  when: technitium_upgrade_result is defined and technitium_upgrade_result.changed | default(false)
+
+- name: Update API token after upgrade re-login
+  when: technitium_upgrade_result is defined and technitium_upgrade_result.changed | default(false)
+  block:
+    - name: Set API token from top-level json.token after upgrade
+      ansible.builtin.set_fact:
+        technitium_token: "{{ technitium_login.json.token }}"
+      when: technitium_login.json is defined and (technitium_login.json.token is defined)
+
+    - name: Set API token from json.response.token after upgrade
+      ansible.builtin.set_fact:
+        technitium_token: "{{ technitium_login.json.response.token }}"
+      when: technitium_login.json is defined and (technitium_login.json.response is defined) and (technitium_login.json.response.token is defined)
+
+    - name: Fail if API token could not be found after Technitium upgrade
+      ansible.builtin.fail:
+        msg: "Technitium login after upgrade did not return an API token. Response: {{ technitium_login.json | default(technitium_login) }}"
       when: technitium_login is succeeded and (technitium_token is not defined or technitium_token == '')
 
 # Fetch current DNS settings so we can add TSIG keys if requested
