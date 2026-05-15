@@ -12,7 +12,7 @@
 - [x] Sync to Ansible host.
 - [x] Run playbook on Ansible host.
 - [x] Verify UI and LDAP endpoints by IP (`http://192.168.50.51`, `ldap://192.168.50.51:3890`).
-- [ ] Verify DNS-based endpoint from Ansible host (`ldap.taylor.lan`) after DNS record propagation/fix.
+- [x] Verify DNS-based endpoint from Ansible host (`ldap.taylor.lan`) after DNS record propagation/fix.
 
 ## HashiCorp Vault Role + Playbook (2026-05-14)
 
