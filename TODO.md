@@ -1,5 +1,18 @@
 # TODO
 
+## HashiCorp Vault Role + Playbook (2026-05-14)
+
+- [x] Design role structure (native binary + Raft storage + Nginx proxy).
+- [x] Create `vault.yaml` playbook.
+- [x] Implement `roles/vault` with systemd service and Nginx reverse proxy.
+- [x] Add vault host (192.168.50.13) to inventory.ini.
+- [x] Create role README with init/unseal steps and step-ca TLS guidance.
+- [x] Validate with syntax check.
+- [ ] Sync to Ansible host.
+- [ ] Run playbook on Ansible host.
+- [ ] Initialize and unseal Vault manually on 192.168.50.13.
+- [ ] (Optional) Enable TLS via step-ca cert — see role README.
+
 ## Docker Registry Role + Playbook (2026-05-14)
 
 - [x] Review current Docker Registry v3 deployment guidance.

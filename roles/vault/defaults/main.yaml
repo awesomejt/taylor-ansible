@@ -1,0 +1,52 @@
+---
+# --- Vault package ---
+vault_version: "1.19.2"
+vault_arch: "amd64"
+vault_binary_url: "https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_linux_{{ vault_arch }}.zip"
+vault_binary_checksum_url: "https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_SHA256SUMS"
+
+# --- Vault user/group ---
+vault_user: vault
+vault_group: vault
+
+# --- Paths ---
+vault_install_dir: /usr/local/bin
+vault_config_dir: /etc/vault.d
+vault_data_dir: /opt/vault/data
+vault_tls_dir: /opt/vault/tls
+vault_log_dir: /var/log/vault
+
+vault_config_file: "{{ vault_config_dir }}/vault.hcl"
+
+# --- Service ---
+vault_service_name: vault
+
+# --- Storage (integrated Raft) ---
+vault_raft_node_id: vault-node1
+
+# --- Listener ---
+vault_listener_address: "127.0.0.1:8200"
+vault_listener_tls_disable: true
+vault_listener_tls_cert_file: "{{ vault_tls_dir }}/vault.crt"
+vault_listener_tls_key_file: "{{ vault_tls_dir }}/vault.key"
+
+# --- API / cluster addresses ---
+vault_api_addr: "http://vault.taylor.lan"
+vault_cluster_addr: "http://{{ ansible_default_ipv4.address }}:8201"
+
+# --- Vault UI ---
+vault_ui_enabled: true
+
+# --- Nginx reverse proxy ---
+vault_proxy_server_name: vault.taylor.lan
+vault_proxy_bind_address: "0.0.0.0"
+vault_proxy_http_port: 80
+vault_proxy_tls_enabled: false
+vault_proxy_tls_port: 443
+vault_proxy_tls_force_https: false
+vault_proxy_tls_cert_path: "/certs/vault.crt"
+vault_proxy_tls_key_path: "/certs/vault.key"
+vault_proxy_certs_dir: /opt/vault-proxy/certs
+
+vault_nginx_config_path: /etc/nginx/sites-available/vault.conf
+vault_nginx_enabled_path: /etc/nginx/sites-enabled/vault.conf

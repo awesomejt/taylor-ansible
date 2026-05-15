@@ -1,0 +1,177 @@
+- name: Ensure vault role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == 'Debian'
+    fail_msg: "vault role currently supports Debian/Ubuntu only"
+
+# --- System dependencies --------------------------------------------------
+
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - unzip
+      - curl
+      - nginx
+    state: present
+    update_cache: true
+
+# --- User / group ---------------------------------------------------------
+
+- name: Ensure vault group exists
+  ansible.builtin.group:
+    name: "{{ vault_group }}"
+    system: true
+    state: present
+
+- name: Ensure vault user exists
+  ansible.builtin.user:
+    name: "{{ vault_user }}"
+    group: "{{ vault_group }}"
+    system: true
+    shell: /sbin/nologin
+    home: "{{ vault_data_dir }}"
+    create_home: false
+    state: present
+
+# --- Directories ----------------------------------------------------------
+
+- name: Ensure vault directories exist
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ vault_group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "{{ vault_config_dir }}", owner: root, mode: "0755" }
+    - { path: "{{ vault_data_dir }}", owner: "{{ vault_user }}", mode: "0700" }
+    - { path: "{{ vault_tls_dir }}", owner: "{{ vault_user }}", mode: "0700" }
+    - { path: "{{ vault_log_dir }}", owner: "{{ vault_user }}", mode: "0755" }
+    - { path: "{{ vault_proxy_certs_dir }}", owner: root, mode: "0750" }
+
+# --- Binary install -------------------------------------------------------
+
+- name: Check current vault version
+  ansible.builtin.command: "{{ vault_install_dir }}/vault version"
+  register: vault_current_version
+  changed_when: false
+  failed_when: false
+
+- name: Download and install vault binary
+  when: >
+    vault_current_version.rc != 0 or
+    vault_version not in vault_current_version.stdout
+  block:
+    - name: Download vault zip
+      ansible.builtin.get_url:
+        url: "{{ vault_binary_url }}"
+        dest: "/tmp/vault_{{ vault_version }}_linux_{{ vault_arch }}.zip"
+        mode: "0644"
+
+    - name: Unzip vault binary
+      ansible.builtin.unarchive:
+        src: "/tmp/vault_{{ vault_version }}_linux_{{ vault_arch }}.zip"
+        dest: "{{ vault_install_dir }}"
+        remote_src: true
+        mode: "0755"
+      notify: Restart vault
+
+    - name: Remove downloaded zip
+      ansible.builtin.file:
+        path: "/tmp/vault_{{ vault_version }}_linux_{{ vault_arch }}.zip"
+        state: absent
+
+- name: Set vault binary capabilities (mlock)
+  ansible.builtin.command: "setcap cap_ipc_lock=+ep {{ vault_install_dir }}/vault"
+  changed_when: true
+
+# --- Configuration --------------------------------------------------------
+
+- name: Deploy vault configuration
+  ansible.builtin.template:
+    src: vault.hcl.j2
+    dest: "{{ vault_config_file }}"
+    owner: root
+    group: "{{ vault_group }}"
+    mode: "0640"
+  notify: Restart vault
+
+# --- Systemd unit ---------------------------------------------------------
+
+- name: Deploy vault systemd unit
+  ansible.builtin.template:
+    src: vault.service.j2
+    dest: /etc/systemd/system/vault.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart vault
+
+- name: Ensure vault service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ vault_service_name }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+# --- Nginx reverse proxy --------------------------------------------------
+
+- name: Remove nginx default site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload nginx
+
+- name: Deploy nginx vault virtual host
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: "{{ vault_nginx_config_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload nginx
+
+- name: Enable nginx vault site
+  ansible.builtin.file:
+    src: "{{ vault_nginx_config_path }}"
+    dest: "{{ vault_nginx_enabled_path }}"
+    state: link
+  notify: Reload nginx
+
+- name: Ensure nginx is enabled and running
+  ansible.builtin.systemd:
+    name: nginx
+    enabled: true
+    state: started
+
+# --- Post-install check ---------------------------------------------------
+
+- name: Wait for vault to be reachable
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:8200/v1/sys/health"
+    method: GET
+    status_code:
+      - 200   # initialized, unsealed, active
+      - 429   # standby
+      - 472   # performance standby
+      - 473   # recovery mode
+      - 501   # not initialized
+      - 503   # sealed
+  register: vault_health
+  retries: 12
+  delay: 5
+  until: vault_health.status in [200, 429, 472, 473, 501, 503]
+
+- name: Report vault initialization status
+  ansible.builtin.debug:
+    msg: >-
+      Vault responded with HTTP {{ vault_health.status }}.
+      {% if vault_health.status == 501 %}
+      Vault is NOT YET INITIALIZED. Run 'vault operator init' manually — see role README.
+      {% elif vault_health.status == 503 %}
+      Vault is sealed. Run 'vault operator unseal' manually — see role README.
+      {% elif vault_health.status == 200 %}
+      Vault is initialized, unsealed, and active.
+      {% endif %}
