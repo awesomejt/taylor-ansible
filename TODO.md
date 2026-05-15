@@ -9,7 +9,7 @@
 - [x] Sync to Ansible host.
 - [x] Run DNS playbook on Ansible host.
 - [x] Confirm the backup was created before upgrade.
-- [ ] Commit changes locally.
+- [x] Commit changes locally.
 
 ## LLDAP Role + Playbook (2026-05-15)
 
