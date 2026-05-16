@@ -16,6 +16,8 @@
 - Hermes integration endpoints were aligned to the new AI stack host (`192.168.50.50`) for LiteLLM and SearXNG.
 # MEMORY
 
+- 2026-05-15: Created `ollama.yaml` playbook and `roles/ollama` to deploy Ollama LLM inference server on 192.168.50.51. Ollama provides CPU-only (or GPU-accelerated) inference endpoint for OpenWebUI (LiteLLM/AnythingLLM). Must be deployed before openwebui.yaml.
+
 - 2026-05-15: Technitium DNS Server is currently pinned to version 15.2 in `roles/technitium-dns/defaults/main.yaml`; upstream site also reports 15.2 as the latest version. The upgrade flow now creates backups under `/var/backups/technitium` before running the installer.
 
 - 2026-05-15: Added `lldap.yaml` + `roles/lldap` for LLDAP on 192.168.50.51 (`ldap.taylor.lan`) with Docker Compose and Nginx reverse proxy for web UI; LDAP remains direct on TCP 3890. Backend persistence is PostgreSQL on `postgres_prod` (192.168.50.15), provisioned by the first play in `lldap.yaml`.

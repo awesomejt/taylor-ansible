@@ -1,0 +1,29 @@
+---
+# Ollama image and runtime
+ollama_image: ollama/ollama:latest
+ollama_container_name: ollama
+ollama_restart_policy: unless-stopped
+
+# Directory layout
+ollama_primary_user: root
+ollama_project_name: ollama
+ollama_project_dir: "/opt/{{ ollama_project_name }}"
+ollama_data_dir: "{{ ollama_project_dir }}/data"
+ollama_models_dir: "{{ ollama_data_dir }}/models"
+
+# Docker compose
+ollama_compose_file: "{{ ollama_project_dir }}/compose.yaml"
+ollama_systemd_unit: ollama.service
+ollama_systemd_unit_path: "/etc/systemd/system/{{ ollama_systemd_unit }}"
+
+# Service settings
+ollama_bind_address: "0.0.0.0"
+ollama_port: 11434
+
+# Model pulling (optional)
+# Set to pull models after container starts (useful for seeding inference endpoints)
+ollama_models_to_pull: []
+  # Example:
+  # - llama3.2:latest
+  # - qwen2.5-coder:latest
+  # - ministral-3:latest

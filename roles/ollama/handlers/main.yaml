@@ -1,0 +1,5 @@
+---
+- name: Restart ollama service
+  ansible.builtin.systemd:
+    name: "{{ ollama_systemd_unit }}"
+    state: restarted

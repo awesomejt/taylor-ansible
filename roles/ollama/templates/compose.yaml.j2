@@ -1,0 +1,12 @@
+services:
+  ollama:
+    image: {{ ollama_image }}
+    container_name: {{ ollama_container_name }}
+    restart: {{ ollama_restart_policy }}
+    ports:
+      - "{{ ollama_bind_address }}:{{ ollama_port }}:11434"
+    volumes:
+      - {{ ollama_data_dir }}:/root/.ollama
+    environment:
+      OLLAMA_HOST: "0.0.0.0:11434"
+    pull_policy: always

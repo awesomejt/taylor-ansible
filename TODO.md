@@ -201,6 +201,17 @@
 
 **Note:** DNS CNAME records have been added to alias multiple service hostnames to `docker.taylor.lan` (192.168.50.50) for simplified access and migration flexibility.
 
+## Ollama Deployment (2026-05-15)
+
+**Purpose**: Deploy Ollama LLM inference server on dedicated host (192.168.50.51) before OpenWebUI stack consolidation. Provides CPU-only fallback inference and embedding model support for LiteLLM and AnythingLLM.
+
+- [ ] Validate ollama.yaml syntax check locally
+- [ ] Sync to Ansible host
+- [ ] Run ollama.yaml playbook on Ansible host
+- [ ] Verify Ollama service is ready on http://192.168.50.51:11434
+- [ ] (Optional) Pull initial models for inference or embedding (e.g., llama3.2, qwen2.5-coder, ministral-3)
+- [ ] Commit changes locally
+
 ### Phase 3: Playbook Refactoring
 
 - [ ] **registry.yaml**: Update inventory target or create consolidated host target; keep role logic unchanged
