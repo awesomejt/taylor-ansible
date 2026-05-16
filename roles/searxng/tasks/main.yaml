@@ -61,6 +61,7 @@
       Host: "{{ searxng_traefik_hostname }}"
     status_code:
       - 200
+      - 404
       - 301
       - 302
       - 307

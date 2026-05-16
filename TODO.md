@@ -443,7 +443,7 @@
   - [ ] Define Traefik virtual hostnames:
     - [ ] openwebui.taylor.lan → open-webui service
     - [ ] litellm.taylor.lan (or litellm-gateway.taylor.lan) → litellm service
-    - [ ] searxng.taylor.lan → searxng service
+    - [ ] search.taylor.lan → searxng service
     - [ ] anythingllm.taylor.lan → anythingllm service
     - [ ] n8n.taylor.lan → n8n service
     - [ ] qdrant.taylor.lan (or qdrant-api.taylor.lan) → qdrant service
@@ -590,7 +590,7 @@
   - [ ] ldap.taylor.lan → consolidated IP
   - [ ] openwebui.taylor.lan → consolidated IP
   - [ ] litellm.taylor.lan → consolidated IP
-  - [ ] searxng.taylor.lan → consolidated IP
+  - [ ] search.taylor.lan → consolidated IP
   - [ ] anythingllm.taylor.lan → consolidated IP
   - [ ] n8n.taylor.lan → consolidated IP
   - [ ] qdrant.taylor.lan → consolidated IP

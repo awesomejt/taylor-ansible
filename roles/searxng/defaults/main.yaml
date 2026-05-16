@@ -21,7 +21,7 @@ searxng_valkey_container_name: searxng-valkey
 
 # Traefik integration
 searxng_network_name: traefik_proxy
-searxng_traefik_hostname: "searxng.taylor.lan"
+searxng_traefik_hostname: "search.taylor.lan"
 searxng_traefik_entrypoint: web
 
 searxng_systemd_unit: searxng.service
