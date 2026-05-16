@@ -26,6 +26,7 @@ litellm_postgres_db: litellm
 litellm_postgres_password: "{{ vault_litellm_postgres_password | default(vault_openwebui_postgres_password | default('change-me')) }}"
 
 # Model routing
+# Keep this legacy alias for compatibility with existing clients (e.g., AnythingLLM).
 litellm_model_name: local-ollama
 litellm_ollama_base_url: "http://192.168.50.51:11434"
 
@@ -45,9 +46,11 @@ litellm_omlx_secondary_chat_model: "Qwen3.6-27B-6bit"
 litellm_omlx_secondary_coding_model: "Qwen3.6-35B-A3B-6bit"
 litellm_omlx_secondary_thinking_model: "gpt-oss-20b-MLX-8bit"
 
-litellm_ollama_chat_model: "llama3.1:latest"
-litellm_ollama_coding_model: "qwen2.5-coder:latest"
-litellm_ollama_thinking_model: "ministral-3:latest"
+litellm_ollama_chat_model: "llama3.2:latest"
+litellm_ollama_coding_model: "deepseek-coder-v2:latest"
+litellm_ollama_thinking_model: "qwen3.5:latest"
+litellm_ollama_hermes_model: "hermes3:latest"
+litellm_ollama_gemma_model: "gemma4:latest"
 
 litellm_alias_chat: use-chat
 litellm_alias_coding: use-coding

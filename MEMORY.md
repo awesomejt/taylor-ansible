@@ -1,3 +1,11 @@
+### LiteLLM/Open WebUI Provider Wiring Refresh (2026-05-16)
+
+- Verified live model catalogs with auth: oMLX primary (`192.168.50.93`) and secondary (`192.168.50.94`) require `vault_omlx_api_key` on `/v1/models`.
+- Updated LiteLLM Ollama defaults to currently installed models on `192.168.50.51`: chat=`llama3.2:latest`, coding=`deepseek-coder-v2:latest`, thinking=`qwen3.5:latest`.
+- Added explicit LiteLLM model alias for legacy `local-ollama` to keep existing clients (e.g., AnythingLLM) working and to keep fallback chains valid.
+- Added additional LiteLLM direct aliases for `ollama-hermes3`, `ollama-gemma4`, and current secondary oMLX model families.
+- Open WebUI now sets `OPENAI_API_BASE_URLS` / `OPENAI_API_KEYS` (semicolon-separated) with LiteLLM first, then direct oMLX primary/secondary endpoints; `OPENAI_API_BASE_URL` remains LiteLLM default and `OLLAMA_BASE_URL` remains direct host access.
+
 ### VM/Inventory Reset and DNS Aliasing (2026-05-15)
 
 - VMs for Docker Compose (192.168.50.50), Ollama (192.168.50.51), and Hermes (192.168.50.52) have been reset and reinitialized per consolidation plan.

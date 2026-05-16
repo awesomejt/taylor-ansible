@@ -16,6 +16,21 @@ openwebui_webui_base_url: "http://chat.taylor.lan"
 openwebui_openai_base_url: "http://litellm:4000/v1"
 openwebui_openai_api_key: "{{ vault_litellm_master_key | default(vault_openwebui_litellm_master_key | default('change-me')) }}"
 
+# Optional direct OpenAI-compatible provider testing endpoints
+openwebui_omlx_primary_base_url: "http://192.168.50.93:8000/v1"
+openwebui_omlx_secondary_base_url: "http://192.168.50.94:8000/v1"
+openwebui_omlx_api_key: "{{ vault_omlx_api_key }}"
+
+# Keep LiteLLM first so it remains the default OpenAI-compatible backend.
+openwebui_openai_api_base_urls:
+  - "{{ openwebui_openai_base_url }}"
+  - "{{ openwebui_omlx_primary_base_url }}"
+  - "{{ openwebui_omlx_secondary_base_url }}"
+openwebui_openai_api_keys:
+  - "{{ openwebui_openai_api_key }}"
+  - "{{ openwebui_omlx_api_key }}"
+  - "{{ openwebui_omlx_api_key }}"
+
 # SearXNG connection (via shared traefik_proxy network)
 openwebui_searxng_query_url: "http://searxng:8080/search?q=<query>&format=json"
 

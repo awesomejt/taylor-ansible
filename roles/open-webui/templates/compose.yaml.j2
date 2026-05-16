@@ -9,6 +9,8 @@ services:
       WEBUI_URL: "{{ openwebui_webui_base_url }}"
       OPENAI_API_BASE_URL: "{{ openwebui_openai_base_url }}"
       OPENAI_API_KEY: "{{ openwebui_openai_api_key }}"
+      OPENAI_API_BASE_URLS: "{{ openwebui_openai_api_base_urls | join(';') }}"
+      OPENAI_API_KEYS: "{{ openwebui_openai_api_keys | join(';') }}"
       ENABLE_RAG_WEB_SEARCH: "true"
       RAG_WEB_SEARCH_ENGINE: "searxng"
       SEARXNG_QUERY_URL: "{{ openwebui_searxng_query_url }}"

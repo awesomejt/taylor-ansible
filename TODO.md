@@ -1,5 +1,18 @@
 # TODO
 
+## LiteLLM + Open WebUI Provider Audit (2026-05-16)
+
+- [x] Verify live oMLX model inventories on primary (`192.168.50.93`) and secondary (`192.168.50.94`) with vault API key.
+- [x] Verify live Ollama model inventory on fallback host (`192.168.50.51`).
+- [x] Update LiteLLM Ollama defaults to currently available models.
+- [x] Fix LiteLLM legacy `local-ollama` alias so configured fallbacks target a defined model.
+- [x] Add direct provider aliases in LiteLLM for newly available Ollama and oMLX models.
+- [x] Configure Open WebUI to keep LiteLLM as default while exposing direct oMLX OpenAI-compatible endpoints for testing.
+- [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`).
+- [x] Sync to Ansible host.
+- [x] Run `litellm.yaml` and `openwebui.yaml` on Ansible host.
+- [x] Verify runtime behavior (routes, LiteLLM models list, and sample completions).
+
 ## AI Stack Rollout - Decomposed Roles (2026-05-16)
 
 - [x] Validate updated playbooks locally (`ansible-playbook --syntax-check`)

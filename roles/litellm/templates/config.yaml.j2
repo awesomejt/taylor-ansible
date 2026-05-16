@@ -83,6 +83,21 @@ model_list:
       model: "ollama/{{ litellm_ollama_thinking_model }}"
       api_base: "{{ litellm_ollama_base_url }}"
       api_key: "none"
+  - model_name: "{{ litellm_model_name }}"
+    litellm_params:
+      model: "ollama/{{ litellm_ollama_chat_model }}"
+      api_base: "{{ litellm_ollama_base_url }}"
+      api_key: "none"
+  - model_name: "ollama-hermes3"
+    litellm_params:
+      model: "ollama/{{ litellm_ollama_hermes_model }}"
+      api_base: "{{ litellm_ollama_base_url }}"
+      api_key: "none"
+  - model_name: "ollama-gemma4"
+    litellm_params:
+      model: "ollama/{{ litellm_ollama_gemma_model }}"
+      api_base: "{{ litellm_ollama_base_url }}"
+      api_key: "none"
   - model_name: "omlx-primary-gpt-oss-20b"
     litellm_params:
       model: "openai/gpt-oss-20b-MXFP4-Q8"
@@ -116,5 +131,20 @@ model_list:
   - model_name: "omlx-secondary-gpt-oss-20b"
     litellm_params:
       model: "openai/gpt-oss-20b-MLX-8bit"
+      api_base: "{{ litellm_omlx_secondary_base_url }}"
+      api_key: "{{ litellm_omlx_api_key }}"
+  - model_name: "omlx-secondary-qwen3-6-27b"
+    litellm_params:
+      model: "openai/Qwen3.6-27B-6bit"
+      api_base: "{{ litellm_omlx_secondary_base_url }}"
+      api_key: "{{ litellm_omlx_api_key }}"
+  - model_name: "omlx-secondary-qwen3-6-35b"
+    litellm_params:
+      model: "openai/Qwen3.6-35B-A3B-6bit"
+      api_base: "{{ litellm_omlx_secondary_base_url }}"
+      api_key: "{{ litellm_omlx_api_key }}"
+  - model_name: "omlx-secondary-gemma4-26b"
+    litellm_params:
+      model: "openai/gemma-4-26b-a4b-it-6bit"
       api_base: "{{ litellm_omlx_secondary_base_url }}"
       api_key: "{{ litellm_omlx_api_key }}"
