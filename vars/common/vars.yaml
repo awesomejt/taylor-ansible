@@ -38,6 +38,12 @@ openclaw_discord_channel_development_id: "1499959791202603180"
 openclaw_discord_channel_research_id: "1499959898291830874"
 openclaw_discord_channel_reports_id: "1499960253163241502"
 
+# Dedicated Ollama host with optional reverse proxy for browser access.
+# API clients should continue using :11434 directly.
+ollama_nginx_enable: true
+ollama_nginx_server_name: "ollama.taylor.lan"
+ollama_nginx_http_port: 80
+
 # AI stack shared defaults
 openwebui_primary_user: "jason"
 openwebui_project_name: "ai-stack"

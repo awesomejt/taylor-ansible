@@ -14,6 +14,7 @@
 - OpenWebUI and AnythingLLM now use dedicated Ollama host `192.168.50.51` via `openwebui_litellm_ollama_base_url` and `openwebui_anythingllm_embedding_base_url`.
 - Shared defaults in `vars/common/vars.yaml` and role defaults now target consolidated host `192.168.50.50` instead of legacy `192.168.50.91`.
 - Hermes integration endpoints were aligned to the new AI stack host (`192.168.50.50`) for LiteLLM and SearXNG.
+- 2026-05-15: `roles/ollama` now supports optional local Nginx reverse proxy on the dedicated Ollama host for browser-friendly access (`ollama_nginx_enable`, default hostname `ollama.taylor.lan`). Direct API access on `:11434` remains unchanged for LiteLLM and other clients.
 # MEMORY
 
 - 2026-05-15: Created `ollama.yaml` playbook and `roles/ollama` to deploy Ollama LLM inference server on 192.168.50.51. Ollama provides CPU-only (or GPU-accelerated) inference endpoint for OpenWebUI (LiteLLM/AnythingLLM). Must be deployed before openwebui.yaml.
