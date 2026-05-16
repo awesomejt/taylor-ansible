@@ -1,0 +1,24 @@
+---
+pgadmin_primary_user: root
+pgadmin_project_name: pgadmin
+pgadmin_project_dir: "/opt/pgadmin"
+pgadmin_compose_file: "{{ pgadmin_project_dir }}/compose.yaml"
+
+pgadmin_image: dpage/pgadmin4:latest
+pgadmin_container_name: pgadmin
+pgadmin_restart_policy: unless-stopped
+pgadmin_container_uid: "5050"
+pgadmin_container_gid: "5050"
+
+pgadmin_data_dir: "{{ pgadmin_project_dir }}/data"
+
+pgadmin_default_email: admin@taylor.lan
+pgadmin_default_password: "{{ vault_pgadmin_admin_password | default('change-me') }}"
+
+# Traefik integration
+pgadmin_network_name: traefik_proxy
+pgadmin_traefik_hostname: "pgadmin.taylor.lan"
+pgadmin_traefik_entrypoint: web
+
+pgadmin_systemd_unit: pgadmin.service
+pgadmin_systemd_unit_path: "/etc/systemd/system/{{ pgadmin_systemd_unit }}"

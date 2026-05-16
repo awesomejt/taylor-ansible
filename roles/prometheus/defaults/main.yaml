@@ -1,0 +1,24 @@
+---
+prometheus_primary_user: root
+prometheus_project_name: prometheus
+prometheus_project_dir: "/opt/prometheus"
+prometheus_compose_file: "{{ prometheus_project_dir }}/compose.yaml"
+
+prometheus_image: prom/prometheus:latest
+prometheus_container_name: prometheus
+prometheus_restart_policy: unless-stopped
+
+prometheus_config_dir: "{{ prometheus_project_dir }}/config"
+prometheus_config_path: "{{ prometheus_config_dir }}/prometheus.yml"
+prometheus_data_dir: "{{ prometheus_project_dir }}/data"
+
+prometheus_scrape_interval: 30s
+prometheus_evaluation_interval: 30s
+
+# Traefik integration
+prometheus_network_name: traefik_proxy
+prometheus_traefik_hostname: "prometheus.taylor.lan"
+prometheus_traefik_entrypoint: web
+
+prometheus_systemd_unit: prometheus.service
+prometheus_systemd_unit_path: "/etc/systemd/system/{{ prometheus_systemd_unit }}"

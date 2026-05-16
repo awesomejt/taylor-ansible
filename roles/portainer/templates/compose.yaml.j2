@@ -1,0 +1,21 @@
+services:
+  portainer:
+    image: {{ portainer_image }}
+    container_name: {{ portainer_container_name }}
+    restart: {{ portainer_restart_policy }}
+    command: --http-enabled
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - {{ portainer_data_dir }}:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.rule=Host(`{{ portainer_traefik_hostname }}`)"
+      - "traefik.http.routers.portainer.entrypoints={{ portainer_traefik_entrypoint }}"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+    networks:
+      - traefik_proxy
+    pull_policy: always
+
+networks:
+  traefik_proxy:
+    external: true

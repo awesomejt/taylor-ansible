@@ -1,0 +1,6 @@
+---
+- name: Restart portainer service
+  ansible.builtin.systemd:
+    name: "{{ portainer_systemd_unit }}"
+    state: restarted
+    daemon_reload: true

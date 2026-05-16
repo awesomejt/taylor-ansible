@@ -1,5 +1,15 @@
 # TODO
 
+## Compose Ops Services Rollout (2026-05-16)
+
+- [x] Add decomposed roles and playbooks for Prometheus, Grafana, pgAdmin, and Portainer.
+- [x] Add inventory groups for new services on the consolidated host.
+- [x] Add sanitized secret placeholders in `vars/common/example-secrets.yaml`.
+- [x] Validate playbooks locally (`ansible-playbook --syntax-check`, `ansible-lint`).
+- [x] Sync to Ansible host.
+- [x] Apply playbooks on Ansible host.
+- [x] Verify routes respond through Traefik.
+
 ## AI Stack Validation Automation (2026-05-16)
 
 - [x] Create validation script template for routed AI stack health checks.

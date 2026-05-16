@@ -1,0 +1,29 @@
+---
+grafana_primary_user: root
+grafana_project_name: grafana
+grafana_project_dir: "/opt/grafana"
+grafana_compose_file: "{{ grafana_project_dir }}/compose.yaml"
+
+grafana_image: grafana/grafana:latest
+grafana_container_name: grafana
+grafana_restart_policy: unless-stopped
+
+grafana_data_dir: "{{ grafana_project_dir }}/data"
+grafana_provisioning_dir: "{{ grafana_project_dir }}/provisioning"
+grafana_datasources_dir: "{{ grafana_provisioning_dir }}/datasources"
+grafana_datasource_path: "{{ grafana_datasources_dir }}/datasource.yaml"
+grafana_container_uid: "472"
+grafana_container_gid: "472"
+
+grafana_admin_username: "admin"
+grafana_admin_password: "{{ vault_grafana_admin_password | default('change-me') }}"
+
+grafana_prometheus_url: "http://prometheus:9090"
+
+# Traefik integration
+grafana_network_name: traefik_proxy
+grafana_traefik_hostname: "grafana.taylor.lan"
+grafana_traefik_entrypoint: web
+
+grafana_systemd_unit: grafana.service
+grafana_systemd_unit_path: "/etc/systemd/system/{{ grafana_systemd_unit }}"

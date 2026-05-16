@@ -1,0 +1,23 @@
+services:
+  grafana:
+    image: {{ grafana_image }}
+    container_name: {{ grafana_container_name }}
+    restart: {{ grafana_restart_policy }}
+    volumes:
+      - {{ grafana_data_dir }}:/var/lib/grafana
+      - {{ grafana_provisioning_dir }}:/etc/grafana/provisioning
+    environment:
+      GF_SECURITY_ADMIN_USER: "{{ grafana_admin_username }}"
+      GF_SECURITY_ADMIN_PASSWORD: "{{ grafana_admin_password }}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`{{ grafana_traefik_hostname }}`)"
+      - "traefik.http.routers.grafana.entrypoints={{ grafana_traefik_entrypoint }}"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+    networks:
+      - traefik_proxy
+    pull_policy: always
+
+networks:
+  traefik_proxy:
+    external: true

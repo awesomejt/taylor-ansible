@@ -1,0 +1,22 @@
+services:
+  pgadmin:
+    image: {{ pgadmin_image }}
+    container_name: {{ pgadmin_container_name }}
+    restart: {{ pgadmin_restart_policy }}
+    volumes:
+      - {{ pgadmin_data_dir }}:/var/lib/pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "{{ pgadmin_default_email }}"
+      PGADMIN_DEFAULT_PASSWORD: "{{ pgadmin_default_password }}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pgadmin.rule=Host(`{{ pgadmin_traefik_hostname }}`)"
+      - "traefik.http.routers.pgadmin.entrypoints={{ pgadmin_traefik_entrypoint }}"
+      - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
+    networks:
+      - traefik_proxy
+    pull_policy: always
+
+networks:
+  traefik_proxy:
+    external: true

@@ -1,0 +1,71 @@
+---
+- name: Ensure role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == "Debian"
+    fail_msg: "prometheus role currently supports Debian/Ubuntu only"
+
+- name: Ensure Prometheus directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ prometheus_primary_user }}"
+    group: "{{ prometheus_primary_user }}"
+    mode: "0755"
+  loop:
+    - "{{ prometheus_project_dir }}"
+    - "{{ prometheus_config_dir }}"
+
+- name: Ensure Prometheus data directory has container-write permissions
+  ansible.builtin.file:
+    path: "{{ prometheus_data_dir }}"
+    state: directory
+    owner: "65534"
+    group: "65534"
+    mode: "0755"
+
+- name: Deploy Prometheus config
+  ansible.builtin.template:
+    src: prometheus.yml.j2
+    dest: "{{ prometheus_config_path }}"
+    owner: "{{ prometheus_primary_user }}"
+    group: "{{ prometheus_primary_user }}"
+    mode: "0644"
+  notify: Restart prometheus service
+
+- name: Deploy Prometheus Docker Compose file
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ prometheus_compose_file }}"
+    owner: "{{ prometheus_primary_user }}"
+    group: "{{ prometheus_primary_user }}"
+    mode: "0644"
+  notify: Restart prometheus service
+
+- name: Deploy Prometheus systemd unit
+  ansible.builtin.template:
+    src: prometheus.service.j2
+    dest: "{{ prometheus_systemd_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart prometheus service
+
+- name: Ensure Prometheus service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ prometheus_systemd_unit }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Wait for Prometheus to be ready
+  ansible.builtin.command: >-
+    docker exec {{ prometheus_container_name }}
+    wget -qO- http://127.0.0.1:9090/-/ready
+  register: prometheus_ready
+  changed_when: false
+  until:
+    - prometheus_ready.rc == 0
+    - "'Ready' in prometheus_ready.stdout"
+  retries: 24
+  delay: 5

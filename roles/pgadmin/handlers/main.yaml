@@ -1,0 +1,6 @@
+---
+- name: Restart pgadmin service
+  ansible.builtin.systemd:
+    name: "{{ pgadmin_systemd_unit }}"
+    state: restarted
+    daemon_reload: true

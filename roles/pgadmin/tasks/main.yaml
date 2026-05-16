@@ -1,0 +1,65 @@
+---
+- name: Ensure role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == "Debian"
+    fail_msg: "pgadmin role currently supports Debian/Ubuntu only"
+
+- name: Ensure pgAdmin directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ pgadmin_primary_user }}"
+    group: "{{ pgadmin_primary_user }}"
+    mode: "0755"
+  loop:
+    - "{{ pgadmin_project_dir }}"
+
+- name: Ensure pgAdmin data directory has container-write permissions
+  ansible.builtin.file:
+    path: "{{ pgadmin_data_dir }}"
+    state: directory
+    owner: "{{ pgadmin_container_uid }}"
+    group: "{{ pgadmin_container_gid }}"
+    mode: "0755"
+
+- name: Deploy pgAdmin Docker Compose file
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ pgadmin_compose_file }}"
+    owner: "{{ pgadmin_primary_user }}"
+    group: "{{ pgadmin_primary_user }}"
+    mode: "0644"
+  notify: Restart pgadmin service
+
+- name: Deploy pgAdmin systemd unit
+  ansible.builtin.template:
+    src: pgadmin.service.j2
+    dest: "{{ pgadmin_systemd_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart pgadmin service
+
+- name: Ensure pgAdmin service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ pgadmin_systemd_unit }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Wait for pgAdmin to be ready
+  ansible.builtin.uri:
+    url: "http://127.0.0.1/"
+    headers:
+      Host: "{{ pgadmin_traefik_hostname }}"
+    status_code:
+      - 200
+      - 301
+      - 302
+      - 307
+      - 308
+  register: pgadmin_ready
+  until: pgadmin_ready is succeeded
+  retries: 24
+  delay: 5

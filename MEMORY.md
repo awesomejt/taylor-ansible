@@ -1,3 +1,19 @@
+### Compose Ops Services Added (2026-05-16)
+
+- Added decomposed roles + playbooks for Prometheus (`prometheus.yaml`), Grafana (`grafana.yaml`), pgAdmin (`pgadmin.yaml`), and Portainer (`portainer.yaml`) on `192.168.50.50`.
+- Added inventory groups: `prometheus`, `grafana`, `pgadmin`, `portainer`, and aggregate group `ops_stack`.
+- All four services are routed via Traefik host rules:
+   - `prometheus.taylor.lan`
+   - `grafana.taylor.lan`
+   - `pgadmin.taylor.lan`
+   - `portainer.taylor.lan`
+- Added common example-secrets placeholders for `vault_grafana_admin_password` and `vault_pgadmin_admin_password`.
+- Runtime verification from host confirms routed responses: Prometheus 302, Grafana 302, pgAdmin 302, Portainer 200.
+- Container permission notes:
+   - Prometheus data dir must be writable by UID/GID `65534`.
+   - Grafana data dir must be writable by UID/GID `472`.
+   - pgAdmin data dir must be writable by UID/GID `5050`.
+
 ### AI Stack Validation Cron + Log Rotation (2026-05-16)
 
 - Added `ai-validation.yaml` and `roles/ai-validation` to deploy a host-local AI stack validation script on `192.168.50.50`.

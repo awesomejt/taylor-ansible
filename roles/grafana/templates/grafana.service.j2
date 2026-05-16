@@ -1,0 +1,18 @@
+[Unit]
+Description=Grafana
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=exec
+WorkingDirectory={{ grafana_project_dir }}
+ExecStart=/usr/bin/docker compose -f {{ grafana_compose_file }} up --remove-orphans
+ExecStop=/usr/bin/docker compose -f {{ grafana_compose_file }} down
+Restart=on-failure
+RestartSec=10s
+User={{ grafana_primary_user }}
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

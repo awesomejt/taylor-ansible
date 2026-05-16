@@ -31,6 +31,24 @@ Run OpenClaw setup against hosts in the `openclaw` inventory group:
 ansible-playbook -i inventory.ini openclaw.yaml
 ```
 
+Run Prometheus, Grafana, pgAdmin, and Portainer on the consolidated Docker host:
+
+```bash
+ansible-playbook -i inventory.ini prometheus.yaml
+ansible-playbook -i inventory.ini grafana.yaml --ask-vault-pass
+ansible-playbook -i inventory.ini pgadmin.yaml --ask-vault-pass
+ansible-playbook -i inventory.ini portainer.yaml
+```
+
+Or deploy all four through the aggregate inventory group:
+
+```bash
+ansible-playbook -i inventory.ini prometheus.yaml -e target=ops_stack
+ansible-playbook -i inventory.ini grafana.yaml -e target=ops_stack --ask-vault-pass
+ansible-playbook -i inventory.ini pgadmin.yaml -e target=ops_stack --ask-vault-pass
+ansible-playbook -i inventory.ini portainer.yaml -e target=ops_stack
+```
+
 Run step-ca setup against hosts in the `step_ca` inventory group:
 
 ```bash

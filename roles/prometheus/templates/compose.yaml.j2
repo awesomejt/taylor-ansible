@@ -1,0 +1,24 @@
+services:
+  prometheus:
+    image: {{ prometheus_image }}
+    container_name: {{ prometheus_container_name }}
+    restart: {{ prometheus_restart_policy }}
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    volumes:
+      - {{ prometheus_config_path }}:/etc/prometheus/prometheus.yml:ro
+      - {{ prometheus_data_dir }}:/prometheus
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.rule=Host(`{{ prometheus_traefik_hostname }}`)"
+      - "traefik.http.routers.prometheus.entrypoints={{ prometheus_traefik_entrypoint }}"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+    networks:
+      - traefik_proxy
+    pull_policy: always
+
+networks:
+  traefik_proxy:
+    external: true
