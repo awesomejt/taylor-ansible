@@ -24,19 +24,8 @@
   loop:
     - "{{ lldap_project_dir }}"
     - "{{ lldap_data_dir }}"
-    - "{{ lldap_nginx_dir }}"
-    - "{{ lldap_certs_dir }}"
 
 # --- Templates ------------------------------------------------------------
-
-- name: Deploy Nginx reverse proxy configuration
-  ansible.builtin.template:
-    src: nginx.conf.j2
-    dest: "{{ lldap_nginx_conf_path }}"
-    owner: "{{ lldap_primary_user }}"
-    group: "{{ lldap_primary_user }}"
-    mode: "0640"
-  notify: Restart lldap service
 
 - name: Deploy Docker Compose file
   ansible.builtin.template:
@@ -78,9 +67,14 @@
 
 # --- Health check ---------------------------------------------------------
 
+- name: Apply pending handlers before readiness checks
+  ansible.builtin.meta: flush_handlers
+
 - name: Wait for LLDAP web UI to be reachable
   ansible.builtin.uri:
-    url: "http://127.0.0.1:{{ lldap_proxy_http_port }}/"
+    url: "http://127.0.0.1/"
+    headers:
+      Host: "{{ lldap_traefik_hostname }}"
     method: GET
     status_code:
       - 200

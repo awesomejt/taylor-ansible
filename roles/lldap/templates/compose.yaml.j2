@@ -4,7 +4,7 @@ services:
     container_name: {{ lldap_container_name }}
     restart: unless-stopped
     ports:
-      - "{{ lldap_proxy_bind_address }}:{{ lldap_ldap_port }}:{{ lldap_ldap_port }}"
+      - "{{ lldap_ldap_bind_address }}:{{ lldap_ldap_host_port }}:{{ lldap_ldap_port }}"
     volumes:
       - {{ lldap_data_dir }}:/data
     environment:
@@ -16,20 +16,15 @@ services:
       LLDAP_HTTP_URL: "{{ lldap_http_url }}"
       LLDAP_DATABASE_URL: "postgresql://{{ lldap_db_user }}:{{ lldap_db_password }}@{{ lldap_db_host }}:{{ lldap_db_port }}/{{ lldap_db_name }}"
       LLDAP_HTTP_PORT: "{{ lldap_web_port }}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lldap.rule=Host(`{{ lldap_traefik_hostname }}`)"
+      - "traefik.http.routers.lldap.entrypoints={{ lldap_traefik_entrypoint }}"
+      - "traefik.http.services.lldap.loadbalancer.server.port={{ lldap_web_port }}"
+    networks:
+      - traefik_proxy
+    pull_policy: always
 
-  nginx:
-    image: {{ lldap_nginx_image }}
-    container_name: {{ lldap_nginx_container_name }}
-    restart: unless-stopped
-    depends_on:
-      - lldap
-    ports:
-      - "{{ lldap_proxy_bind_address }}:{{ lldap_proxy_http_port }}:80"
-{% if lldap_proxy_tls_enabled | bool %}
-      - "{{ lldap_proxy_bind_address }}:{{ lldap_proxy_tls_port }}:443"
-{% endif %}
-    volumes:
-      - {{ lldap_nginx_conf_path }}:/etc/nginx/conf.d/default.conf:ro
-{% if lldap_proxy_tls_enabled | bool %}
-      - {{ lldap_certs_dir }}:/certs:ro
-{% endif %}
+networks:
+  traefik_proxy:
+    external: true

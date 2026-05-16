@@ -65,9 +65,9 @@
 
 - 2026-05-15: Technitium DNS Server is currently pinned to version 15.2 in `roles/technitium-dns/defaults/main.yaml`; upstream site also reports 15.2 as the latest version. The upgrade flow now creates backups under `/var/backups/technitium` before running the installer.
 
-- 2026-05-15: Added `lldap.yaml` + `roles/lldap` for LLDAP on 192.168.50.51 (`ldap.taylor.lan`) with Docker Compose and Nginx reverse proxy for web UI; LDAP remains direct on TCP 3890. Backend persistence is PostgreSQL on `postgres_prod` (192.168.50.15), provisioned by the first play in `lldap.yaml`.
-- 2026-05-15: Applied `lldap.yaml` successfully from Ansible host; DB/user were created on `postgres_prod` and LLDAP came up on 192.168.50.51. From 192.168.50.11, direct IP checks passed (`http://192.168.50.51` and `:3890`), but `ldap.taylor.lan` did not resolve at verification time.
-- 2026-05-15: DNS for `ldap.taylor.lan` was later fixed; from 192.168.50.11, `getent hosts ldap.taylor.lan` resolves to 192.168.50.51 and both HTTP (`200`) and LDAP TCP (`:3890`) checks pass by hostname.
+- 2026-05-16: LDAP playbook naming now uses `ldap.yaml` (canonical) while `lldap.yaml` remains for compatibility; both deploy `roles/lldap` on the Docker host.
+- 2026-05-16: LLDAP now runs on 192.168.50.50 (`ldap.taylor.lan`) with Traefik host-based UI routing instead of an nginx sidecar; LDAP protocol access remains direct on TCP 3890 for app integrations.
+- 2026-05-16: Applied `ldap.yaml` from Ansible host; DB/user were present on `postgres_prod` and host checks from 192.168.50.11 passed for both UI (`http://ldap.taylor.lan` = 200) and LDAP TCP (`ldap.taylor.lan:3890` open).
 
 - 2026-05-14: Added `vault.yaml` + `roles/vault` for HashiCorp Vault (192.168.50.13 / vault.taylor.lan); native binary (Raft storage), Nginx proxy on :80/:443 → :8200; UI enabled. Vault requires manual `vault operator init` + `vault operator unseal` after first deploy. TLS via step-ca (certs.taylor.lan) is supported; see role README for cert issuance steps.
 
@@ -84,7 +84,7 @@ Reviewed all 16 playbooks and 14+ roles to assess consolidation opportunities:
 
 **Current Docker Compose Services (3 hosts, 5 compose stacks):**
 - OpenWebUI stack (192.168.50.91): open-webui, litellm, ollama, searxng, anythingllm, n8n, qdrant, postgres
-- LLDAP (192.168.50.51): lldap + nginx
+- LLDAP (192.168.50.50): lldap routed by Traefik
 - Registry (192.168.50.50): registry:3 + nginx
 - Hermes (192.168.50.92): Python-based AI agent orchestrator + services
 - Nexus (192.168.50.12): Artifact repository (standalone systemd)

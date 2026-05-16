@@ -1,5 +1,5 @@
 ---
-- name: Provision LLDAP PostgreSQL database
+- name: Provision LDAP PostgreSQL database
   hosts: postgres_prod
   become: true
   vars_files:
@@ -8,7 +8,7 @@
     lldap_db_name: lldap
     lldap_db_user: lldap
   tasks:
-    - name: Ensure LLDAP PostgreSQL user exists
+    - name: Ensure LDAP PostgreSQL user exists
       become: true
       become_user: postgres
       community.postgresql.postgresql_user:
@@ -18,7 +18,7 @@
         state: present
       no_log: true
 
-    - name: Ensure LLDAP PostgreSQL database exists
+    - name: Ensure LDAP PostgreSQL database exists
       become: true
       become_user: postgres
       community.postgresql.postgresql_db:
@@ -26,7 +26,7 @@
         owner: "{{ lldap_db_user }}"
         state: present
 
-    - name: Grant all privileges on LLDAP database to LLDAP user
+    - name: Grant all privileges on LDAP database to LDAP user
       become: true
       become_user: postgres
       community.postgresql.postgresql_privs:
@@ -37,8 +37,8 @@
         type: database
         state: present
 
-- name: Deploy LLDAP
-  hosts: "{{ target | default('lldap') }}"
+- name: Deploy LDAP (LLDAP role)
+  hosts: "{{ target | default('ldap') }}"
   become: true
   gather_facts: true
   vars_files:

@@ -12,18 +12,13 @@ lldap_env_file: "{{ lldap_project_dir }}/.env"
 lldap_service_name: "{{ lldap_project_name }}.service"
 lldap_systemd_unit_path: "/etc/systemd/system/{{ lldap_service_name }}"
 lldap_data_dir: "{{ lldap_project_dir }}/data"
-lldap_nginx_dir: "{{ lldap_project_dir }}/nginx"
-lldap_nginx_conf_path: "{{ lldap_nginx_dir }}/default.conf"
-lldap_certs_dir: "{{ lldap_project_dir }}/certs"
-
-# --- Nginx image ---
-lldap_nginx_image: nginx:1.27-alpine
-lldap_nginx_container_name: lldap-nginx
 
 # --- LDAP settings ---
 lldap_base_dn: "dc=taylor,dc=lan"
 lldap_ldap_user_dn: "admin"
 lldap_ldap_port: 3890
+lldap_ldap_bind_address: "0.0.0.0"
+lldap_ldap_host_port: 3890
 lldap_web_port: 17170
 
 # --- Secrets (from Ansible Vault) ---
@@ -37,16 +32,10 @@ lldap_db_port: 5432
 lldap_db_name: lldap
 lldap_db_user: lldap
 
-# --- Nginx reverse proxy ---
-lldap_proxy_server_name: ldap.taylor.lan
-lldap_proxy_bind_address: "0.0.0.0"
-lldap_proxy_http_port: 80
-lldap_proxy_tls_enabled: false
-lldap_proxy_tls_port: 443
-lldap_proxy_tls_force_https: false
-lldap_proxy_tls_cert_path: "/certs/lldap.crt"
-lldap_proxy_tls_key_path: "/certs/lldap.key"
+# --- Traefik UI routing ---
+lldap_traefik_hostname: ldap.taylor.lan
+lldap_traefik_entrypoint: web
 
 # --- Misc ---
 lldap_verbose: false
-lldap_http_url: "http://{{ lldap_proxy_server_name }}"
+lldap_http_url: "http://{{ lldap_traefik_hostname }}"

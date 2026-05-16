@@ -46,6 +46,12 @@ Run Kanban (Vikunja) on the consolidated Docker host:
 ansible-playbook -i inventory.ini kanban.yaml --ask-vault-pass
 ```
 
+Run LDAP (LLDAP role) on the consolidated Docker host:
+
+```bash
+ansible-playbook -i inventory.ini ldap.yaml --vault-password-file ~/avpass
+```
+
 Or deploy all four through the aggregate inventory group:
 
 ```bash

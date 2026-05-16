@@ -1,23 +1,23 @@
 # LLDAP Role
 
-Deploys [LLDAP](https://github.com/lldap/lldap) — a lightweight LDAP server with a web UI — using Docker Compose, with an Nginx reverse proxy for the web interface and a PostgreSQL backend on the shared prod database server.
+Deploys [LLDAP](https://github.com/lldap/lldap) — a lightweight LDAP server with a web UI — using Docker Compose, with Traefik-based web routing and a PostgreSQL backend on the shared prod database server.
 
 ## Host
 
 | Hostname        | IP              |
 |-----------------|-----------------|
-| ldap.taylor.lan | 192.168.50.51   |
+| ldap.taylor.lan | 192.168.50.50   |
 
 ## Architecture
 
 ```
 LDAP clients → port 3890 (TCP, exposed directly from container)
-Browser       → Nginx :80 / :443 → lldap container :17170 (web UI)
+Browser       → Traefik (Host: ldap.taylor.lan) → lldap container :17170 (web UI)
 LLDAP         → PostgreSQL prod (192.168.50.15) database: lldap
 ```
 
-- **LDAP port 3890** is exposed directly on the host. Nginx cannot proxy raw LDAP (it is a TCP protocol, not HTTP). Clients use `ldap://ldap.taylor.lan:3890`.
-- **Web UI** is proxied through Nginx on port 80 (and optionally 443) → `http://ldap.taylor.lan`.
+- **LDAP port 3890** is exposed directly on the host for standard LDAP client access. Clients use `ldap://ldap.taylor.lan:3890`.
+- **Web UI** is routed through Traefik using host-based routing at `http://ldap.taylor.lan`.
 - **Storage**: PostgreSQL prod (`192.168.50.15`, database `lldap`, user `lldap`). The first play in the playbook provisions the database and user automatically via `community.postgresql`.
 
 ## Secrets Required
@@ -59,41 +59,18 @@ Key variables (see `defaults/main.yaml` for the full list):
 | `lldap_ldap_port` | `3890` | LDAP TCP port (exposed on host) |
 | `lldap_db_host` | `192.168.50.15` | PostgreSQL server |
 | `lldap_db_name` | `lldap` | Database name |
-| `lldap_proxy_server_name` | `ldap.taylor.lan` | Nginx server_name |
-| `lldap_proxy_tls_enabled` | `false` | Enable HTTPS on Nginx |
-| `lldap_proxy_tls_force_https` | `false` | Redirect HTTP → HTTPS |
+| `lldap_traefik_hostname` | `ldap.taylor.lan` | Traefik host rule |
+| `lldap_traefik_entrypoint` | `web` | Traefik entrypoint |
 
-## Using Step CA for TLS (Recommended)
+## TLS With Traefik
 
-The project's Step CA at `certs.taylor.lan` (192.168.50.9) can issue a cert for the web UI.
-
-### Obtain a cert on the LLDAP host (ldap.taylor.lan):
-
-```bash
-# Bootstrap trust (one-time per host)
-step ca bootstrap --ca-url https://certs.taylor.lan --fingerprint <CA_FINGERPRINT>
-
-# Issue cert
-sudo step ca certificate ldap.taylor.lan \
-    /opt/lldap/certs/lldap.crt \
-    /opt/lldap/certs/lldap.key \
-    --ca-url https://certs.taylor.lan
-```
-
-Then set in your host vars and re-run the playbook:
-```yaml
-lldap_proxy_tls_enabled: true
-lldap_proxy_tls_force_https: true
-lldap_http_url: "https://ldap.taylor.lan"
-```
-
-> Find the CA fingerprint on 192.168.50.9: `step certificate fingerprint $(step path)/certs/root_ca.crt`
+TLS termination for the LLDAP UI should be handled in Traefik using your existing Step CA workflow and Traefik entrypoint/certificate configuration.
 
 ## Running the Playbook
 
 The playbook has two plays:
 1. **Provision DB** — runs on `postgres_prod` (192.168.50.15), creates the `lldap` user and database.
-2. **Deploy LLDAP** — runs on `lldap` (192.168.50.51), deploys Docker Compose stack.
+2. **Deploy LLDAP** — runs on `ldap` (mapped to `lldap` inventory host group), deploys Docker Compose stack.
 
 From the Ansible host (`192.168.50.11`):
 
@@ -101,7 +78,10 @@ From the Ansible host (`192.168.50.11`):
 ssh 192.168.50.11
 cd ~/ansible
 ansible-playbook lldap.yaml --vault-password-file ~/avpass
+ansible-playbook ldap.yaml --vault-password-file ~/avpass
 ```
+
+`ldap.yaml` is the canonical playbook name. `lldap.yaml` remains as a compatibility wrapper.
 
 ## Initial Login
 
@@ -140,7 +120,7 @@ roles/lldap/
 ├── tasks/
 │   └── main.yaml           # Directories, templates, systemd, health check
 └── templates/
-    ├── compose.yaml.j2     # Docker Compose (lldap + nginx)
+    ├── compose.yaml.j2     # Docker Compose (lldap + Traefik labels)
     ├── lldap.service.j2    # systemd unit
-    └── nginx.conf.j2       # Nginx reverse proxy for web UI
+    └── nginx.conf.j2       # Legacy template (unused)
 ```
