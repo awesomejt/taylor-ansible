@@ -16,6 +16,8 @@ n8n_host: "n8n.taylor.lan"
 n8n_protocol: http
 n8n_webhook_url: "http://n8n.taylor.lan"
 n8n_timezone: "America/Chicago"
+# Keep secure cookies off for HTTP deployments; enable automatically when protocol is HTTPS.
+n8n_secure_cookie: "{{ (n8n_protocol | lower) == 'https' }}"
 
 # Traefik integration
 n8n_network_name: traefik_proxy
