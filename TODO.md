@@ -8,6 +8,7 @@
 - [x] Add inventory target group `kanban`.
 - [x] Add sanitized `vault_vikunja_service_secret` placeholder to `vars/common/example-secrets.yaml`.
 - [x] Switch Vikunja backend to common/prod PostgreSQL (`192.168.50.15`) with DB provisioning in `kanban.yaml`.
+- [x] Enable Vikunja LDAP authentication against LLDAP (`ldap.taylor.lan:3890`) for central auth.
 - [x] Validate playbook locally (`ansible-playbook --syntax-check`, `ansible-lint`).
 - [x] Sync to Ansible host.
 - [x] Run `kanban.yaml` on Ansible host.

@@ -7,6 +7,18 @@ services:
       VIKUNJA_SERVICE_PUBLICURL: "{{ vikunja_service_public_url }}"
       VIKUNJA_SERVICE_SECRET: "{{ vikunja_service_secret }}"
       VIKUNJA_SERVICE_ENABLEREGISTRATION: "{{ 'true' if vikunja_service_enable_registration | bool else 'false' }}"
+      VIKUNJA_AUTH_LOCAL_ENABLED: "{{ 'true' if vikunja_auth_local_enabled | bool else 'false' }}"
+      VIKUNJA_AUTH_LDAP_ENABLED: "{{ 'true' if vikunja_auth_ldap_enabled | bool else 'false' }}"
+{% if vikunja_auth_ldap_enabled | bool %}
+      VIKUNJA_AUTH_LDAP_HOST: "{{ vikunja_auth_ldap_host }}"
+      VIKUNJA_AUTH_LDAP_PORT: "{{ vikunja_auth_ldap_port }}"
+      VIKUNJA_AUTH_LDAP_BASEDN: "{{ vikunja_auth_ldap_basedn }}"
+      VIKUNJA_AUTH_LDAP_USERFILTER: "{{ vikunja_auth_ldap_userfilter }}"
+      VIKUNJA_AUTH_LDAP_USETLS: "{{ 'true' if vikunja_auth_ldap_usetls | bool else 'false' }}"
+      VIKUNJA_AUTH_LDAP_VERIFYTLS: "{{ 'true' if vikunja_auth_ldap_verifytls | bool else 'false' }}"
+      VIKUNJA_AUTH_LDAP_BINDDN: "{{ vikunja_auth_ldap_binddn }}"
+      VIKUNJA_AUTH_LDAP_BINDPASSWORD: "{{ vikunja_auth_ldap_bindpassword }}"
+{% endif %}
       VIKUNJA_DATABASE_TYPE: "{{ vikunja_database_type }}"
 {% if vikunja_database_type == 'sqlite' %}
       VIKUNJA_DATABASE_PATH: "{{ vikunja_database_path }}"

@@ -19,6 +19,18 @@ vikunja_service_public_url: "http://kanban.taylor.lan/"
 vikunja_service_secret: "{{ vault_vikunja_service_secret | default('change-me') }}"
 vikunja_service_enable_registration: false
 
+# Authentication
+vikunja_auth_local_enabled: true
+vikunja_auth_ldap_enabled: true
+vikunja_auth_ldap_host: lldap
+vikunja_auth_ldap_port: 3890
+vikunja_auth_ldap_basedn: "dc=taylor,dc=lan"
+vikunja_auth_ldap_userfilter: "(uid=%[1]s)"
+vikunja_auth_ldap_usetls: false
+vikunja_auth_ldap_verifytls: false
+vikunja_auth_ldap_binddn: "cn=admin,ou=people,dc=taylor,dc=lan"
+vikunja_auth_ldap_bindpassword: "{{ vault_lldap_ldap_user_pass | default('change-me') }}"
+
 # Use common/prod PostgreSQL by default.
 vikunja_database_type: postgres
 vikunja_database_host: 192.168.50.15
