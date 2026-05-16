@@ -19,8 +19,14 @@ vikunja_service_public_url: "http://kanban.taylor.lan/"
 vikunja_service_secret: "{{ vault_vikunja_service_secret | default('change-me') }}"
 vikunja_service_enable_registration: false
 
-# Use sqlite by default for quick single-node deployment.
-vikunja_database_type: sqlite
+# Use common/prod PostgreSQL by default.
+vikunja_database_type: postgres
+vikunja_database_host: 192.168.50.15
+vikunja_database_port: 5432
+vikunja_database_name: vikunja
+vikunja_database_user: vikunja
+vikunja_database_password: "{{ vault_vikunja_db_password | default('change-me') }}"
+# Keep sqlite path for optional local override.
 vikunja_database_path: /db/vikunja.db
 
 # Traefik integration

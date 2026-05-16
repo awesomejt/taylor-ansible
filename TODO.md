@@ -7,11 +7,12 @@
 - [x] Wire Traefik hostname to `kanban.taylor.lan`.
 - [x] Add inventory target group `kanban`.
 - [x] Add sanitized `vault_vikunja_service_secret` placeholder to `vars/common/example-secrets.yaml`.
+- [x] Switch Vikunja backend to common/prod PostgreSQL (`192.168.50.15`) with DB provisioning in `kanban.yaml`.
 - [x] Validate playbook locally (`ansible-playbook --syntax-check`, `ansible-lint`).
 - [x] Sync to Ansible host.
 - [x] Run `kanban.yaml` on Ansible host.
 - [x] Verify routed endpoint (`kanban.taylor.lan`) responds.
-- [ ] Set `vault_vikunja_service_secret` in vaulted `vars/common/secrets.yaml` on 192.168.50.11 and re-apply `kanban.yaml`.
+- [ ] Set `vault_vikunja_service_secret` and `vault_vikunja_db_password` in vaulted `vars/common/secrets.yaml` on 192.168.50.11 and re-apply `kanban.yaml`.
 
 ## Compose Ops Services Rollout (2026-05-16)
 

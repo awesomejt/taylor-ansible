@@ -1,4 +1,43 @@
 ---
+- name: Provision Vikunja PostgreSQL database
+  hosts: postgres_prod
+  become: true
+  vars_files:
+    - vars/common/secrets.yaml
+  vars:
+    vikunja_db_name: vikunja
+    vikunja_db_user: vikunja
+    vikunja_db_password: "{{ vault_vikunja_db_password | default('change-me') }}"
+  tasks:
+    - name: Ensure Vikunja PostgreSQL user exists
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_user:
+        name: "{{ vikunja_db_user }}"
+        password: "{{ vikunja_db_password }}"
+        role_attr_flags: LOGIN
+        state: present
+      no_log: true
+
+    - name: Ensure Vikunja PostgreSQL database exists
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: "{{ vikunja_db_name }}"
+        owner: "{{ vikunja_db_user }}"
+        state: present
+
+    - name: Grant all privileges on Vikunja database to Vikunja user
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_privs:
+        login_db: postgres
+        objs: "{{ vikunja_db_name }}"
+        roles: "{{ vikunja_db_user }}"
+        privs: ALL
+        type: database
+        state: present
+
 - name: Deploy Kanban (Vikunja)
   hosts: "{{ target | default('kanban') }}"
   become: true

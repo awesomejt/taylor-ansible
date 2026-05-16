@@ -8,7 +8,15 @@ services:
       VIKUNJA_SERVICE_SECRET: "{{ vikunja_service_secret }}"
       VIKUNJA_SERVICE_ENABLEREGISTRATION: "{{ 'true' if vikunja_service_enable_registration | bool else 'false' }}"
       VIKUNJA_DATABASE_TYPE: "{{ vikunja_database_type }}"
+{% if vikunja_database_type == 'sqlite' %}
       VIKUNJA_DATABASE_PATH: "{{ vikunja_database_path }}"
+{% else %}
+      VIKUNJA_DATABASE_HOST: "{{ vikunja_database_host }}"
+      VIKUNJA_DATABASE_PORT: "{{ vikunja_database_port }}"
+      VIKUNJA_DATABASE_DATABASE: "{{ vikunja_database_name }}"
+      VIKUNJA_DATABASE_USER: "{{ vikunja_database_user }}"
+      VIKUNJA_DATABASE_PASSWORD: "{{ vikunja_database_password }}"
+{% endif %}
     volumes:
       - {{ vikunja_files_dir }}:/app/vikunja/files
       - {{ vikunja_db_dir }}:/db
