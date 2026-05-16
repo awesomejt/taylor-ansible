@@ -11,6 +11,7 @@
 - [x] Sync to Ansible host.
 - [x] Run `kanban.yaml` on Ansible host.
 - [x] Verify routed endpoint (`kanban.taylor.lan`) responds.
+- [ ] Set `vault_vikunja_service_secret` in vaulted `vars/common/secrets.yaml` on 192.168.50.11 and re-apply `kanban.yaml`.
 
 ## Compose Ops Services Rollout (2026-05-16)
 
