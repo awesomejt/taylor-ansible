@@ -9,7 +9,7 @@
 - [x] Validate with ansible-lint.
 - [ ] Sync to Ansible host.
 - [ ] Run playbook on Ansible host.
-- [ ] Commit changes locally.
+- [x] Commit changes locally.
 
 ## Technitium DNS Update (2026-05-15)
 
