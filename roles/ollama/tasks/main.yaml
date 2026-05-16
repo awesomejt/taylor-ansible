@@ -77,6 +77,20 @@
     timeout: 60
   when: ollama_nginx_enable | bool
 
+- name: Deploy ollama CLI wrapper script
+  ansible.builtin.copy:
+    dest: /usr/local/bin/ollama
+    owner: root
+    group: root
+    mode: "0755"
+    content: |
+      #!/bin/sh
+      if [ -t 0 ]; then
+        exec docker exec -it {{ ollama_container_name }} ollama "$@"
+      else
+        exec docker exec -i {{ ollama_container_name }} ollama "$@"
+      fi
+
 - name: Pull Ollama models (if configured)
   ansible.builtin.shell:
     cmd: |
