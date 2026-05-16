@@ -144,6 +144,10 @@ If revealing the password in the response would be inappropriate for the task, e
 For any entry in the ansible-vault secrets, create a sanitized example-secrets.yaml entry - with a comment about what the entry 
 is for and how to create it or where to find it.
 
+### Hashicorp Vault
+
+When possible, use the Vault server (vault.taylor.lan / 192.168.50.13) to manage secrets.
+
 
 ## Persistent Project Memory
 
