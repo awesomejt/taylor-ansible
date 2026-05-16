@@ -14,7 +14,7 @@ openwebui_webui_base_url: "http://openwebui.taylor.lan"
 
 # LiteLLM connection (via shared traefik_proxy network)
 openwebui_openai_base_url: "http://litellm:4000/v1"
-openwebui_openai_api_key: "{{ litellm_master_key | default('change-me') }}"
+openwebui_openai_api_key: "{{ vault_litellm_master_key | default(vault_openwebui_litellm_master_key | default('change-me')) }}"
 
 # SearXNG connection (via shared traefik_proxy network)
 openwebui_searxng_query_url: "http://searxng:8080/search?q=<query>&format=json"

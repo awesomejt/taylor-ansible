@@ -6,6 +6,7 @@ services:
     volumes:
       - {{ anythingllm_storage_dir }}:/app/server/storage
     environment:
+      STORAGE_DIR: "/app/server/storage"
       LLM_PROVIDER: "openai"
       OPEN_AI_KEY: "{{ anythingllm_litellm_api_key }}"
       OPEN_AI_BASE_PATH: "{{ anythingllm_litellm_base_url }}"

@@ -55,7 +55,17 @@
     daemon_reload: true
 
 - name: Wait for SearXNG to be ready
-  ansible.builtin.wait_for:
-    host: 127.0.0.1
-    port: 8080
-    timeout: 60
+  ansible.builtin.uri:
+    url: "http://127.0.0.1/"
+    headers:
+      Host: "{{ searxng_traefik_hostname }}"
+    status_code:
+      - 200
+      - 301
+      - 302
+      - 307
+      - 308
+  register: searxng_ready
+  until: searxng_ready is succeeded
+  retries: 24
+  delay: 5

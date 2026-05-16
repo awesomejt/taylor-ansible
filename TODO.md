@@ -1,5 +1,17 @@
 # TODO
 
+## AI Stack Rollout - Decomposed Roles (2026-05-16)
+
+- [x] Validate updated playbooks locally (`ansible-playbook --syntax-check`)
+- [x] Validate updated playbooks locally (`ansible-lint`)
+- [x] Sync repository to Ansible host via `./sync-to-ansible.sh`
+- [x] Ensure AI stack secrets exist in Ansible Vault on 192.168.50.11 (`vars/common/secrets.yaml`)
+- [x] Apply playbooks on Ansible host in order (`traefik`, `qdrant`, `searxng`, `litellm`, `anythingllm`, `n8n`, `openwebui`)
+- [x] Validate server-side deployment on 192.168.50.50 (systemd, docker containers, routed endpoint checks)
+- [x] Fix readiness probes for Traefik-routed services and re-apply affected playbooks
+- [x] Fix runtime startup issues: LiteLLM Postgres auth, N8N data-dir permissions, AnythingLLM storage configuration/permissions
+- [ ] Perform manual browser validation of each UI and core flows
+
 ## Ollama Reverse Proxy For Web Access (2026-05-15)
 
 - [x] Add optional Nginx reverse proxy support in `roles/ollama`.

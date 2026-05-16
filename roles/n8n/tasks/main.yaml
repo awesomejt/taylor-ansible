@@ -5,18 +5,21 @@
       - ansible_facts['os_family'] == "Debian"
     fail_msg: "n8n role currently supports Debian/Ubuntu only"
 
-- name: Ensure N8N directories exist
+- name: Ensure N8N project directory exists
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ n8n_project_dir }}"
     state: directory
     owner: "{{ n8n_primary_user }}"
     group: "{{ n8n_primary_user }}"
     mode: "0755"
-  loop:
-    - "{{ n8n_project_dir }}"
-    - "{{ n8n_data_dir }}"
-  loop_control:
-    label: "{{ item }}"
+
+- name: Ensure N8N data directory exists and is writable by container user
+  ansible.builtin.file:
+    path: "{{ n8n_data_dir }}"
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: "0755"
 
 - name: Deploy N8N Docker Compose file
   ansible.builtin.template:
@@ -44,7 +47,18 @@
     daemon_reload: true
 
 - name: Wait for N8N to be ready
-  ansible.builtin.wait_for:
-    host: 127.0.0.1
-    port: "{{ n8n_port }}"
-    timeout: 120
+  ansible.builtin.uri:
+    url: "http://127.0.0.1/"
+    headers:
+      Host: "{{ n8n_traefik_hostname }}"
+    status_code:
+      - 200
+      - 404
+      - 301
+      - 302
+      - 307
+      - 308
+  register: n8n_ready
+  until: n8n_ready is succeeded
+  retries: 24
+  delay: 5

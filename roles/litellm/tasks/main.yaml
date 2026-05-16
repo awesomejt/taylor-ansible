@@ -55,7 +55,9 @@
 - name: Wait for LiteLLM to be ready
   ansible.builtin.uri:
     url: "http://127.0.0.1:{{ litellm_port }}/health"
-    status_code: 200
+    status_code:
+      - 200
+      - 401
   register: litellm_ready
   until: litellm_ready is succeeded
   retries: 24

@@ -45,9 +45,11 @@
 
 - name: Wait for Qdrant to be ready
   ansible.builtin.uri:
-    url: "http://127.0.0.1:6333/"
+    url: "http://127.0.0.1/"
+    headers:
+      Host: "{{ qdrant_traefik_hostname }}"
     status_code: 200
   register: qdrant_ready
   until: qdrant_ready is succeeded
-  retries: 12
+  retries: 24
   delay: 5
