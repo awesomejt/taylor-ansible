@@ -22,8 +22,10 @@ ollama_port: 11434
 
 # Model pulling (optional)
 # Set to pull models after container starts (useful for seeding inference endpoints)
-ollama_models_to_pull: []
-  # Example:
-  # - llama3.2:latest
-  # - qwen2.5-coder:latest
-  # - ministral-3:latest
+ollama_models_to_pull:
+  - llama3.2:latest
+  - hermes3:latest
+  - qwen3.5:latest
+  - qwen3:14b
+  - gemma4:latest
+  - deepseek-coder-v2:latest
