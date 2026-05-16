@@ -34,7 +34,7 @@
 - [x] Validate server-side deployment on 192.168.50.50 (systemd, docker containers, routed endpoint checks)
 - [x] Fix readiness probes for Traefik-routed services and re-apply affected playbooks
 - [x] Fix runtime startup issues: LiteLLM Postgres auth, N8N data-dir permissions, AnythingLLM storage configuration/permissions
-- [ ] Perform manual browser validation of each UI and core flows
+- [x] Perform manual browser validation of each UI and core flows (confirmed: n8n, AnythingLLM, Open WebUI, SearXNG)
 
 ## Ollama Reverse Proxy For Web Access (2026-05-15)
 
