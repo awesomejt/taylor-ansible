@@ -4,7 +4,7 @@
 - All Compose stack services (Registry, LLDAP, OpenWebUI, etc.) are now targeted for deployment on 192.168.50.50.
 - Hermes is now assigned to 192.168.50.52 (dedicated host).
 - Ollama is now assigned to 192.168.50.51 (dedicated host, CPU fallback provider).
-- DNS CNAME records have been added to alias multiple service hostnames (e.g., registry.taylor.lan, lldap.taylor.lan, openwebui.taylor.lan, etc.) to docker.taylor.lan (192.168.50.50) for simplified migration and flexible service addressing.
+- DNS CNAME records have been added to alias multiple service hostnames (e.g., registry.taylor.lan, lldap.taylor.lan, chat.taylor.lan, etc.) to docker.taylor.lan (192.168.50.50) for simplified migration and flexible service addressing.
 - Inventory and TODO are in sync with these assignments as of 2026-05-15.
 
 ### OpenWebUI External Dependency Refactor (2026-05-15)
@@ -166,7 +166,7 @@ Reviewed all 16 playbooks and 14+ roles to assess consolidation opportunities:
 1. **AI Compose Stack Decomposition**
    - Current monolithic approach: all services in one compose file
    - Desired approach: break into separate services, each with own Traefik virtual host
-   - Rationale: Cleaner URLs (e.g., `openwebui.taylor.lan`, `litellm-gateway.taylor.lan`, `anythingllm.taylor.lan`)
+   - Rationale: Cleaner URLs (e.g., `chat.taylor.lan`, `litellm-gateway.taylor.lan`, `anythingllm.taylor.lan`)
    - Each service gets its own reverse proxy entry via Traefik labels
    - Still consolidates to single VM, but services are logically separate for clarity
    - Example structure:

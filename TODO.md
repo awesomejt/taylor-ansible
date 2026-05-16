@@ -441,7 +441,7 @@
 - [ ] Design decomposed structure:
   - [ ] One Docker Compose file per service (or logical grouping)
   - [ ] Define Traefik virtual hostnames:
-    - [ ] openwebui.taylor.lan → open-webui service
+    - [ ] chat.taylor.lan → open-webui service
     - [ ] litellm.taylor.lan (or litellm-gateway.taylor.lan) → litellm service
     - [ ] search.taylor.lan → searxng service
     - [ ] anythingllm.taylor.lan → anythingllm service
@@ -588,7 +588,7 @@
 - [ ] Update DNS records (Technitium on 192.168.50.53):
   - [ ] registry.taylor.lan → consolidated IP
   - [ ] ldap.taylor.lan → consolidated IP
-  - [ ] openwebui.taylor.lan → consolidated IP
+  - [ ] chat.taylor.lan → consolidated IP
   - [ ] litellm.taylor.lan → consolidated IP
   - [ ] search.taylor.lan → consolidated IP
   - [ ] anythingllm.taylor.lan → consolidated IP

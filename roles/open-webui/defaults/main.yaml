@@ -10,7 +10,7 @@ openwebui_restart_policy: unless-stopped
 
 openwebui_data_dir: "{{ openwebui_project_dir }}/data"
 
-openwebui_webui_base_url: "http://openwebui.taylor.lan"
+openwebui_webui_base_url: "http://chat.taylor.lan"
 
 # LiteLLM connection (via shared traefik_proxy network)
 openwebui_openai_base_url: "http://litellm:4000/v1"
@@ -28,7 +28,7 @@ openwebui_ollama_base_url: "http://192.168.50.51:11434"
 
 # Traefik integration
 openwebui_network_name: traefik_proxy
-openwebui_traefik_hostname: "openwebui.taylor.lan"
+openwebui_traefik_hostname: "chat.taylor.lan"
 openwebui_traefik_entrypoint: web
 
 openwebui_systemd_unit: open-webui.service
