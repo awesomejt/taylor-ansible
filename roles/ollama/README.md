@@ -14,7 +14,7 @@ Provides CPU-only (or GPU-accelerated if available) LLM inference endpoint for:
 - **ollama_port**: Service port (default: 11434)
 - **ollama_data_dir**: Model storage location
 - **ollama_models_to_pull**: List of models to auto-pull after deployment (optional)
-- **ollama_nginx_enable**: Enable Nginx reverse proxy for easy browser access (default: false)
+- **ollama_nginx_enable**: Enable containerized Nginx reverse proxy sidecar for easy browser access (default: false)
 - **ollama_nginx_server_name**: DNS hostname served by Nginx (default: ollama.taylor.lan)
 
 ## Typical Usage
@@ -35,7 +35,7 @@ Once deployed, Ollama listens on `http://<host>:11434` and provides:
 - `POST /api/pull` - Pull a new model
 - `POST /api/embeddings` - Generate embeddings
 
-When `ollama_nginx_enable` is true, Nginx also exposes Ollama on `http://<ollama_nginx_server_name>` (default port 80) while keeping the direct API port available for LiteLLM and other clients.
+When `ollama_nginx_enable` is true, a Compose-managed Nginx sidecar also exposes Ollama on `http://<ollama_nginx_server_name>` (default port 80) while keeping the direct API port available for LiteLLM and other clients.
 
 ## Notes
 

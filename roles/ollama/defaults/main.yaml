@@ -22,10 +22,15 @@ ollama_port: 11434
 
 # Optional nginx reverse proxy for browser-friendly access
 ollama_nginx_enable: false
+ollama_nginx_image: nginx:stable-alpine
+ollama_nginx_container_name: ollama-nginx
 ollama_nginx_server_name: "ollama.taylor.lan"
+ollama_nginx_bind_address: "0.0.0.0"
 ollama_nginx_http_port: 80
-ollama_nginx_proxy_host: "127.0.0.1"
-ollama_nginx_proxy_port: "{{ ollama_port }}"
+ollama_nginx_config_dir: "{{ ollama_project_dir }}/nginx"
+ollama_nginx_config_path: "{{ ollama_nginx_config_dir }}/default.conf"
+ollama_nginx_proxy_host: "{{ ollama_container_name }}"
+ollama_nginx_proxy_port: 11434
 
 # Model pulling (optional)
 # Set to pull models after container starts (useful for seeding inference endpoints)

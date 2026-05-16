@@ -11,6 +11,17 @@
 - [ ] Run playbook on Ansible host.
 - [x] Commit changes locally.
 
+## Ollama Containerized Nginx Sidecar (2026-05-15)
+
+- [x] Refactor reverse proxy from host-level nginx to Compose sidecar.
+- [x] Keep direct Ollama API access on port `11434` unchanged.
+- [x] Keep reverse proxy configurable through role defaults/common vars.
+- [x] Validate with syntax check.
+- [x] Validate with ansible-lint.
+- [ ] Sync to Ansible host.
+- [ ] Run playbook on Ansible host.
+- [ ] Commit changes locally.
+
 ## Technitium DNS Update (2026-05-15)
 
 - [x] Confirm latest upstream Technitium DNS version.

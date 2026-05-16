@@ -10,3 +10,17 @@ services:
     environment:
       OLLAMA_HOST: "0.0.0.0:11434"
     pull_policy: always
+
+{% if ollama_nginx_enable | bool %}
+  nginx:
+    image: {{ ollama_nginx_image }}
+    container_name: {{ ollama_nginx_container_name }}
+    restart: {{ ollama_restart_policy }}
+    depends_on:
+      - ollama
+    ports:
+      - "{{ ollama_nginx_bind_address }}:{{ ollama_nginx_http_port }}:80"
+    volumes:
+      - {{ ollama_nginx_config_path }}:/etc/nginx/conf.d/default.conf:ro
+    pull_policy: always
+{% endif %}

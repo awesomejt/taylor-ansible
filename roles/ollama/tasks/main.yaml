@@ -23,8 +23,19 @@
   loop:
     - "{{ ollama_data_dir }}"
     - "{{ ollama_models_dir }}"
+    - "{{ ollama_nginx_config_dir }}"
   loop_control:
     label: "{{ item }}"
+
+- name: Deploy nginx reverse proxy configuration for Ollama compose sidecar
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: "{{ ollama_nginx_config_path }}"
+    owner: "{{ ollama_primary_user }}"
+    group: "{{ ollama_primary_user }}"
+    mode: "0644"
+  when: ollama_nginx_enable | bool
+  notify: Restart ollama service
 
 - name: Deploy Ollama Docker Compose file
   ansible.builtin.template:
@@ -58,45 +69,6 @@
     timeout: 60
   retries: 5
   delay: 5
-
-- name: Install nginx package for Ollama reverse proxy
-  ansible.builtin.apt:
-    name: nginx
-    state: present
-    update_cache: true
-  when: ollama_nginx_enable | bool
-
-- name: Deploy nginx site for Ollama reverse proxy
-  ansible.builtin.template:
-    src: nginx.conf.j2
-    dest: /etc/nginx/sites-available/ollama.conf
-    owner: root
-    group: root
-    mode: "0644"
-  when: ollama_nginx_enable | bool
-  notify: Restart nginx
-
-- name: Enable nginx site for Ollama reverse proxy
-  ansible.builtin.file:
-    src: /etc/nginx/sites-available/ollama.conf
-    dest: /etc/nginx/sites-enabled/ollama.conf
-    state: link
-  when: ollama_nginx_enable | bool
-  notify: Restart nginx
-
-- name: Disable default nginx site
-  ansible.builtin.file:
-    path: /etc/nginx/sites-enabled/default
-    state: absent
-  when: ollama_nginx_enable | bool
-  notify: Restart nginx
-
-- name: Ensure nginx service is enabled and running
-  ansible.builtin.systemd:
-    name: nginx
-    enabled: true
-    state: started
-  when: ollama_nginx_enable | bool
 
 - name: Wait for nginx reverse proxy port to be ready
   ansible.builtin.wait_for:
