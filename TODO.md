@@ -1,5 +1,16 @@
 # TODO
 
+## AI Stack Validation Automation (2026-05-16)
+
+- [x] Create validation script template for routed AI stack health checks.
+- [x] Add role to deploy script, env file, cron schedule, and log file.
+- [x] Configure hourly cron schedule.
+- [x] Configure logrotate policy for validation logs.
+- [x] Validate playbook syntax and ansible-lint locally.
+- [x] Sync to Ansible host.
+- [x] Run playbook on Ansible host.
+- [x] Verify cron/logrotate installation and run validation once manually.
+
 ## LiteLLM + Open WebUI Provider Audit (2026-05-16)
 
 - [x] Verify live oMLX model inventories on primary (`192.168.50.93`) and secondary (`192.168.50.94`) with vault API key.

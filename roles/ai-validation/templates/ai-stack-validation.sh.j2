@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+set -u
+
+if [[ -f "{{ ai_validation_env_path }}" ]]; then
+  # shellcheck disable=SC1091
+  . "{{ ai_validation_env_path }}"
+fi
+
+failures=0
+
+timestamp() {
+  date +"%Y-%m-%dT%H:%M:%S%z"
+}
+
+log() {
+  printf '%s %s\n' "$(timestamp)" "$*"
+}
+
+check_http() {
+  local name="$1"
+  local host="$2"
+  local path="$3"
+  local expected_codes="$4"
+  local url="http://127.0.0.1${path}"
+  local code=""
+
+  if ! code=$(curl -sS -o /dev/null -w "%{http_code}" -H "Host: ${host}" "${url}"); then
+    log "FAIL ${name}: request failed (${url} Host=${host})"
+    failures=$((failures + 1))
+    return
+  fi
+
+  for expected in ${expected_codes}; do
+    if [[ "${code}" == "${expected}" ]]; then
+      log "PASS ${name}: HTTP ${code} (${url} Host=${host})"
+      return
+    fi
+  done
+
+  log "FAIL ${name}: HTTP ${code} not in [${expected_codes}] (${url} Host=${host})"
+  failures=$((failures + 1))
+}
+
+check_litellm_models() {
+  local response
+  local missing=0
+
+  if [[ -z "${AI_VALIDATION_LITELLM_MASTER_KEY:-}" ]]; then
+    log "FAIL LiteLLM model inventory: AI_VALIDATION_LITELLM_MASTER_KEY is empty"
+    failures=$((failures + 1))
+    return
+  fi
+
+  if ! response=$(curl -sS \
+    -H "Authorization: Bearer ${AI_VALIDATION_LITELLM_MASTER_KEY}" \
+    "http://127.0.0.1:4000/v1/models"); then
+    log "FAIL LiteLLM model inventory: API request failed"
+    failures=$((failures + 1))
+    return
+  fi
+
+  if ! printf '%s' "${response}" | jq -e '.data | type == "array"' >/dev/null 2>&1; then
+    log "FAIL LiteLLM model inventory: unexpected payload"
+    failures=$((failures + 1))
+    return
+  fi
+
+  for model in ${AI_VALIDATION_REQUIRED_MODELS:-}; do
+    if ! printf '%s' "${response}" | jq -e --arg model "${model}" 'any(.data[]?; .id == $model)' >/dev/null 2>&1; then
+      log "FAIL LiteLLM model inventory: missing model alias ${model}"
+      missing=$((missing + 1))
+    fi
+  done
+
+  if [[ ${missing} -gt 0 ]]; then
+    failures=$((failures + 1))
+  else
+    log "PASS LiteLLM model inventory: all required aliases present"
+  fi
+}
+
+log "Starting AI stack validation"
+
+check_http "Open WebUI route" "${AI_VALIDATION_OPENWEBUI_HOST:-chat.taylor.lan}" "/" "200 301 302 307 308"
+check_http "SearXNG route" "${AI_VALIDATION_SEARXNG_HOST:-search.taylor.lan}" "/" "200 301 302 307 308 404"
+check_http "AnythingLLM route" "${AI_VALIDATION_ANYTHINGLLM_HOST:-anythingllm.taylor.lan}" "/" "200 301 302 307 308"
+check_http "n8n route" "${AI_VALIDATION_N8N_HOST:-n8n.taylor.lan}" "/" "200 301 302 307 308"
+check_http "LiteLLM health route" "${AI_VALIDATION_LITELLM_HOST:-litellm.taylor.lan}" "/health" "200 401"
+
+check_litellm_models
+
+if [[ ${failures} -gt 0 ]]; then
+  log "Validation finished with ${failures} failure(s)"
+  exit 1
+fi
+
+log "Validation finished successfully"
+exit 0

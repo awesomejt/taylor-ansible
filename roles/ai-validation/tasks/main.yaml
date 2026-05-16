@@ -1,0 +1,62 @@
+---
+- name: Ensure role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == "Debian"
+    fail_msg: "ai-validation role currently supports Debian/Ubuntu only"
+
+- name: Ensure validation dependencies are installed
+  ansible.builtin.package:
+    name:
+      - curl
+      - jq
+    state: present
+
+- name: Deploy AI stack validation script
+  ansible.builtin.template:
+    src: ai-stack-validation.sh.j2
+    dest: "{{ ai_validation_script_path }}"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy AI stack validation environment file
+  ansible.builtin.template:
+    src: ai-stack-validation.env.j2
+    dest: "{{ ai_validation_env_path }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: Ensure validation log file exists
+  ansible.builtin.file:
+    path: "{{ ai_validation_log_path }}"
+    state: touch
+    owner: root
+    group: root
+    mode: "0644"
+  changed_when: false
+
+- name: Install cron file for AI stack validation
+  ansible.builtin.template:
+    src: cron-ai-stack-validation.j2
+    dest: "{{ ai_validation_cron_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when: ai_validation_cron_enabled | bool
+
+- name: Remove cron file when AI stack validation is disabled
+  ansible.builtin.file:
+    path: "{{ ai_validation_cron_file }}"
+    state: absent
+  when: not (ai_validation_cron_enabled | bool)
+
+- name: Install logrotate config for AI stack validation logs
+  ansible.builtin.template:
+    src: logrotate-ai-stack-validation.j2
+    dest: "{{ ai_validation_logrotate_file }}"
+    owner: root
+    group: root
+    mode: "0644"

@@ -1,0 +1,4 @@
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+{{ ai_validation_cron_minute }} {{ ai_validation_cron_hour }} * * * root . {{ ai_validation_env_path }} && {{ ai_validation_script_path }} >> {{ ai_validation_log_path }} 2>&1

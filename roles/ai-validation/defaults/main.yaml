@@ -1,0 +1,38 @@
+---
+ai_validation_primary_user: root
+
+ai_validation_script_path: /usr/local/bin/ai-stack-validation.sh
+ai_validation_env_path: /etc/ai-stack-validation.env
+ai_validation_log_path: /var/log/ai-stack-validation.log
+ai_validation_cron_file: /etc/cron.d/ai-stack-validation
+ai_validation_logrotate_file: /etc/logrotate.d/ai-stack-validation
+
+# Hourly validation by default
+ai_validation_cron_enabled: true
+ai_validation_cron_minute: "5"
+ai_validation_cron_hour: "*"
+
+# Traefik hostnames to probe from localhost with Host headers
+ai_validation_openwebui_host: "{{ openwebui_traefik_hostname | default('chat.taylor.lan') }}"
+ai_validation_searxng_host: "{{ searxng_traefik_hostname | default('search.taylor.lan') }}"
+ai_validation_anythingllm_host: "{{ anythingllm_traefik_hostname | default('anythingllm.taylor.lan') }}"
+ai_validation_n8n_host: "{{ n8n_traefik_hostname | default('n8n.taylor.lan') }}"
+ai_validation_litellm_host: "{{ litellm_traefik_hostname | default('litellm.taylor.lan') }}"
+
+# Authenticated LiteLLM checks
+ai_validation_litellm_master_key: "{{ vault_litellm_master_key | default(vault_openwebui_litellm_master_key | default('')) }}"
+ai_validation_required_litellm_models:
+  - use-chat
+  - use-coding
+  - use-thinking
+  - local-ollama
+  - ollama-chat
+  - ollama-coding
+  - ollama-thinking
+  - omlx-primary-chat
+  - omlx-secondary-chat
+
+# Log rotation
+ai_validation_logrotate_frequency: daily
+ai_validation_logrotate_rotate: 14
+ai_validation_logrotate_maxsize: 10M

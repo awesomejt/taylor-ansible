@@ -1,0 +1,12 @@
+{{ ai_validation_log_path }} {
+    su root root
+    {{ ai_validation_logrotate_frequency }}
+    rotate {{ ai_validation_logrotate_rotate }}
+    maxsize {{ ai_validation_logrotate_maxsize }}
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    create 0644 root root
+}

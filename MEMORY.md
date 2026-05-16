@@ -1,3 +1,12 @@
+### AI Stack Validation Cron + Log Rotation (2026-05-16)
+
+- Added `ai-validation.yaml` and `roles/ai-validation` to deploy a host-local AI stack validation script on `192.168.50.50`.
+- Script path: `/usr/local/bin/ai-stack-validation.sh`; env file: `/etc/ai-stack-validation.env`; log file: `/var/log/ai-stack-validation.log`.
+- Cron is installed via `/etc/cron.d/ai-stack-validation` and runs hourly at minute `5`.
+- Validation checks Traefik-routed hostnames for Open WebUI, SearXNG, AnythingLLM, n8n, and LiteLLM health.
+- Validation also performs an authenticated LiteLLM `/v1/models` check to ensure required aliases remain present.
+- Log rotation policy is installed at `/etc/logrotate.d/ai-stack-validation` with daily rotation, 14 archives, 10M maxsize, and `su root root` (required on this host due `/var/log` permission policy).
+
 ### LiteLLM/Open WebUI Provider Wiring Refresh (2026-05-16)
 
 - Verified live model catalogs with auth: oMLX primary (`192.168.50.93`) and secondary (`192.168.50.94`) require `vault_omlx_api_key` on `/v1/models`.
