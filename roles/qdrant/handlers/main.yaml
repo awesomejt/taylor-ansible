@@ -1,6 +1,6 @@
 ---
-- name: Restart open-webui service
+- name: Restart qdrant service
   ansible.builtin.systemd:
-    name: "{{ openwebui_systemd_unit }}"
+    name: "{{ qdrant_systemd_unit }}"
     state: restarted
     daemon_reload: true

@@ -1,0 +1,50 @@
+---
+- name: Ensure role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == "Debian"
+    fail_msg: "anythingllm role currently supports Debian/Ubuntu only"
+
+- name: Ensure AnythingLLM directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ anythingllm_primary_user }}"
+    group: "{{ anythingllm_primary_user }}"
+    mode: "0755"
+  loop:
+    - "{{ anythingllm_project_dir }}"
+    - "{{ anythingllm_storage_dir }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Deploy AnythingLLM Docker Compose file
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ anythingllm_compose_file }}"
+    owner: "{{ anythingllm_primary_user }}"
+    group: "{{ anythingllm_primary_user }}"
+    mode: "0644"
+  notify: Restart anythingllm service
+
+- name: Deploy AnythingLLM systemd unit
+  ansible.builtin.template:
+    src: anythingllm.service.j2
+    dest: "{{ anythingllm_systemd_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart anythingllm service
+
+- name: Ensure AnythingLLM service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ anythingllm_systemd_unit }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Wait for AnythingLLM to be ready
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: 3001
+    timeout: 120

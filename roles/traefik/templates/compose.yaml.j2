@@ -1,0 +1,26 @@
+services:
+  traefik:
+    image: {{ traefik_image }}
+    container_name: {{ traefik_container_name }}
+    restart: {{ traefik_restart_policy }}
+    command:
+      - "--log.level={{ traefik_log_level }}"
+      - "--api.dashboard={{ traefik_dashboard_enable | lower }}"
+      - "--api.insecure={{ traefik_dashboard_insecure | lower }}"
+      - "--entryPoints.web.address=:{{ traefik_http_port }}"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault={{ traefik_exposed_by_default | lower }}"
+      - "--providers.docker.network={{ traefik_network_name }}"
+    ports:
+      - "{{ traefik_http_port }}:{{ traefik_http_port }}"
+      - "{{ traefik_dashboard_port }}:{{ traefik_dashboard_port }}"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - traefik_proxy
+    pull_policy: always
+
+networks:
+  traefik_proxy:
+    name: {{ traefik_network_name }}
+    driver: bridge

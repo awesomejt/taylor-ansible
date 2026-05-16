@@ -1,19 +1,18 @@
 [Unit]
-Description=AI Stack Docker Compose service
+Description=Open WebUI
+After=docker.service
 Requires=docker.service
-After=docker.service network-online.target
-Wants=network-online.target
 
 [Service]
-Type=oneshot
-RemainAfterExit=yes
-User={{ openwebui_primary_user }}
+Type=exec
 WorkingDirectory={{ openwebui_project_dir }}
-EnvironmentFile=-{{ openwebui_env_file }}
-ExecStart=/usr/bin/docker compose -f {{ openwebui_compose_file }} up -d
+ExecStart=/usr/bin/docker compose -f {{ openwebui_compose_file }} up --remove-orphans
 ExecStop=/usr/bin/docker compose -f {{ openwebui_compose_file }} down
-ExecReload=/usr/bin/docker compose -f {{ openwebui_compose_file }} up -d
-TimeoutStartSec=0
+Restart=on-failure
+RestartSec=10s
+User={{ openwebui_primary_user }}
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target

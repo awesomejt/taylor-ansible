@@ -1,0 +1,62 @@
+---
+litellm_primary_user: root
+litellm_project_name: litellm
+litellm_project_dir: "/opt/litellm"
+litellm_compose_file: "{{ litellm_project_dir }}/compose.yaml"
+
+litellm_image: ghcr.io/berriai/litellm:main-stable
+litellm_container_name: litellm
+litellm_restart_policy: unless-stopped
+
+litellm_port: 4000
+litellm_config_dir: "{{ litellm_project_dir }}/config"
+litellm_config_path: "{{ litellm_config_dir }}/config.yaml"
+
+# Use new vault var names; fall back to old openwebui-prefixed names for compatibility
+litellm_master_key: "{{ vault_litellm_master_key | default(vault_openwebui_litellm_master_key | default('change-me')) }}"
+
+# Expose port on host for direct API access (e.g., Hermes on 192.168.50.52)
+litellm_expose_host_port: true
+
+# Postgres backend for LiteLLM dashboard/state
+litellm_postgres_host: 192.168.50.15
+litellm_postgres_port: 5432
+litellm_postgres_user: litellm
+litellm_postgres_db: litellm
+litellm_postgres_password: "{{ vault_litellm_postgres_password | default(vault_openwebui_postgres_password | default('change-me')) }}"
+
+# Model routing
+litellm_model_name: local-ollama
+litellm_ollama_base_url: "http://192.168.50.51:11434"
+
+litellm_omlx_api_key: "{{ vault_omlx_api_key | default(vault_openwebui_omlx_api_key | default(vault_hermes_omlx_api_key | default('example'))) }}"
+
+litellm_omlx_primary_model_name: omlx-primary
+litellm_omlx_primary_model: gpt-oss-20b-MXFP4-Q8
+litellm_omlx_primary_base_url: "http://192.168.50.93:8000/v1"
+litellm_omlx_primary_chat_model: "Qwen3.6-27B-6bit"
+litellm_omlx_primary_coding_model: "Qwen3.5-27B-Claude-4.6-Opus-Distilled-MLX-6bit"
+litellm_omlx_primary_thinking_model: "gpt-oss-20b-MXFP4-Q8"
+
+litellm_omlx_secondary_model_name: omlx-secondary
+litellm_omlx_secondary_model: gpt-oss-20b-MLX-8bit
+litellm_omlx_secondary_base_url: "http://192.168.50.94:8000/v1"
+litellm_omlx_secondary_chat_model: "Qwen3.6-27B-6bit"
+litellm_omlx_secondary_coding_model: "Qwen3.6-35B-A3B-6bit"
+litellm_omlx_secondary_thinking_model: "gpt-oss-20b-MLX-8bit"
+
+litellm_ollama_chat_model: "llama3.1:latest"
+litellm_ollama_coding_model: "qwen2.5-coder:latest"
+litellm_ollama_thinking_model: "ministral-3:latest"
+
+litellm_alias_chat: use-chat
+litellm_alias_coding: use-coding
+litellm_alias_thinking: use-thinking
+
+# Traefik integration
+litellm_network_name: traefik_proxy
+litellm_traefik_hostname: "litellm.taylor.lan"
+litellm_traefik_entrypoint: web
+
+litellm_systemd_unit: litellm.service
+litellm_systemd_unit_path: "/etc/systemd/system/{{ litellm_systemd_unit }}"

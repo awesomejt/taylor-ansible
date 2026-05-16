@@ -1,0 +1,31 @@
+---
+anythingllm_primary_user: root
+anythingllm_project_name: anythingllm
+anythingllm_project_dir: "/opt/anythingllm"
+anythingllm_compose_file: "{{ anythingllm_project_dir }}/compose.yaml"
+
+anythingllm_image: mintplexlabs/anythingllm:latest
+anythingllm_container_name: anythingllm
+anythingllm_restart_policy: unless-stopped
+
+anythingllm_storage_dir: "{{ anythingllm_project_dir }}/storage"
+
+# LiteLLM connection (via shared traefik_proxy network)
+anythingllm_litellm_base_url: "http://litellm:4000/v1"
+anythingllm_litellm_api_key: "{{ litellm_master_key | default('change-me') }}"
+anythingllm_litellm_model: local-ollama
+
+# Embedding via Ollama (direct host access)
+anythingllm_embedding_base_url: "http://192.168.50.51:11434"
+anythingllm_embedding_model: nomic-embed-text:latest
+
+# Qdrant connection (via shared traefik_proxy network)
+anythingllm_qdrant_endpoint: "http://qdrant:6333"
+
+# Traefik integration
+anythingllm_network_name: traefik_proxy
+anythingllm_traefik_hostname: "anythingllm.taylor.lan"
+anythingllm_traefik_entrypoint: web
+
+anythingllm_systemd_unit: anythingllm.service
+anythingllm_systemd_unit_path: "/etc/systemd/system/{{ anythingllm_systemd_unit }}"

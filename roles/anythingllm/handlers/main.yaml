@@ -1,0 +1,6 @@
+---
+- name: Restart anythingllm service
+  ansible.builtin.systemd:
+    name: "{{ anythingllm_systemd_unit }}"
+    state: restarted
+    daemon_reload: true

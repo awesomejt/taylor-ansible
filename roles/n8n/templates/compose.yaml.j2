@@ -1,0 +1,25 @@
+services:
+  n8n:
+    image: {{ n8n_image }}
+    container_name: {{ n8n_container_name }}
+    restart: {{ n8n_restart_policy }}
+    volumes:
+      - {{ n8n_data_dir }}:/home/node/.n8n
+    environment:
+      N8N_ENCRYPTION_KEY: "{{ n8n_encryption_key }}"
+      N8N_HOST: "{{ n8n_host }}"
+      N8N_PROTOCOL: "{{ n8n_protocol }}"
+      WEBHOOK_URL: "{{ n8n_webhook_url }}"
+      GENERIC_TIMEZONE: "{{ n8n_timezone }}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.rule=Host(`{{ n8n_traefik_hostname }}`)"
+      - "traefik.http.routers.n8n.entrypoints={{ n8n_traefik_entrypoint }}"
+      - "traefik.http.services.n8n.loadbalancer.server.port={{ n8n_port }}"
+    networks:
+      - traefik_proxy
+    pull_policy: always
+
+networks:
+  traefik_proxy:
+    external: true

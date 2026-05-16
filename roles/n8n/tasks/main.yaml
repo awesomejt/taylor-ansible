@@ -1,0 +1,50 @@
+---
+- name: Ensure role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == "Debian"
+    fail_msg: "n8n role currently supports Debian/Ubuntu only"
+
+- name: Ensure N8N directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ n8n_primary_user }}"
+    group: "{{ n8n_primary_user }}"
+    mode: "0755"
+  loop:
+    - "{{ n8n_project_dir }}"
+    - "{{ n8n_data_dir }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Deploy N8N Docker Compose file
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ n8n_compose_file }}"
+    owner: "{{ n8n_primary_user }}"
+    group: "{{ n8n_primary_user }}"
+    mode: "0644"
+  notify: Restart n8n service
+
+- name: Deploy N8N systemd unit
+  ansible.builtin.template:
+    src: n8n.service.j2
+    dest: "{{ n8n_systemd_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart n8n service
+
+- name: Ensure N8N service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ n8n_systemd_unit }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Wait for N8N to be ready
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: "{{ n8n_port }}"
+    timeout: 120

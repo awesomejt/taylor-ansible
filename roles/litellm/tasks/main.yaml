@@ -1,0 +1,62 @@
+---
+- name: Ensure role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == "Debian"
+    fail_msg: "litellm role currently supports Debian/Ubuntu only"
+
+- name: Ensure LiteLLM directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ litellm_primary_user }}"
+    group: "{{ litellm_primary_user }}"
+    mode: "0755"
+  loop:
+    - "{{ litellm_project_dir }}"
+    - "{{ litellm_config_dir }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Deploy LiteLLM config
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: "{{ litellm_config_path }}"
+    owner: "{{ litellm_primary_user }}"
+    group: "{{ litellm_primary_user }}"
+    mode: "0640"
+  notify: Restart litellm service
+
+- name: Deploy LiteLLM Docker Compose file
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ litellm_compose_file }}"
+    owner: "{{ litellm_primary_user }}"
+    group: "{{ litellm_primary_user }}"
+    mode: "0644"
+  notify: Restart litellm service
+
+- name: Deploy LiteLLM systemd unit
+  ansible.builtin.template:
+    src: litellm.service.j2
+    dest: "{{ litellm_systemd_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart litellm service
+
+- name: Ensure LiteLLM service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ litellm_systemd_unit }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Wait for LiteLLM to be ready
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ litellm_port }}/health"
+    status_code: 200
+  register: litellm_ready
+  until: litellm_ready is succeeded
+  retries: 24
+  delay: 5

@@ -1,0 +1,40 @@
+services:
+  valkey:
+    image: {{ searxng_valkey_image }}
+    container_name: {{ searxng_valkey_container_name }}
+    restart: {{ searxng_restart_policy }}
+    command:
+      - valkey-server
+      - --appendonly
+      - "yes"
+    volumes:
+      - {{ searxng_valkey_data_dir }}:/data
+    networks:
+      - internal
+
+  searxng:
+    image: {{ searxng_image }}
+    container_name: {{ searxng_container_name }}
+    restart: {{ searxng_restart_policy }}
+    depends_on:
+      - valkey
+    volumes:
+      - {{ searxng_config_path }}:/etc/searxng/settings.yml:ro
+      - {{ searxng_cache_dir }}:/var/cache/searxng
+    environment:
+      SEARXNG_SETTINGS_PATH: /etc/searxng/settings.yml
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.searxng.rule=Host(`{{ searxng_traefik_hostname }}`)"
+      - "traefik.http.routers.searxng.entrypoints={{ searxng_traefik_entrypoint }}"
+      - "traefik.http.services.searxng.loadbalancer.server.port=8080"
+    networks:
+      - internal
+      - traefik_proxy
+    pull_policy: always
+
+networks:
+  internal:
+    driver: bridge
+  traefik_proxy:
+    external: true

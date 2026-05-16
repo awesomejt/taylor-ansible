@@ -1,0 +1,61 @@
+---
+- name: Ensure role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == "Debian"
+    fail_msg: "searxng role currently supports Debian/Ubuntu only"
+
+- name: Ensure SearXNG directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ searxng_primary_user }}"
+    group: "{{ searxng_primary_user }}"
+    mode: "0755"
+  loop:
+    - "{{ searxng_project_dir }}"
+    - "{{ searxng_config_dir }}"
+    - "{{ searxng_cache_dir }}"
+    - "{{ searxng_valkey_data_dir }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Deploy SearXNG settings
+  ansible.builtin.template:
+    src: settings.yml.j2
+    dest: "{{ searxng_config_path }}"
+    owner: "{{ searxng_primary_user }}"
+    group: "{{ searxng_primary_user }}"
+    mode: "0644"
+  notify: Restart searxng service
+
+- name: Deploy SearXNG Docker Compose file
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ searxng_compose_file }}"
+    owner: "{{ searxng_primary_user }}"
+    group: "{{ searxng_primary_user }}"
+    mode: "0644"
+  notify: Restart searxng service
+
+- name: Deploy SearXNG systemd unit
+  ansible.builtin.template:
+    src: searxng.service.j2
+    dest: "{{ searxng_systemd_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart searxng service
+
+- name: Ensure SearXNG service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ searxng_systemd_unit }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Wait for SearXNG to be ready
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: 8080
+    timeout: 60

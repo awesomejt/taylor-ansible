@@ -1,0 +1,25 @@
+---
+traefik_primary_user: root
+traefik_project_name: traefik
+traefik_project_dir: "/opt/traefik"
+traefik_compose_file: "{{ traefik_project_dir }}/compose.yaml"
+
+traefik_image: traefik:v3
+traefik_container_name: traefik
+traefik_restart_policy: unless-stopped
+
+traefik_http_port: 80
+traefik_https_port: 443
+traefik_dashboard_port: 8080
+
+# The shared Docker network all proxied services join
+traefik_network_name: traefik_proxy
+
+traefik_log_level: INFO
+traefik_dashboard_enable: true
+# Set to false and configure basic auth before exposing publicly
+traefik_dashboard_insecure: true
+traefik_exposed_by_default: false
+
+traefik_systemd_unit: traefik.service
+traefik_systemd_unit_path: "/etc/systemd/system/{{ traefik_systemd_unit }}"

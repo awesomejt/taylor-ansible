@@ -1,0 +1,18 @@
+[Unit]
+Description=Traefik Reverse Proxy
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=exec
+WorkingDirectory={{ traefik_project_dir }}
+ExecStart=/usr/bin/docker compose -f {{ traefik_compose_file }} up --remove-orphans
+ExecStop=/usr/bin/docker compose -f {{ traefik_compose_file }} down
+Restart=on-failure
+RestartSec=10s
+User={{ traefik_primary_user }}
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

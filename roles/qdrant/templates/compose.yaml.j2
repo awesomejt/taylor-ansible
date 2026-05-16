@@ -1,0 +1,19 @@
+services:
+  qdrant:
+    image: {{ qdrant_image }}
+    container_name: {{ qdrant_container_name }}
+    restart: {{ qdrant_restart_policy }}
+    volumes:
+      - {{ qdrant_storage_dir }}:/qdrant/storage
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.qdrant.rule=Host(`{{ qdrant_traefik_hostname }}`)"
+      - "traefik.http.routers.qdrant.entrypoints={{ qdrant_traefik_entrypoint }}"
+      - "traefik.http.services.qdrant.loadbalancer.server.port=6333"
+    networks:
+      - traefik_proxy
+    pull_policy: always
+
+networks:
+  traefik_proxy:
+    external: true

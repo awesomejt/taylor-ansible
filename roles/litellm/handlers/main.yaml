@@ -1,6 +1,6 @@
 ---
-- name: Restart open-webui service
+- name: Restart litellm service
   ansible.builtin.systemd:
-    name: "{{ openwebui_systemd_unit }}"
+    name: "{{ litellm_systemd_unit }}"
     state: restarted
     daemon_reload: true

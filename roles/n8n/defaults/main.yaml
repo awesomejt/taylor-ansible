@@ -1,0 +1,26 @@
+---
+n8n_primary_user: root
+n8n_project_name: n8n
+n8n_project_dir: "/opt/n8n"
+n8n_compose_file: "{{ n8n_project_dir }}/compose.yaml"
+
+n8n_image: n8nio/n8n:latest
+n8n_container_name: n8n
+n8n_restart_policy: unless-stopped
+
+n8n_data_dir: "{{ n8n_project_dir }}/data"
+n8n_port: 5678
+
+n8n_encryption_key: "{{ vault_n8n_encryption_key | default(vault_openwebui_n8n_encryption_key | default('change-me')) }}"
+n8n_host: "n8n.taylor.lan"
+n8n_protocol: http
+n8n_webhook_url: "http://n8n.taylor.lan"
+n8n_timezone: "America/Chicago"
+
+# Traefik integration
+n8n_network_name: traefik_proxy
+n8n_traefik_hostname: "n8n.taylor.lan"
+n8n_traefik_entrypoint: web
+
+n8n_systemd_unit: n8n.service
+n8n_systemd_unit_path: "/etc/systemd/system/{{ n8n_systemd_unit }}"

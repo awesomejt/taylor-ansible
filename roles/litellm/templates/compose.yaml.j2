@@ -1,0 +1,28 @@
+services:
+  litellm:
+    image: {{ litellm_image }}
+    container_name: {{ litellm_container_name }}
+    restart: {{ litellm_restart_policy }}
+    volumes:
+      - {{ litellm_config_path }}:/app/config.yaml:ro
+    environment:
+      CONFIG_FILE_PATH: /app/config.yaml
+      LITELLM_MASTER_KEY: "{{ litellm_master_key }}"
+      DATABASE_URL: "postgresql://{{ litellm_postgres_user }}:{{ litellm_postgres_password }}@{{ litellm_postgres_host }}:{{ litellm_postgres_port }}/{{ litellm_postgres_db }}"
+      STORE_MODEL_IN_DB: "true"
+{% if litellm_expose_host_port %}
+    ports:
+      - "{{ litellm_port }}:{{ litellm_port }}"
+{% endif %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.litellm.rule=Host(`{{ litellm_traefik_hostname }}`)"
+      - "traefik.http.routers.litellm.entrypoints={{ litellm_traefik_entrypoint }}"
+      - "traefik.http.services.litellm.loadbalancer.server.port={{ litellm_port }}"
+    networks:
+      - traefik_proxy
+    pull_policy: always
+
+networks:
+  traefik_proxy:
+    external: true

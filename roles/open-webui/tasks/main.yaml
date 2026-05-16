@@ -1,109 +1,50 @@
+---
 - name: Ensure role runs on Debian-family systems
   ansible.builtin.assert:
     that:
       - ansible_facts['os_family'] == "Debian"
-    fail_msg: "ai-stack role currently supports Debian/Ubuntu only"
+    fail_msg: "open-webui role currently supports Debian/Ubuntu only"
 
-- name: Ensure AI stack project directory exists
-  ansible.builtin.file:
-    path: "{{ openwebui_project_dir }}"
-    state: directory
-    owner: "{{ openwebui_primary_user }}"
-    group: "{{ openwebui_primary_user }}"
-    mode: "0750"
-
-- name: Ensure AI stack directories exist
+- name: Ensure Open WebUI directories exist
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ openwebui_primary_user }}"
     group: "{{ openwebui_primary_user }}"
-    mode: "0750"
+    mode: "0755"
   loop:
+    - "{{ openwebui_project_dir }}"
     - "{{ openwebui_data_dir }}"
-    - "{{ openwebui_litellm_dir }}"
-    - "{{ openwebui_ollama_dir }}"
-    - "{{ openwebui_searxng_dir }}"
-    - "{{ openwebui_anythingllm_dir }}"
-    - "{{ openwebui_anythingllm_storage_dir }}"
-    - "{{ openwebui_n8n_dir }}"
-    - "{{ openwebui_n8n_data_dir }}"
-    - "{{ openwebui_qdrant_dir }}"
-    - "{{ openwebui_qdrant_storage_dir }}"
-    - "{{ openwebui_project_dir }}/nginx"
   loop_control:
     label: "{{ item }}"
 
-- name: Stop and remove old deployment containers
-  ansible.builtin.shell: |
-    docker stop open-webui open-webui-nginx open-webui-ollama-proxy 2>/dev/null || true
-    docker rm open-webui open-webui-nginx open-webui-ollama-proxy 2>/dev/null || true
-  changed_when: false
-  ignore_errors: true
-
-- name: Remove old deployment directory
-  ansible.builtin.file:
-    path: /opt/open-webui
-    state: absent
-  ignore_errors: true
-
-- name: Deploy nginx reverse proxy configuration
-  ansible.builtin.template:
-    src: nginx.conf.j2
-    dest: "{{ openwebui_project_dir }}/nginx/default.conf"
-    owner: "{{ openwebui_primary_user }}"
-    group: "{{ openwebui_primary_user }}"
-    mode: "0640"
-  notify: Restart ai-stack service
-
-- name: Deploy LiteLLM config
-  ansible.builtin.template:
-    src: litellm-config.yaml.j2
-    dest: "{{ openwebui_litellm_config_path }}"
-    owner: "{{ openwebui_primary_user }}"
-    group: "{{ openwebui_primary_user }}"
-    mode: "0640"
-  notify: Restart ai-stack service
-
-- name: Deploy SearXNG config
-  ansible.builtin.template:
-    src: searxng-settings.yml.j2
-    dest: "{{ openwebui_searxng_config_path }}"
-    owner: "{{ openwebui_primary_user }}"
-    group: "{{ openwebui_primary_user }}"
-    mode: "0640"
-  notify: Restart ai-stack service
-
-- name: Deploy AI stack compose file
+- name: Deploy Open WebUI Docker Compose file
   ansible.builtin.template:
     src: compose.yaml.j2
     dest: "{{ openwebui_compose_file }}"
     owner: "{{ openwebui_primary_user }}"
     group: "{{ openwebui_primary_user }}"
-    mode: "0640"
-  notify: Restart ai-stack service
+    mode: "0644"
+  notify: Restart open-webui service
 
-- name: Deploy AI stack environment file
-  ansible.builtin.copy:
-    dest: "{{ openwebui_env_file }}"
-    content: "# AI stack environment overrides\n# This file is not overwritten on subsequent runs.\n"
-    owner: "{{ openwebui_primary_user }}"
-    group: "{{ openwebui_primary_user }}"
-    mode: "0640"
-    force: false
-
-- name: Deploy AI stack systemd unit
+- name: Deploy Open WebUI systemd unit
   ansible.builtin.template:
     src: open-webui.service.j2
     dest: "{{ openwebui_systemd_unit_path }}"
     owner: root
     group: root
     mode: "0644"
-  notify: Restart ai-stack service
+  notify: Restart open-webui service
 
-- name: Ensure AI stack service is enabled and running
+- name: Ensure Open WebUI service is enabled and running
   ansible.builtin.systemd:
     name: "{{ openwebui_systemd_unit }}"
     enabled: true
     state: started
     daemon_reload: true
+
+- name: Wait for Open WebUI to be ready
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: 8080
+    timeout: 120

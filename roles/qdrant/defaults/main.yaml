@@ -1,0 +1,19 @@
+---
+qdrant_primary_user: root
+qdrant_project_name: qdrant
+qdrant_project_dir: "/opt/qdrant"
+qdrant_compose_file: "{{ qdrant_project_dir }}/compose.yaml"
+
+qdrant_image: qdrant/qdrant:latest
+qdrant_container_name: qdrant
+qdrant_restart_policy: unless-stopped
+
+qdrant_storage_dir: "{{ qdrant_project_dir }}/storage"
+
+# Traefik integration
+qdrant_network_name: traefik_proxy
+qdrant_traefik_hostname: "qdrant.taylor.lan"
+qdrant_traefik_entrypoint: web
+
+qdrant_systemd_unit: qdrant.service
+qdrant_systemd_unit_path: "/etc/systemd/system/{{ qdrant_systemd_unit }}"

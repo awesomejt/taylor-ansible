@@ -1,0 +1,28 @@
+---
+searxng_primary_user: root
+searxng_project_name: searxng
+searxng_project_dir: "/opt/searxng"
+searxng_compose_file: "{{ searxng_project_dir }}/compose.yaml"
+
+searxng_image: ghcr.io/searxng/searxng:latest
+searxng_container_name: searxng
+searxng_restart_policy: unless-stopped
+
+searxng_config_dir: "{{ searxng_project_dir }}/config"
+searxng_config_path: "{{ searxng_config_dir }}/settings.yml"
+searxng_cache_dir: "{{ searxng_project_dir }}/cache"
+searxng_valkey_data_dir: "{{ searxng_project_dir }}/valkey"
+
+searxng_secret_key: "{{ vault_searxng_secret_key | default(vault_openwebui_searxng_secret_key | default('change-me')) }}"
+
+# Valkey sidecar (Redis-compatible cache for SearXNG)
+searxng_valkey_image: valkey/valkey:8-alpine
+searxng_valkey_container_name: searxng-valkey
+
+# Traefik integration
+searxng_network_name: traefik_proxy
+searxng_traefik_hostname: "searxng.taylor.lan"
+searxng_traefik_entrypoint: web
+
+searxng_systemd_unit: searxng.service
+searxng_systemd_unit_path: "/etc/systemd/system/{{ searxng_systemd_unit }}"
