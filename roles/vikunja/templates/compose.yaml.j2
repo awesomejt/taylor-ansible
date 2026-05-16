@@ -1,0 +1,26 @@
+services:
+  vikunja:
+    image: {{ vikunja_image }}
+    container_name: {{ vikunja_container_name }}
+    restart: {{ vikunja_restart_policy }}
+    environment:
+      VIKUNJA_SERVICE_PUBLICURL: "{{ vikunja_service_public_url }}"
+      VIKUNJA_SERVICE_SECRET: "{{ vikunja_service_secret }}"
+      VIKUNJA_SERVICE_ENABLEREGISTRATION: "{{ 'true' if vikunja_service_enable_registration | bool else 'false' }}"
+      VIKUNJA_DATABASE_TYPE: "{{ vikunja_database_type }}"
+      VIKUNJA_DATABASE_PATH: "{{ vikunja_database_path }}"
+    volumes:
+      - {{ vikunja_files_dir }}:/app/vikunja/files
+      - {{ vikunja_db_dir }}:/db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vikunja.rule=Host(`{{ vikunja_traefik_hostname }}`)"
+      - "traefik.http.routers.vikunja.entrypoints={{ vikunja_traefik_entrypoint }}"
+      - "traefik.http.services.vikunja.loadbalancer.server.port=3456"
+    networks:
+      - traefik_proxy
+    pull_policy: always
+
+networks:
+  traefik_proxy:
+    external: true

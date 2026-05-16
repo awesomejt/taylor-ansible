@@ -1,0 +1,32 @@
+---
+vikunja_primary_user: root
+vikunja_project_name: vikunja
+vikunja_project_dir: "/opt/vikunja"
+vikunja_compose_file: "{{ vikunja_project_dir }}/compose.yaml"
+
+vikunja_image: vikunja/vikunja:latest
+vikunja_container_name: vikunja
+vikunja_restart_policy: unless-stopped
+
+vikunja_files_dir: "{{ vikunja_project_dir }}/files"
+vikunja_db_dir: "{{ vikunja_project_dir }}/db"
+
+# Vikunja container defaults to uid 1000.
+vikunja_container_uid: "1000"
+vikunja_container_gid: "1000"
+
+vikunja_service_public_url: "http://kanban.taylor.lan/"
+vikunja_service_secret: "{{ vault_vikunja_service_secret | default('change-me') }}"
+vikunja_service_enable_registration: false
+
+# Use sqlite by default for quick single-node deployment.
+vikunja_database_type: sqlite
+vikunja_database_path: /db/vikunja.db
+
+# Traefik integration
+vikunja_network_name: traefik_proxy
+vikunja_traefik_hostname: "kanban.taylor.lan"
+vikunja_traefik_entrypoint: web
+
+vikunja_systemd_unit: vikunja.service
+vikunja_systemd_unit_path: "/etc/systemd/system/{{ vikunja_systemd_unit }}"

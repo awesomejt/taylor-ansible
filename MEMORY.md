@@ -1,3 +1,13 @@
+### Kanban Service (Vikunja) Added (2026-05-16)
+
+- Added `kanban.yaml` playbook using the new `roles/vikunja` role.
+- Vikunja runs on the consolidated Docker host (`192.168.50.50`) and is routed via Traefik at `kanban.taylor.lan`.
+- Inventory group `kanban` now targets `192.168.50.50`.
+- Compose config uses `vikunja/vikunja:latest` with sqlite persisted at `/opt/vikunja/db` and files at `/opt/vikunja/files`.
+- `VIKUNJA_SERVICE_ENABLEREGISTRATION` is disabled by default (`false`).
+- Added `vault_vikunja_service_secret` placeholder to `vars/common/example-secrets.yaml`.
+- Deployment verified from host with routed response `kanban.taylor.lan -> 200`.
+
 ### Compose Ops Services Added (2026-05-16)
 
 - Added decomposed roles + playbooks for Prometheus (`prometheus.yaml`), Grafana (`grafana.yaml`), pgAdmin (`pgadmin.yaml`), and Portainer (`portainer.yaml`) on `192.168.50.50`.

@@ -1,5 +1,17 @@
 # TODO
 
+## Kanban (Vikunja) Rollout (2026-05-16)
+
+- [x] Create `kanban.yaml` playbook using `vikunja` role.
+- [x] Add `roles/vikunja` with compose/systemd deployment and readiness checks.
+- [x] Wire Traefik hostname to `kanban.taylor.lan`.
+- [x] Add inventory target group `kanban`.
+- [x] Add sanitized `vault_vikunja_service_secret` placeholder to `vars/common/example-secrets.yaml`.
+- [x] Validate playbook locally (`ansible-playbook --syntax-check`, `ansible-lint`).
+- [x] Sync to Ansible host.
+- [x] Run `kanban.yaml` on Ansible host.
+- [x] Verify routed endpoint (`kanban.taylor.lan`) responds.
+
 ## Compose Ops Services Rollout (2026-05-16)
 
 - [x] Add decomposed roles and playbooks for Prometheus, Grafana, pgAdmin, and Portainer.

@@ -40,6 +40,12 @@ ansible-playbook -i inventory.ini pgadmin.yaml --ask-vault-pass
 ansible-playbook -i inventory.ini portainer.yaml
 ```
 
+Run Kanban (Vikunja) on the consolidated Docker host:
+
+```bash
+ansible-playbook -i inventory.ini kanban.yaml --ask-vault-pass
+```
+
 Or deploy all four through the aggregate inventory group:
 
 ```bash

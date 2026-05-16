@@ -1,0 +1,73 @@
+---
+- name: Ensure role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == "Debian"
+    fail_msg: "vikunja role currently supports Debian/Ubuntu only"
+
+- name: Ensure Vikunja directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ vikunja_primary_user }}"
+    group: "{{ vikunja_primary_user }}"
+    mode: "0755"
+  loop:
+    - "{{ vikunja_project_dir }}"
+
+- name: Ensure Vikunja files directory has container-write permissions
+  ansible.builtin.file:
+    path: "{{ vikunja_files_dir }}"
+    state: directory
+    owner: "{{ vikunja_container_uid }}"
+    group: "{{ vikunja_container_gid }}"
+    mode: "0755"
+
+- name: Ensure Vikunja database directory has container-write permissions
+  ansible.builtin.file:
+    path: "{{ vikunja_db_dir }}"
+    state: directory
+    owner: "{{ vikunja_container_uid }}"
+    group: "{{ vikunja_container_gid }}"
+    mode: "0755"
+
+- name: Deploy Vikunja Docker Compose file
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ vikunja_compose_file }}"
+    owner: "{{ vikunja_primary_user }}"
+    group: "{{ vikunja_primary_user }}"
+    mode: "0644"
+  notify: Restart vikunja service
+
+- name: Deploy Vikunja systemd unit
+  ansible.builtin.template:
+    src: vikunja.service.j2
+    dest: "{{ vikunja_systemd_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart vikunja service
+
+- name: Ensure Vikunja service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ vikunja_systemd_unit }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Wait for Vikunja API to be ready
+  ansible.builtin.uri:
+    url: "http://127.0.0.1/"
+    headers:
+      Host: "{{ vikunja_traefik_hostname }}"
+    status_code:
+      - 200
+      - 301
+      - 302
+      - 307
+      - 308
+  register: vikunja_ready
+  until: vikunja_ready is succeeded
+  retries: 24
+  delay: 5

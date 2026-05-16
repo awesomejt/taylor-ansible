@@ -1,0 +1,18 @@
+[Unit]
+Description=Vikunja
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=exec
+WorkingDirectory={{ vikunja_project_dir }}
+ExecStart=/usr/bin/docker compose -f {{ vikunja_compose_file }} up --remove-orphans
+ExecStop=/usr/bin/docker compose -f {{ vikunja_compose_file }} down
+Restart=on-failure
+RestartSec=10s
+User={{ vikunja_primary_user }}
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
