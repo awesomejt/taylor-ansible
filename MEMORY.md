@@ -218,3 +218,162 @@ Reviewed all 16 playbooks and 14+ roles to assess consolidation opportunities:
   - `traefik.http.routers.service.rule=Host(\`service.taylor.lan\`)`
   - `traefik.http.services.service.loadbalancer.server.port=SERVICE_PORT`
   - Optional: TLS, auth, rate limiting per service
+
+### Additional Planning Decisions (2026-05-15)
+
+**IP assignments locked for reinitialized VM roles**:
+- `192.168.50.50` = consolidated Docker Compose stacks host
+- `192.168.50.51` = dedicated Ollama server (CPU fallback provider)
+
+**Current migration risk profile**:
+- Registry at `192.168.50.50` only has test images; no production-critical payload yet.
+- LLDAP at `192.168.50.51` has no meaningful directory entries yet.
+- This lowers migration risk and supports clean rebuild/reinitialize workflow before implementation.
+
+**Portainer consideration**:
+- Portainer is a good fit on the consolidated Docker Compose host for operational visibility.
+- Use scope-limited role and avoid making Portainer the source of truth for config drift; keep Ansible + Compose files authoritative.
+- Optional future expansion: attach additional Docker endpoints and K8s endpoint in read-only mode first.
+
+**Prometheus + Grafana placement guidance**:
+- Recommended split model for this homelab:
+   - Run baseline observability on Docker Compose host first (fast to stand up, lower complexity).
+   - If/when K3s-native workloads dominate, add/shift K3s-native observability for cluster metrics and retain central Grafana.
+- For current phase (pre-reinit, pre-implementation), keep this as an architecture decision item in TODO.
+
+**Consul decision guidance**:
+- Do not add Consul by default just because mixed Docker/K3s exists.
+- Introduce Consul only if there is a concrete requirement for:
+   - cross-platform dynamic service discovery with health checks,
+   - service mesh/connect features, or
+   - KV-driven runtime config that DNS + Traefik + static inventory cannot satisfy.
+- Current trajectory suggests DNS + Traefik labels + Ansible inventory likely sufficient initially.
+
+### Architecture Decisions Confirmed (2026-05-15, follow-up)
+
+**Portainer operating model**:
+- Portainer will be added as an operations dashboard for visibility and limited maintenance actions (for example restarts).
+- Infrastructure/config/security remain infrastructure-as-code first; Portainer is not the source of truth.
+- Keep mutable changes in Portainer constrained to day-2 ops tasks only.
+
+**Traefik model across platforms**:
+- Docker Compose host (`192.168.50.50`) runs Traefik for Compose-managed services.
+- K3s clusters use their built-in Traefik ingress controller for in-cluster workloads.
+- This establishes a dual-ingress model by platform boundary (Compose vs K3s), not a single shared ingress plane.
+
+**Observability model**:
+- Central Grafana model is approved.
+- Prometheus runs on the Compose host and in each K3s cluster; Grafana consumes multiple Prometheus data sources centrally.
+- This supports gradual K3s adoption without replacing existing Compose-host observability.
+
+**Consul timing**:
+- Consul is intentionally deferred for now.
+- Planned as a later exploration after K3s is established, primarily for service mesh/discovery experiments.
+- Current phases continue with DNS + Traefik + inventory-based discovery patterns.
+
+### VM Sizing Recommendations (2026-05-15)
+
+Recommended Proxmox sizing for reinitialized roles, based on current services plus moderate growth headroom:
+
+**Compose host (`192.168.50.50`)**:
+- Purpose: Traefik, Portainer, Registry, LLDAP, OpenWebUI sub-stacks, Prometheus (plus room for additional non-K3s services)
+- vCPU: `8` (start) with ability to grow to `12`
+- RAM: `32 GB` (start) with ability to grow to `48 GB`
+- Storage:
+   - OS disk: `80-100 GB` (SSD)
+   - Data disk: `1.0-1.5 TB` fast SSD/NVMe for Docker volumes, metrics retention, logs
+- Notes:
+   - Keep CPU/RAM headroom for observability and bursty web workloads.
+   - Prefer separate data disk for easier backup/restore and future migration.
+
+**Ollama host (`192.168.50.51`)**:
+- Purpose: CPU-only fallback LLM inference endpoint for LiteLLM/OpenWebUI
+- vCPU: `16` (start) with ability to grow to `20-24`
+- RAM: `64 GB` (start) with ability to grow to `96 GB` if larger models/concurrency increase
+- Storage:
+   - OS disk: `80-100 GB` (SSD)
+   - Model disk: `500 GB` NVMe minimum (`1 TB` preferred for model library growth)
+- Notes:
+   - CPU-only inference is memory and thread sensitive; prioritize higher memory bandwidth and local NVMe.
+   - Keep this VM on a different Proxmox node than Compose host to balance RAM/disk pressure and isolate inference spikes.
+
+**Placement strategy**:
+- Split VMs across nodes as planned:
+   - Node A (compute-heavy): Ollama (`192.168.50.51`)
+   - Node B (storage/service-heavy): Compose (`192.168.50.50`)
+- Prioritize local SSD/NVMe storage (not shared slow storage) for both Docker volumes and Ollama models.
+
+Node fit analysis snapshot (2026-05-15, live Proxmox query):
+- Cluster nodes online: `homelab`, `homelab2`, `homelab3`, `homelab4`
+- Node capacity/headroom:
+   - `homelab`: 20 vCPU, 94.0 GiB RAM total, 37.2 GiB free, NVMe-heavy storage (1.8T + 3.6T + 3.6T)
+   - `homelab2`: 20 vCPU, 62.6 GiB RAM total, 45.4 GiB free, strong SSD/NVMe mix (1T + 3.6T + 3.6T)
+   - `homelab3`: 16 vCPU, 62.4 GiB RAM total, 46.2 GiB free, smaller/faster local footprint (0.5T + 1T + 1T)
+   - `homelab4`: 16 vCPU, 62.3 GiB RAM total, 37.1 GiB free, mixed SSD/NVMe (0.5T + 1T + 2T)
+- CPU class:
+   - `homelab` = i9-13900H (fastest)
+   - `homelab2` = i9-12900H
+   - `homelab4` = i7-1260P
+   - `homelab3` = i5-1240P
+
+Recommended placement from current distribution:
+- **Compose VM (`192.168.50.50`)**: place on `homelab` (storage-rich infra node; best fit for service/data volume growth).
+- **Ollama VM (`192.168.50.51`)**: place on `homelab2` (strong CPU + highest practical free RAM while staying off Compose node).
+
+Ollama fallback sizing revision (based on real node headroom):
+- Prior 64 GiB target is optional and likely unnecessary for fallback-only use.
+- Recommended start: `12 vCPU`, `32 GiB RAM`, `500 GiB-1 TiB` NVMe model disk.
+- Scale-up trigger: sustained queueing/latency or model-size pressure.
+   - Step 1: increase to `16 vCPU` / `48 GiB` RAM.
+   - Step 2: increase toward `64 GiB` only if larger models/concurrency truly require it.
+
+### Artifact Repository Direction (2026-05-15)
+
+User priorities for artifact strategy:
+- Simple but reliable
+- Web UI required, proxied via Traefik
+- Can run unsecured initially until TLS rollout
+- Primary focus: Docker images
+- Additional package needs: Maven/Gradle and potentially npm (not strictly required in same tool)
+- Proxy/mirror upstream repos is nice-to-have
+- Free/open source required
+- Prefer datastore that is included or supports PostgreSQL in free mode
+
+Recommended phased approach:
+
+1. **Phase A (now, Docker-first)**
+- Keep Docker image registry path lightweight and reliable on Compose host.
+- Use a UI-backed Docker registry pattern behind Traefik on `192.168.50.50`.
+- Run HTTP internally first (lab mode), then add TLS via Traefik/step-ca later.
+
+2. **Phase B (when non-Docker artifacts become real demand)**
+- Add a dedicated package manager for Maven/Gradle/npm if usage materially grows.
+- Keep Docker images as primary workload and avoid overloading Day-1 architecture.
+
+Tooling fit notes against priorities:
+- **Harbor**: Strong Docker-first fit, UI included, OSS, includes/uses PostgreSQL stack components, supports proxy cache, heavier operational footprint.
+- **Nexus OSS**: Broad package support with UI, good when Maven/npm needs become primary; verify current free-edition external PostgreSQL support before selecting as primary due to edition/version nuances.
+- **Docker Distribution + lightweight UI**: Simplest operationally for Docker-only focus, minimal footprint, but weaker multi-format/package-management capabilities.
+
+Current recommendation for this homelab stage:
+- Start Docker-first and simple on Compose host.
+- Defer broad all-in-one artifact management until Maven/npm demand justifies additional complexity.
+- Keep Traefik routing and auth/TLS policy consistent across registry UI and APIs.
+
+Decision refinement based on user priorities:
+- **Preferred Day-1 path**: Harbor (best overall match for Docker-first + UI + OSS + optional proxy capability).
+- **Fallback Day-1 path**: Docker Distribution + lightweight UI if Harbor footprint/complexity is too high.
+- **Day-2 path**: Introduce Nexus OSS only when Maven/Gradle/npm usage materially increases.
+- Security rollout remains phased: unsecured internal first, then Traefik TLS once step-ca workflow is ready.
+
+Nexus placement recommendation when Harbor is Day-1 registry:
+- Keep Nexus off the consolidated Compose host and run it on a dedicated VM (reuse `192.168.50.12` is preferred).
+- Preferred deployment mode: Nexus in Docker Compose on the dedicated VM (instead of direct systemd binary), to align ops with the rest of the stack.
+- Route Nexus UI/repositories through Traefik using a separate virtual host.
+- Status: user-approved on 2026-05-15 for future Day-2 adoption.
+- Rationale:
+   - isolates Java heap/disk I/O from Harbor and other Compose workloads,
+   - reduces contention risk on the shared Compose node,
+   - keeps failure domains separate (artifact library issues do not impact core Docker registry path),
+   - simplifies future retirement/migration if package demand changes.
+- Trigger to introduce Nexus: real and recurring Maven/Gradle/npm demand beyond occasional use.

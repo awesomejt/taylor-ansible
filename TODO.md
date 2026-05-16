@@ -170,7 +170,23 @@
 
 ### Phase 2: Secrets & Infrastructure Prep
 
-- [ ] Confirm consolidated VM target IP (suggest 192.168.50.75 or reuse 192.168.50.91).
+- [x] Confirm consolidated VM target IP: `192.168.50.50` for Docker Compose stacks.
+- [x] Confirm dedicated Ollama host IP: `192.168.50.51`.
+- [x] Define recommended VM specs for Compose and Ollama hosts (documented in MEMORY.md).
+- [ ] Reinitialize VMs for new roles before implementation (user-managed prerequisite).
+- [ ] Apply VM sizing at reinit:
+  - [ ] Compose host (`192.168.50.50`): 8 vCPU, 32 GB RAM, 80-100 GB OS disk, 1.0-1.5 TB data SSD/NVMe
+  - [ ] Ollama host (`192.168.50.51`): 16 vCPU, 64 GB RAM, 80-100 GB OS disk, 500 GB-1 TB model NVMe
+- [ ] Place Compose and Ollama on different Proxmox nodes to balance memory/disk pressure.
+- [ ] Validate post-reinit host capacity baseline (CPU steal, RAM headroom, disk IOPS/latency).
+- [ ] Run Proxmox node fit analysis before VM reinit:
+  - [x] Capture each node capacity (total/free vCPU threads, RAM, local SSD/NVMe free space, IOPS class)
+  - [x] Assign Ollama VM (`192.168.50.51`) to compute-strong node with best RAM headroom and NVMe throughput
+  - [x] Assign Compose VM (`192.168.50.50`) to storage-strong node with best sustained disk capacity
+  - [x] Confirm post-placement node headroom target (>=20-25% RAM free, acceptable CPU contention)
+  - [x] Document node-to-VM mapping decision in MEMORY.md
+  - [x] Recommended mapping from current snapshot: `192.168.50.50` -> `homelab`, `192.168.50.51` -> `homelab2`
+  - [x] Revised Ollama fallback sizing target: start at 12 vCPU / 32 GiB RAM, scale to 16 vCPU / 48 GiB if needed
 - [ ] Update inventory.ini to reflect consolidated host groups and IP.
 - [ ] Plan PostgreSQL database host changes for LLDAP and OpenWebUI services:
   - [ ] LLDAP: refactor playbook to use external postgres_prod instead of embedded DB role
@@ -194,7 +210,7 @@
   - [ ] Remove postgres service from Docker Compose (move to separate postgres_prod deployment if not exists)
   - [ ] Change compose DATABASE_URL to external postgres_prod host
   - [ ] Consolidate deploy location
-  - [ ] Ensure ollama stays on consolidated host (GPU-preferred, resource-local)
+  - [ ] Ensure LiteLLM points to external Ollama endpoint on `192.168.50.51`
 - [ ] **Create traefik.yaml** (new):
   - [ ] Traefik service on consolidated host
   - [ ] Routing to registry, lldap, openwebui, anythingllm, n8n, etc.
@@ -240,10 +256,10 @@
 
 ### Open Questions & Decisions Pending User Review
 
-- [ ] **Consolidated host IP**: Use 192.168.50.91 (current OpenWebUI host) or new IP 192.168.50.75?
-- [ ] **Traefik ingress**: Host on consolidated Docker Compose or in K3s?
+- [x] **Consolidated host IP**: `192.168.50.50`.
+- [x] **Traefik ingress**: Dual model confirmed — Traefik on Compose host for Compose stacks + built-in Traefik in each K3s cluster for cluster workloads.
 - [ ] **LLDAP persistence**: Stay Docker Compose or consider K8s migration?
-- [ ] **Ollama**: Stay on consolidated Docker Compose (GPU affinity, local storage) or move to K8s?
+- [x] **Ollama placement**: Dedicated VM at `192.168.50.51` (CPU fallback provider).
 - [ ] **Registry backups**: Backup strategy for consolidated host (snapshots, off-host replication)?
 - [ ] **External database approach**: Keep postgres_prod centralized or distribute per-environment DB VMs?
 - [ ] **Timeline**: Consolidate immediately or pilot with one service first (e.g., registry)?
@@ -262,6 +278,40 @@
 ### Research Item 1: Docker Registry & Asset Management Strategy
 
 **Goal**: Evaluate Docker registry options (simple registry vs Harbor vs Nexus) and determine best approach for build asset/library management.
+
+**User priority constraints (locked):**
+- [x] Simple but reliable
+- [x] Web UI required (proxied via Traefik)
+- [x] Can run unsecured initially before TLS setup
+- [x] Docker images are primary focus
+- [x] Maven/Gradle and potential npm support desirable (not required to be same tool)
+- [x] Upstream proxy support is nice-to-have
+- [x] Free/open source only
+- [x] Datastore should be included or support PostgreSQL in free model
+
+**Recommended phased approach (planning decision):**
+- [x] Phase A: Docker-first approach on Compose host, keep architecture simple
+- [x] Phase B: Add broader dependency/package tooling only when Maven/npm demand is real
+- [ ] Final Day-1 tool decision: Harbor vs Docker Distribution + lightweight UI
+- [ ] Day-2 expansion decision: if/when to introduce Nexus OSS for Maven/npm ecosystems
+
+**Priority-fit scoring (working recommendation):**
+- [x] Harbor is currently best overall fit for priority mix (Docker-first + built-in UI + OSS + proxy-cache capability + included DB components).
+- [x] Docker Distribution + lightweight UI is best low-complexity fallback if Harbor operational footprint is too high.
+- [x] Nexus OSS is treated as Day-2 package expansion candidate, not Day-1 Docker-first default.
+
+**Decision gates before implementation:**
+- [ ] Gate 1: Choose Day-1 artifact path:
+  - [ ] Option A (recommended): Harbor on `192.168.50.50`, Traefik-routed, HTTP first then TLS
+  - [ ] Option B: Docker Distribution + UI on `192.168.50.50`, Traefik-routed, HTTP first then TLS
+- [ ] Gate 2: Confirm repository scope at Day-1:
+  - [ ] Docker hosted repo (required)
+  - [ ] Docker proxy cache (optional but recommended)
+  - [ ] Maven/npm proxies (defer unless immediate need)
+- [ ] Gate 3: Confirm security rollout sequence:
+  - [ ] Initial lab mode (unsecured internal HTTP)
+  - [ ] Step-CA/TLS enablement via Traefik
+  - [ ] Optional auth hardening after TLS baseline
 
 - [ ] Research current simple Docker registry (192.168.50.50):
   - [ ] Document current capabilities, limitations (no UI, no auth, no vulnerability scanning)
@@ -300,6 +350,12 @@
 
 **Goal**: Determine whether Nexus should remain dedicated VM (192.168.50.12) or fold into consolidated Docker Compose host.
 
+**Planning decision for Harbor Day-1 path:**
+- [x] If Harbor is selected for Docker registry, Nexus stays on a dedicated VM (prefer `192.168.50.12`), not on consolidated Compose host.
+- [x] Preferred Nexus runtime model: Docker Compose on dedicated VM (not direct systemd binary).
+- [x] Introduce Nexus only when Maven/Gradle/npm demand is recurring and material.
+- [x] User approved this placement recommendation for future Day-2 use.
+
 - [ ] Analyze current Nexus deployment:
   - [ ] Current state: systemd binary, Java runtime, ~2GB footprint
   - [ ] Resource utilization: CPU, memory, disk I/O
@@ -307,7 +363,7 @@
 
 - [ ] Evaluate consolidation options:
   - [ ] Option A: Convert to Docker Compose, deploy on consolidated host
-  - [ ] Option B: Keep dedicated VM but switch to Docker Compose (easier than binary)
+  - [x] Option B: Keep dedicated VM but switch to Docker Compose (easier than binary)
   - [ ] Option C: Migrate to K8s StatefulSet (for HA if needed later)
   - [ ] Option D: Leave as-is on dedicated VM
 
@@ -319,6 +375,11 @@
   - [ ] HA requirements (user confirmed: none for now)
 
 - [ ] Document recommendation with decision matrix
+- [ ] Plan Day-2 Nexus rollout (only if demand trigger is met):
+  - [ ] Define demand trigger threshold (team/project count or package volume)
+  - [ ] Reserve dedicated VM capacity for Nexus (CPU/RAM/disk)
+  - [ ] Define Traefik route and hostname for Nexus UI/API
+  - [ ] Define backup/restore cadence for Nexus data volume
 
 ### Research Item 3: AI Compose Stack Decomposition Architecture
 
@@ -418,16 +479,64 @@
 
 **Goal**: Finalize consolidated Docker Compose host IP and update inventory/DNS accordingly.
 
-- [ ] Decide consolidated host IP:
-  - [ ] Option A: Reuse 192.168.50.91 (current OpenWebUI host, consolidate all there)
-  - [ ] Option B: New IP 192.168.50.75 (or other available)
-  - [ ] Criteria: proximity to existing services, IP pool availability
-  - [ ] **Decision**: [awaiting user choice]
+- [x] Decide consolidated host IP: `192.168.50.50`.
+- [x] Decide Ollama host IP: `192.168.50.51`.
+- [x] Confirm DNS updates will be user-managed during rollout.
+
+### Research Item 6: Portainer Scope & Governance
+
+**Goal**: Determine whether Portainer should be added to the consolidated Docker Compose host and define safe operational boundaries.
+
+- [x] Evaluate Portainer fit for consolidated host visibility and day-2 operations.
+- [x] Define governance model:
+  - [x] Keep Ansible + Compose files as source of truth.
+  - [x] Restrict Portainer use to observability and controlled actions.
+  - [x] Avoid unmanaged drift from ad hoc UI changes.
+- [x] Decide endpoint model:
+  - [x] Local Docker endpoint on `192.168.50.50`.
+  - [ ] Optional remote Docker endpoints (future).
+  - [x] Optional K3s endpoint (future, read-only first).
+- [ ] Define baseline security controls:
+  - [ ] SSO/Auth strategy (if any), admin user policy, backup of Portainer data volume.
+  - [ ] Traefik route + TLS policy.
+
+### Research Item 7: Prometheus + Grafana Placement (Compose vs K3s)
+
+**Goal**: Decide primary observability platform placement for current and near-term architecture.
+
+- [x] Compare deployment options:
+  - [x] Option A: Docker Compose on `192.168.50.50`.
+  - [x] Option B: K3s-native stack in cluster.
+  - [x] Option C: Hybrid (central Grafana + mixed Prometheus targets).
+- [ ] Evaluate by criterion:
+  - [ ] Operational complexity for bootstrap/recovery from scratch.
+  - [ ] Coverage for VM + Docker + K3s metrics.
+  - [ ] Persistence/backup model simplicity.
+  - [ ] Resource impact and failure domains.
+- [x] Produce recommendation with phased rollout:
+  - [x] Phase 1 baseline deployment choice: central Grafana + Compose-host Prometheus.
+  - [x] Phase 2 expansion path when K3s workloads grow: per-cluster Prometheus, all as Grafana datasources.
+
+### Research Item 8: Consul Requirement Decision
+
+**Goal**: Determine whether Consul adds practical value beyond current DNS + Traefik + Ansible inventory model.
+
+- [x] Document concrete use cases that would justify Consul introduction.
+- [x] Primary near-term use case captured: post-K3s service mesh and service-discovery experimentation.
+- [ ] Compare alternatives:
+  - [x] DNS records + Traefik labels + static inventory (current direction).
+  - [x] Consul service discovery/health checks.
+  - [x] K3s-native service discovery for in-cluster workloads.
+- [ ] Define adoption threshold:
+  - [x] Conditions under which Consul is introduced.
+  - [x] Conditions under which Consul is explicitly deferred.
+- [x] Produce recommendation: adopt now, pilot later, or defer.
+- [x] Decision: defer now; pilot later after K3s baseline is stable.
 
 - [ ] Update inventory.ini with new consolidated host group:
   - [ ] `[docker_compose_consolidated]` or similar group name
   - [ ] Remove/reassign old groups (registry, openwebui, lldap)
-  - [ ] Map decommissioned IPs (192.168.50.50, 192.168.50.51, possibly 192.168.50.91)
+  - [ ] Map re-purposed/decommissioned IPs (old registry/openwebui/lldap placements)
 
 - [ ] Update DNS records (Technitium on 192.168.50.53):
   - [ ] registry.taylor.lan → consolidated IP
@@ -441,7 +550,6 @@
   - [ ] Any new services → consolidated IP
 
 - [ ] Plan decommissioning:
-  - [ ] When does 192.168.50.50 (registry VM) get retired?
-  - [ ] When does 192.168.50.51 (LLDAP VM) get retired?
-  - [ ] When does 192.168.50.91 (OpenWebUI VM) get retired (if reusing for consolidated)?
+  - [ ] Confirm VM rebuild/reinitialize completion for new roles on `192.168.50.50` and `192.168.50.51`.
+  - [ ] Decide retirement/reassignment timing for prior OpenWebUI host `192.168.50.91`.
   - [ ] Backup/snapshot strategy before decommissioning
