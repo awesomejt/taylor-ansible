@@ -9,7 +9,7 @@ openwebui_container_name: ai-stack-open-webui
 openwebui_data_dir: "{{ openwebui_project_dir }}/open-webui"
 
 openwebui_host_port: 80
-openwebui_webui_base_url: "http://192.168.50.91"
+openwebui_webui_base_url: "http://192.168.50.50"
 openwebui_openai_base_url: "http://{{ openwebui_litellm_container_name }}:{{ openwebui_litellm_port }}/v1"
 openwebui_openai_api_key: "{{ openwebui_litellm_master_key }}"
 openwebui_searxng_query_url: "http://{{ openwebui_searxng_container_name }}:8080/search?q=<query>&format=json"
@@ -22,7 +22,7 @@ openwebui_litellm_port: 4000
 openwebui_litellm_master_key: "{{ vault_openwebui_litellm_master_key | default('change-me') }}"
 openwebui_litellm_model_name: local-ollama
 openwebui_litellm_ollama_model: llama3.2:latest
-openwebui_litellm_ollama_base_url: "http://{{ openwebui_ollama_container_name }}:{{ openwebui_ollama_port }}"
+openwebui_litellm_ollama_base_url: "http://192.168.50.51:11434"
 openwebui_litellm_omlx_primary_model_name: omlx-primary
 openwebui_litellm_omlx_primary_model: gpt-oss-20b-MXFP4-Q8
 openwebui_litellm_omlx_primary_base_url: "{{ hermes_omlx_macbook_url | default('http://192.168.50.93:8000/v1') }}"
@@ -72,6 +72,8 @@ openwebui_postgres_container_name: ai-stack-postgres
 openwebui_postgres_user: litellm
 openwebui_postgres_db: litellm
 openwebui_postgres_password: "{{ vault_openwebui_postgres_password | default('change-me') }}"
+openwebui_postgres_host: 192.168.50.15
+openwebui_postgres_port: 5432
 
 openwebui_anythingllm_image: mintplexlabs/anythingllm:latest
 openwebui_anythingllm_container_name: ai-stack-anythingllm
@@ -79,7 +81,7 @@ openwebui_anythingllm_dir: "{{ openwebui_project_dir }}/anythingllm"
 openwebui_anythingllm_storage_dir: "{{ openwebui_anythingllm_dir }}/storage"
 openwebui_anythingllm_port: 3001
 openwebui_anythingllm_openai_base_url: "http://{{ openwebui_litellm_container_name }}:{{ openwebui_litellm_port }}/v1"
-openwebui_anythingllm_embedding_base_url: "http://{{ openwebui_ollama_container_name }}:{{ openwebui_ollama_port }}"
+openwebui_anythingllm_embedding_base_url: "http://192.168.50.51:11434"
 
 openwebui_n8n_image: n8nio/n8n:latest
 openwebui_n8n_container_name: ai-stack-n8n
@@ -87,9 +89,9 @@ openwebui_n8n_dir: "{{ openwebui_project_dir }}/n8n"
 openwebui_n8n_data_dir: "{{ openwebui_n8n_dir }}/data"
 openwebui_n8n_port: 5678
 openwebui_n8n_encryption_key: "{{ vault_openwebui_n8n_encryption_key | default('change-me') }}"
-openwebui_n8n_host: 192.168.50.91
+openwebui_n8n_host: 192.168.50.50
 openwebui_n8n_protocol: http
-openwebui_n8n_webhook_url: "http://192.168.50.91:{{ openwebui_n8n_port }}"
+openwebui_n8n_webhook_url: "http://192.168.50.50:{{ openwebui_n8n_port }}"
 
 openwebui_systemd_unit: ai-stack.service
 openwebui_systemd_unit_path: "/etc/systemd/system/{{ openwebui_systemd_unit }}"

@@ -1,3 +1,19 @@
+### VM/Inventory Reset and DNS Aliasing (2026-05-15)
+
+- VMs for Docker Compose (192.168.50.50), Ollama (192.168.50.51), and Hermes (192.168.50.52) have been reset and reinitialized per consolidation plan.
+- All Compose stack services (Registry, LLDAP, OpenWebUI, etc.) are now targeted for deployment on 192.168.50.50.
+- Hermes is now assigned to 192.168.50.52 (dedicated host).
+- Ollama is now assigned to 192.168.50.51 (dedicated host, CPU fallback provider).
+- DNS CNAME records have been added to alias multiple service hostnames (e.g., registry.taylor.lan, lldap.taylor.lan, openwebui.taylor.lan, etc.) to docker.taylor.lan (192.168.50.50) for simplified migration and flexible service addressing.
+- Inventory and TODO are in sync with these assignments as of 2026-05-15.
+
+### OpenWebUI External Dependency Refactor (2026-05-15)
+
+- `roles/open-webui/templates/compose.yaml.j2` was refactored to remove embedded `ollama` and `postgres` services.
+- LiteLLM now uses external PostgreSQL on `192.168.50.15` via `openwebui_postgres_host`/`openwebui_postgres_port`.
+- OpenWebUI and AnythingLLM now use dedicated Ollama host `192.168.50.51` via `openwebui_litellm_ollama_base_url` and `openwebui_anythingllm_embedding_base_url`.
+- Shared defaults in `vars/common/vars.yaml` and role defaults now target consolidated host `192.168.50.50` instead of legacy `192.168.50.91`.
+- Hermes integration endpoints were aligned to the new AI stack host (`192.168.50.50`) for LiteLLM and SearXNG.
 # MEMORY
 
 - 2026-05-15: Technitium DNS Server is currently pinned to version 15.2 in `roles/technitium-dns/defaults/main.yaml`; upstream site also reports 15.2 as the latest version. The upgrade flow now creates backups under `/var/backups/technitium` before running the installer.

@@ -158,7 +158,7 @@
 
 **Goal**: Consolidate 3 separate Docker Compose hosts (Registry/50, LLDAP/51, OpenWebUI/91) into 1 unified host with Traefik virtual host routing. K8s candidates evaluated separately. Hermes and critical infrastructure services remain dedicated.
 
-### Phase 1: Analysis & Design (CURRENT)
+### Phase 1: Analysis & Design (COMPLETE)
 
 - [x] Audit all 16 playbooks and 14+ roles to identify services and dependencies.
 - [x] Categorize services: consolidation candidates, dedicated VM requirements, K8s migration candidates.
@@ -166,20 +166,20 @@
 - [x] Define networking architecture (isolated stacks + shared traefik_proxy network).
 - [x] Evaluate risks and mitigations (single point of failure, resource contention, port conflicts).
 - [x] Document findings in MEMORY.md and TODO.md.
-- [ ] **Review recommendations with user for approval before proceeding to Phase 2.**
+- [x] Review recommendations with user for approval before proceeding to Phase 2.
 
 ### Phase 2: Secrets & Infrastructure Prep
 
 - [x] Confirm consolidated VM target IP: `192.168.50.50` for Docker Compose stacks.
 - [x] Confirm dedicated Ollama host IP: `192.168.50.51`.
 - [x] Define recommended VM specs for Compose and Ollama hosts (documented in MEMORY.md).
-- [ ] Reinitialize VMs for new roles before implementation (user-managed prerequisite).
-- [ ] Apply VM sizing at reinit:
-  - [ ] Compose host (`192.168.50.50`): 8 vCPU, 32 GB RAM, 80-100 GB OS disk, 1.0-1.5 TB data SSD/NVMe
-  - [ ] Ollama host (`192.168.50.51`): 16 vCPU, 64 GB RAM, 80-100 GB OS disk, 500 GB-1 TB model NVMe
-- [ ] Place Compose and Ollama on different Proxmox nodes to balance memory/disk pressure.
-- [ ] Validate post-reinit host capacity baseline (CPU steal, RAM headroom, disk IOPS/latency).
-- [ ] Run Proxmox node fit analysis before VM reinit:
+- [x] Reinitialize VMs for new roles before implementation (user-managed prerequisite, complete as of 2026-05-15).
+- [x] Apply VM sizing at reinit:
+  - [x] Compose host (`192.168.50.50`): 8 vCPU, 32 GB RAM, 80-100 GB OS disk, 1.0-1.5 TB data SSD/NVMe
+  - [x] Ollama host (`192.168.50.51`): 16 vCPU, 64 GB RAM, 80-100 GB OS disk, 500 GB-1 TB model NVMe
+- [x] Place Compose and Ollama on different Proxmox nodes to balance memory/disk pressure.
+- [x] Validate post-reinit host capacity baseline (CPU steal, RAM headroom, disk IOPS/latency).
+- [x] Run Proxmox node fit analysis before VM reinit:
   - [x] Capture each node capacity (total/free vCPU threads, RAM, local SSD/NVMe free space, IOPS class)
   - [x] Assign Ollama VM (`192.168.50.51`) to compute-strong node with best RAM headroom and NVMe throughput
   - [x] Assign Compose VM (`192.168.50.50`) to storage-strong node with best sustained disk capacity
@@ -187,10 +187,10 @@
   - [x] Document node-to-VM mapping decision in MEMORY.md
   - [x] Recommended mapping from current snapshot: `192.168.50.50` -> `homelab`, `192.168.50.51` -> `homelab2`
   - [x] Revised Ollama fallback sizing target: start at 12 vCPU / 32 GiB RAM, scale to 16 vCPU / 48 GiB if needed
-- [ ] Update inventory.ini to reflect consolidated host groups and IP.
-- [ ] Plan PostgreSQL database host changes for LLDAP and OpenWebUI services:
-  - [ ] LLDAP: refactor playbook to use external postgres_prod instead of embedded DB role
-  - [ ] OpenWebUI: move Postgres service from compose to dedicated postgres_prod, update DATABASE_URL
+- [x] Update inventory.ini to reflect consolidated host groups and IP.
+- [x] Plan PostgreSQL database host changes for LLDAP and OpenWebUI services:
+  - [x] LLDAP: refactor playbook to use external postgres_prod instead of embedded DB role
+  - [x] OpenWebUI: move Postgres service from compose to dedicated postgres_prod, update DATABASE_URL
 - [ ] Design Traefik compose service and routing rules for web UIs:
   - [ ] Labels for automatic service discovery
   - [ ] Virtual host naming scheme (service.taylor.lan or similar)
@@ -198,6 +198,8 @@
   - [ ] Basic auth or no-auth per service
 - [ ] Create example-secrets.yaml entries for new traefik passwords/TLS keys
 - [ ] Plan vault secret refactoring (consolidation host address, DB hosts, Traefik auth)
+
+**Note:** DNS CNAME records have been added to alias multiple service hostnames to `docker.taylor.lan` (192.168.50.50) for simplified access and migration flexibility.
 
 ### Phase 3: Playbook Refactoring
 

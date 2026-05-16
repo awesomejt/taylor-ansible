@@ -112,16 +112,18 @@ openwebui_postgres_container_name: ai-stack-postgres
 openwebui_postgres_user: litellm
 openwebui_postgres_db: litellm
 openwebui_postgres_password: "{{ vault_openwebui_postgres_password | default('change-me') }}"
+openwebui_postgres_host: "192.168.50.15"
+openwebui_postgres_port: 5432
 
-openwebui_litellm_ollama_base_url: "http://{{ openwebui_ollama_container_name }}:{{ openwebui_ollama_port }}"
+openwebui_litellm_ollama_base_url: "http://192.168.50.51:11434"
 openwebui_anythingllm_openai_base_url: "http://{{ openwebui_litellm_container_name }}:{{ openwebui_litellm_port }}/v1"
-openwebui_anythingllm_embedding_base_url: "http://{{ openwebui_ollama_container_name }}:{{ openwebui_ollama_port }}"
+openwebui_anythingllm_embedding_base_url: "http://192.168.50.51:11434"
 openwebui_qdrant_endpoint: "http://{{ openwebui_qdrant_container_name }}:{{ openwebui_qdrant_port }}"
 openwebui_searxng_query_url: "http://{{ openwebui_searxng_container_name }}:8080/search?q=<query>&format=json"
-openwebui_webui_base_url: "http://192.168.50.91:{{ openwebui_host_port }}"
-openwebui_n8n_host: "192.168.50.91"
+openwebui_webui_base_url: "http://192.168.50.50:{{ openwebui_host_port }}"
+openwebui_n8n_host: "192.168.50.50"
 openwebui_n8n_protocol: "http"
-openwebui_n8n_webhook_url: "http://192.168.50.91:{{ openwebui_n8n_port }}"
+openwebui_n8n_webhook_url: "http://192.168.50.50:{{ openwebui_n8n_port }}"
 
 # Legacy Open WebUI reverse-proxy settings retained for compatibility with older overrides.
 openwebui_ollama_base_url: "http://192.168.50.93:11434"
@@ -220,8 +222,8 @@ hermes_python_extras: "web,messaging"
 hermes_api_timeout_seconds: 45
 hermes_api_stale_timeout_seconds: 60
 hermes_api_max_retries: 1
-hermes_litellm_base_url: "http://192.168.50.91:4000/v1"
-hermes_searxng_url: "http://192.168.50.91:8081"
+hermes_litellm_base_url: "http://192.168.50.50:4000/v1"
+hermes_searxng_url: "http://192.168.50.50:8081"
 hermes_web_backend: "searxng"
 hermes_web_search_backend: "searxng"
 hermes_web_extract_backend: ""
