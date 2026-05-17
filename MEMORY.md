@@ -14,6 +14,7 @@
 - Canonical LDAP playbook name is now `ldap.yaml`; legacy `lldap.yaml` compatibility playbook was retired during cleanup.
 - LLDAP role UI proxying is Traefik-based (no active nginx sidecar in compose).
 - Inventory now includes `ldap` as a child group of `lldap` for playbook target clarity.
+- Grafana and pgAdmin Compose roles are now wired for LDAP authentication against LLDAP (`ldap://lldap:3890`) while keeping local/internal fallback logins enabled.
 
 ### Dormant Component Archiving (2026-05-16)
 

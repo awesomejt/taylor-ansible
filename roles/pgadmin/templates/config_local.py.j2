@@ -1,0 +1,18 @@
+# Managed by Ansible (roles/pgadmin).
+# pgAdmin local settings for LDAP authentication.
+
+{% if pgadmin_auth_ldap_enabled | bool %}
+AUTHENTICATION_SOURCES = ['ldap'{% if pgadmin_auth_ldap_allow_internal_fallback | bool %}, 'internal'{% endif %}]
+LDAP_AUTO_CREATE_USER = {{ 'True' if pgadmin_ldap_auto_create_user | bool else 'False' }}
+LDAP_SERVER_URI = {{ pgadmin_ldap_server_uri | to_json }}
+LDAP_BIND_USER = {{ pgadmin_ldap_bind_user | to_json }}
+LDAP_BIND_PASSWORD = {{ pgadmin_ldap_bind_password | to_json }}
+LDAP_USERNAME_ATTRIBUTE = {{ pgadmin_ldap_username_attribute | to_json }}
+LDAP_BASE_DN = {{ pgadmin_ldap_base_dn | to_json }}
+LDAP_SEARCH_BASE_DN = {{ pgadmin_ldap_search_base_dn | to_json }}
+LDAP_SEARCH_FILTER = {{ pgadmin_ldap_search_filter | to_json }}
+LDAP_USE_STARTTLS = {{ 'True' if pgadmin_ldap_use_starttls | bool else 'False' }}
+LDAP_CONNECTION_TIMEOUT = {{ pgadmin_ldap_connection_timeout }}
+{% else %}
+AUTHENTICATION_SOURCES = ['internal']
+{% endif %}

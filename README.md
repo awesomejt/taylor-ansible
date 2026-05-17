@@ -36,6 +36,8 @@ ansible-playbook -i inventory.ini pgadmin.yaml --ask-vault-pass
 ansible-playbook -i inventory.ini portainer.yaml
 ```
 
+Grafana and pgAdmin are now configured to support LDAP login against LLDAP (`ldap://lldap:3890`) with internal/local auth fallback retained.
+
 Run Kanban (Vikunja) on the consolidated Docker host:
 
 ```bash

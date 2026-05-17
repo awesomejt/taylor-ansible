@@ -45,6 +45,15 @@
 - [x] Mark OpenClaw as dormant and document reactivation runbook in `archive/openclaw.md`.
 - [x] Hard-archive OpenClaw by moving playbook/role into `archive/` paths and removing active top-level README run instructions.
 
+## LDAP Auth Expansion Review (2026-05-16)
+
+- [x] Review currently deployed services for LDAP-capable authentication flows.
+- [x] Confirm Vikunja LDAP remains enabled against LLDAP.
+- [x] Add Grafana LDAP auth wiring to role defaults/templates/tasks.
+- [x] Add pgAdmin LDAP auth wiring to role defaults/templates/tasks.
+- [x] Validate LDAP-related playbook changes with syntax check.
+- [x] Validate LDAP-related playbook changes with ansible-lint.
+
 ## LiteLLM + Open WebUI Provider Audit (2026-05-16)
 
 - [x] Verify live oMLX model inventories on primary (`192.168.50.93`) and secondary (`192.168.50.94`) with vault API key.

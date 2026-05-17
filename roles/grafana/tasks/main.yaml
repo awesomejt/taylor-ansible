@@ -5,6 +5,13 @@
       - ansible_facts['os_family'] == "Debian"
     fail_msg: "grafana role currently supports Debian/Ubuntu only"
 
+- name: Ensure LDAP bind password is set when LDAP auth is enabled
+  ansible.builtin.assert:
+    that:
+      - grafana_ldap_bind_password != 'change-me'
+    fail_msg: "Set vault_lldap_ldap_user_pass in vars/common/secrets.yaml before enabling Grafana LDAP auth"
+  when: grafana_auth_ldap_enabled | bool
+
 - name: Ensure Grafana directories exist
   ansible.builtin.file:
     path: "{{ item }}"
@@ -32,6 +39,16 @@
     owner: "{{ grafana_primary_user }}"
     group: "{{ grafana_primary_user }}"
     mode: "0644"
+  notify: Restart grafana service
+
+- name: Deploy Grafana LDAP config
+  ansible.builtin.template:
+    src: ldap.toml.j2
+    dest: "{{ grafana_ldap_config_path }}"
+    owner: "{{ grafana_primary_user }}"
+    group: "{{ grafana_primary_user }}"
+    mode: "0640"
+  when: grafana_auth_ldap_enabled | bool
   notify: Restart grafana service
 
 - name: Deploy Grafana Docker Compose file

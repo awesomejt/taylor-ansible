@@ -5,6 +5,7 @@ services:
     restart: {{ pgadmin_restart_policy }}
     volumes:
       - {{ pgadmin_data_dir }}:/var/lib/pgadmin
+      - {{ pgadmin_config_local_path }}:/pgadmin4/config_local.py:ro
     environment:
       PGADMIN_DEFAULT_EMAIL: "{{ pgadmin_default_email }}"
       PGADMIN_DEFAULT_PASSWORD: "{{ pgadmin_default_password }}"

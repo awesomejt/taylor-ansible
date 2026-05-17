@@ -5,6 +5,13 @@
       - ansible_facts['os_family'] == "Debian"
     fail_msg: "pgadmin role currently supports Debian/Ubuntu only"
 
+- name: Ensure LDAP bind password is set when LDAP auth is enabled
+  ansible.builtin.assert:
+    that:
+      - pgadmin_ldap_bind_password != 'change-me'
+    fail_msg: "Set vault_lldap_ldap_user_pass in vars/common/secrets.yaml before enabling pgAdmin LDAP auth"
+  when: pgadmin_auth_ldap_enabled | bool
+
 - name: Ensure pgAdmin directories exist
   ansible.builtin.file:
     path: "{{ item }}"
@@ -22,6 +29,15 @@
     owner: "{{ pgadmin_container_uid }}"
     group: "{{ pgadmin_container_gid }}"
     mode: "0755"
+
+- name: Deploy pgAdmin local config
+  ansible.builtin.template:
+    src: config_local.py.j2
+    dest: "{{ pgadmin_config_local_path }}"
+    owner: "{{ pgadmin_primary_user }}"
+    group: "{{ pgadmin_primary_user }}"
+    mode: "0640"
+  notify: Restart pgadmin service
 
 - name: Deploy pgAdmin Docker Compose file
   ansible.builtin.template:

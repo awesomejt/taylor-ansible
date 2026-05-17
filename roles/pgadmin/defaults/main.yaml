@@ -15,6 +15,21 @@ pgadmin_data_dir: "{{ pgadmin_project_dir }}/data"
 pgadmin_default_email: admin@taylor.lan
 pgadmin_default_password: "{{ vault_pgadmin_admin_password | default('change-me') }}"
 
+# LDAP auth integration (LLDAP)
+pgadmin_auth_ldap_enabled: true
+pgadmin_auth_ldap_allow_internal_fallback: true
+pgadmin_config_local_path: "{{ pgadmin_project_dir }}/config_local.py"
+pgadmin_ldap_server_uri: "ldap://lldap:3890"
+pgadmin_ldap_bind_user: "cn=admin,ou=people,dc=taylor,dc=lan"
+pgadmin_ldap_bind_password: "{{ vault_lldap_ldap_user_pass | default('change-me') }}"
+pgadmin_ldap_username_attribute: "uid"
+pgadmin_ldap_base_dn: "ou=people,dc=taylor,dc=lan"
+pgadmin_ldap_search_base_dn: "ou=people,dc=taylor,dc=lan"
+pgadmin_ldap_search_filter: "(objectclass=*)"
+pgadmin_ldap_use_starttls: false
+pgadmin_ldap_auto_create_user: true
+pgadmin_ldap_connection_timeout: 10
+
 # Traefik integration
 pgadmin_network_name: traefik_proxy
 pgadmin_traefik_hostname: "pgadmin.taylor.lan"
