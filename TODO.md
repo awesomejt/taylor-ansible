@@ -51,6 +51,7 @@
 - [x] Confirm Vikunja LDAP remains enabled against LLDAP.
 - [x] Add Grafana LDAP auth wiring to role defaults/templates/tasks.
 - [x] Add pgAdmin LDAP auth wiring to role defaults/templates/tasks.
+- [ ] Evaluate whether Open WebUI (chat.taylor.lan) can use LDAP authentication via LLDAP and wire it if supported.
 - [x] Validate LDAP-related playbook changes with syntax check.
 - [x] Validate LDAP-related playbook changes with ansible-lint.
 
