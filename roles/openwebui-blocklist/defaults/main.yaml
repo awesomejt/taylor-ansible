@@ -1,0 +1,38 @@
+---
+openwebui_blocklist_primary_user: root
+
+openwebui_blocklist_enabled: true
+openwebui_blocklist_script_path: /usr/local/bin/openwebui-web-blocklist-sync.sh
+openwebui_blocklist_env_path: /etc/openwebui-web-blocklist.env
+openwebui_blocklist_log_path: /var/log/openwebui-web-blocklist.log
+openwebui_blocklist_cron_file: /etc/cron.d/openwebui-web-blocklist
+openwebui_blocklist_logrotate_file: /etc/logrotate.d/openwebui-web-blocklist
+
+openwebui_blocklist_state_dir: /var/lib/openwebui-web-blocklist
+openwebui_blocklist_state_file: "{{ openwebui_blocklist_state_dir }}/last_run_epoch"
+openwebui_blocklist_output_dir: /opt/open-webui/data/web-blocklist
+openwebui_blocklist_output_text: "{{ openwebui_blocklist_output_dir }}/blocked-urls.txt"
+openwebui_blocklist_output_json: "{{ openwebui_blocklist_output_dir }}/blocked-urls.json"
+
+openwebui_blocklist_container_name: "{{ openwebui_container_name | default('open-webui') }}"
+openwebui_blocklist_source_name: open-webui-web-loader
+openwebui_blocklist_initial_lookback_minutes: 240
+openwebui_blocklist_retention_days: 30
+
+openwebui_blocklist_postgres_host: 192.168.50.15
+openwebui_blocklist_postgres_port: 5432
+openwebui_blocklist_postgres_db: openwebui_blocklist
+openwebui_blocklist_postgres_user: openwebui_blocklist
+openwebui_blocklist_postgres_password: >-
+  {{ vault_openwebui_blocklist_postgres_password
+  | default(vault_litellm_postgres_password
+  | default(vault_openwebui_postgres_password | default('change-me'))) }}
+openwebui_blocklist_postgres_sslmode: prefer
+
+openwebui_blocklist_cron_enabled: true
+openwebui_blocklist_cron_minute: "*/15"
+openwebui_blocklist_cron_hour: "*"
+
+openwebui_blocklist_logrotate_frequency: daily
+openwebui_blocklist_logrotate_rotate: 14
+openwebui_blocklist_logrotate_maxsize: 10M

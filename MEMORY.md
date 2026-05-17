@@ -22,6 +22,8 @@
 - Open WebUI compose template now sets both key sets for compatibility; this fixed stale-answer behavior where models responded from training data instead of triggering web search.
 - Open WebUI query generation for web search can fail with `No search query generated` when model-specific behavior returns an empty query set; role now pins `TASK_MODEL` and `TASK_MODEL_EXTERNAL` to `use-chat` and keeps `ENABLE_SEARCH_QUERY_GENERATION=true` to stabilize query generation across selected chat models.
 - Open WebUI web search can still return no usable sources when upstream sites block crawler fetches; role now sets `BYPASS_WEB_SEARCH_WEB_LOADER=true` so search snippets are used as context instead of hard-failing on page-load errors.
+- Open WebUI blocked crawler URLs are now persisted in PostgreSQL (`openwebui_blocklist` DB, `web_blocked_sources` table) via `roles/openwebui-blocklist`; a cron-driven sync script parses Open WebUI fetch warnings, upserts rows, and exports the latest list to `/opt/open-webui/data/web-blocklist/`.
+- `openwebui.yaml` now provisions the `openwebui_blocklist` PostgreSQL DB/user on `postgres_prod` before deploying Open WebUI host automation; sync runs every 15 minutes via `/etc/cron.d/openwebui-web-blocklist`.
 - n8n LDAP was not implemented because official docs mark it as Self-hosted Business/Enterprise feature.
 - AnythingLLM/LiteLLM were not wired for direct LDAP in this pass because no confirmed free native LDAP path was identified in current stack docs.
 

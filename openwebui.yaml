@@ -1,4 +1,46 @@
 ---
+- name: Provision Open WebUI web-blocklist PostgreSQL database
+  hosts: postgres_prod
+  become: true
+  vars_files:
+    - vars/common/secrets.yaml
+  vars:
+    openwebui_blocklist_db_name: openwebui_blocklist
+    openwebui_blocklist_db_user: openwebui_blocklist
+    openwebui_blocklist_db_password: >-
+      {{ vault_openwebui_blocklist_postgres_password
+      | default(vault_litellm_postgres_password
+      | default(vault_openwebui_postgres_password | default('change-me'))) }}
+  tasks:
+    - name: Ensure Open WebUI blocklist PostgreSQL user exists
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_user:
+        name: "{{ openwebui_blocklist_db_user }}"
+        password: "{{ openwebui_blocklist_db_password }}"
+        role_attr_flags: LOGIN
+        state: present
+      no_log: true
+
+    - name: Ensure Open WebUI blocklist PostgreSQL database exists
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: "{{ openwebui_blocklist_db_name }}"
+        owner: "{{ openwebui_blocklist_db_user }}"
+        state: present
+
+    - name: Grant all privileges on Open WebUI blocklist database
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_privs:
+        login_db: postgres
+        objs: "{{ openwebui_blocklist_db_name }}"
+        roles: "{{ openwebui_blocklist_db_user }}"
+        privs: ALL
+        type: database
+        state: present
+
 - name: Deploy Open WebUI
   hosts: "{{ target | default('openwebui') }}"
   become: true
@@ -23,3 +65,5 @@
     - common
     - docker
     - open-webui
+    - role: openwebui-blocklist
+      when: openwebui_blocklist_enabled | default(true) | bool

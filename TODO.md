@@ -93,6 +93,17 @@
 - [x] Verify runtime env includes `BYPASS_WEB_SEARCH_WEB_LOADER=true`.
 - [ ] Re-test in Open WebUI UI with a fresh chat prompt and confirm citations/sources appear.
 
+## Open WebUI Blocked-URL Registry (PostgreSQL) (2026-05-16)
+
+- [x] Add Ansible role to collect crawler fetch failures from Open WebUI logs and upsert into PostgreSQL.
+- [x] Add scheduled sync interface that exports latest blocked URLs from PostgreSQL to local files on the Open WebUI host.
+- [x] Wire PostgreSQL DB/user provisioning for blocklist registry into `openwebui.yaml`.
+- [x] Add sanitized `vault_openwebui_blocklist_postgres_password` placeholder in `vars/common/example-secrets.yaml`.
+- [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`).
+- [x] Sync to Ansible host.
+- [x] Re-apply `openwebui.yaml` on Ansible host.
+- [x] Verify blocklist export files and PostgreSQL rows are updating (validated with seeded test row and cleanup).
+
 ## LiteLLM + Open WebUI Provider Audit (2026-05-16)
 
 - [x] Verify live oMLX model inventories on primary (`192.168.50.93`) and secondary (`192.168.50.94`) with vault API key.

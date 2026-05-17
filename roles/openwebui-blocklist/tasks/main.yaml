@@ -1,0 +1,94 @@
+---
+- name: Ensure role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == "Debian"
+    fail_msg: "openwebui-blocklist role currently supports Debian/Ubuntu only"
+
+- name: Ensure blocklist Postgres password is configured
+  ansible.builtin.assert:
+    that:
+      - (openwebui_blocklist_postgres_password | string | length) > 0
+      - openwebui_blocklist_postgres_password != 'change-me'
+    fail_msg: >-
+      Define vault_openwebui_blocklist_postgres_password in vars/common/secrets.yaml
+      (or ensure a valid fallback password is set) before enabling openwebui-blocklist.
+
+- name: Ensure blocklist dependencies are installed
+  ansible.builtin.package:
+    name:
+      - postgresql-client
+      - jq
+    state: present
+
+- name: Ensure blocklist state directory exists
+  ansible.builtin.file:
+    path: "{{ openwebui_blocklist_state_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+
+- name: Ensure blocklist output directory exists
+  ansible.builtin.file:
+    path: "{{ openwebui_blocklist_output_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy Open WebUI blocklist sync script
+  ansible.builtin.template:
+    src: openwebui-web-blocklist-sync.sh.j2
+    dest: "{{ openwebui_blocklist_script_path }}"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy Open WebUI blocklist environment file
+  ansible.builtin.template:
+    src: openwebui-web-blocklist.env.j2
+    dest: "{{ openwebui_blocklist_env_path }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: Ensure blocklist log file exists
+  ansible.builtin.file:
+    path: "{{ openwebui_blocklist_log_path }}"
+    state: touch
+    owner: root
+    group: root
+    mode: "0644"
+  changed_when: false
+
+- name: Install cron file for Open WebUI blocklist sync
+  ansible.builtin.template:
+    src: cron-openwebui-web-blocklist.j2
+    dest: "{{ openwebui_blocklist_cron_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when: openwebui_blocklist_cron_enabled | bool
+
+- name: Remove cron file when Open WebUI blocklist sync is disabled
+  ansible.builtin.file:
+    path: "{{ openwebui_blocklist_cron_file }}"
+    state: absent
+  when: not (openwebui_blocklist_cron_enabled | bool)
+
+- name: Install logrotate config for Open WebUI blocklist logs
+  ansible.builtin.template:
+    src: logrotate-openwebui-web-blocklist.j2
+    dest: "{{ openwebui_blocklist_logrotate_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Run initial Open WebUI blocklist sync
+  ansible.builtin.command:
+    cmd: "{{ openwebui_blocklist_script_path }}"
+  register: openwebui_blocklist_sync_initial
+  changed_when: "'Upserted' in (openwebui_blocklist_sync_initial.stdout | default(''))"
+  no_log: true

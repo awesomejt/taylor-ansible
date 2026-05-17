@@ -72,6 +72,7 @@ ollama_nginx_http_port: 80
 # vault_headlamp_oidc_use_pkce
 # vault_headlamp_oidc_me_user_info_url
 # vault_openwebui_postgres_password
+# vault_openwebui_blocklist_postgres_password
 
 technitium_zones: 
   - name: "dev.lab"

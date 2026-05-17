@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -f "{{ openwebui_blocklist_env_path }}" ]]; then
+  # shellcheck disable=SC1091
+  . "{{ openwebui_blocklist_env_path }}"
+fi
+
+timestamp() {
+  date +"%Y-%m-%dT%H:%M:%S%z"
+}
+
+log() {
+  printf '%s %s\n' "$(timestamp)" "$*"
+}
+
+require_env() {
+  local name="$1"
+  if [[ -z "${!name:-}" ]]; then
+    log "ERROR missing required env var: ${name}"
+    exit 1
+  fi
+}
+
+sql_escape() {
+  local value="$1"
+  printf '%s' "${value}" | sed "s/'/''/g"
+}
+
+for var_name in \
+  OWUI_BLOCKLIST_CONTAINER_NAME \
+  OWUI_BLOCKLIST_SOURCE_NAME \
+  OWUI_BLOCKLIST_INITIAL_LOOKBACK_MINUTES \
+  OWUI_BLOCKLIST_RETENTION_DAYS \
+  OWUI_BLOCKLIST_STATE_FILE \
+  OWUI_BLOCKLIST_OUTPUT_TEXT \
+  OWUI_BLOCKLIST_OUTPUT_JSON \
+  OWUI_BLOCKLIST_DB_HOST \
+  OWUI_BLOCKLIST_DB_PORT \
+  OWUI_BLOCKLIST_DB_NAME \
+  OWUI_BLOCKLIST_DB_USER \
+  OWUI_BLOCKLIST_DB_PASSWORD \
+  OWUI_BLOCKLIST_DB_SSLMODE; do
+  require_env "${var_name}"
+done
+
+if ! [[ "${OWUI_BLOCKLIST_INITIAL_LOOKBACK_MINUTES}" =~ ^[0-9]+$ ]]; then
+  log "ERROR OWUI_BLOCKLIST_INITIAL_LOOKBACK_MINUTES must be an integer"
+  exit 1
+fi
+
+if ! [[ "${OWUI_BLOCKLIST_RETENTION_DAYS}" =~ ^[0-9]+$ ]]; then
+  log "ERROR OWUI_BLOCKLIST_RETENTION_DAYS must be an integer"
+  exit 1
+fi
+
+state_dir="$(dirname "${OWUI_BLOCKLIST_STATE_FILE}")"
+output_dir="$(dirname "${OWUI_BLOCKLIST_OUTPUT_TEXT}")"
+mkdir -p "${state_dir}" "${output_dir}"
+
+export PGPASSWORD="${OWUI_BLOCKLIST_DB_PASSWORD}"
+export PGSSLMODE="${OWUI_BLOCKLIST_DB_SSLMODE}"
+psql_base=(
+  psql
+  -h "${OWUI_BLOCKLIST_DB_HOST}"
+  -p "${OWUI_BLOCKLIST_DB_PORT}"
+  -U "${OWUI_BLOCKLIST_DB_USER}"
+  -d "${OWUI_BLOCKLIST_DB_NAME}"
+  -v ON_ERROR_STOP=1
+  -q
+)
+
+run_sql() {
+  local sql="$1"
+  "${psql_base[@]}" -c "${sql}" >/dev/null
+}
+
+run_sql "
+CREATE TABLE IF NOT EXISTS web_blocked_sources (
+  id BIGSERIAL PRIMARY KEY,
+  url TEXT NOT NULL UNIQUE,
+  domain TEXT NOT NULL,
+  reason TEXT NOT NULL DEFAULT '',
+  first_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  failure_count BIGINT NOT NULL DEFAULT 1,
+  source TEXT NOT NULL DEFAULT '${OWUI_BLOCKLIST_SOURCE_NAME}'
+);
+CREATE INDEX IF NOT EXISTS idx_web_blocked_sources_domain_last_seen
+  ON web_blocked_sources (domain, last_seen DESC);
+"
+
+now_epoch="$(date +%s)"
+since_time=""
+
+if [[ -f "${OWUI_BLOCKLIST_STATE_FILE}" ]]; then
+  last_epoch="$(tr -d '[:space:]' < "${OWUI_BLOCKLIST_STATE_FILE}" || true)"
+  if [[ "${last_epoch}" =~ ^[0-9]+$ ]]; then
+    since_time="$(date -u -d "@${last_epoch}" +"%Y-%m-%dT%H:%M:%SZ")"
+  fi
+fi
+
+if [[ -z "${since_time}" ]]; then
+  since_time="$(date -u -d "-${OWUI_BLOCKLIST_INITIAL_LOOKBACK_MINUTES} minutes" +"%Y-%m-%dT%H:%M:%SZ")"
+fi
+
+declare -A fail_counts=()
+declare -A fail_reasons=()
+
+while IFS= read -r line; do
+  if [[ "${line}" =~ Error\ fetching\ (https?://[^,[:space:]]+) ]]; then
+    url="${BASH_REMATCH[1]}"
+    reason="fetch_failed"
+    if [[ "${line}" =~ skipping\ due\ to\ ([^[:space:]].*)$ ]]; then
+      reason="${BASH_REMATCH[1]}"
+    fi
+
+    current_count="${fail_counts["${url}"]:-0}"
+    fail_counts["${url}"]=$((current_count + 1))
+    fail_reasons["${url}"]="${reason}"
+  fi
+done < <(docker logs --since "${since_time}" "${OWUI_BLOCKLIST_CONTAINER_NAME}" 2>&1 || true)
+
+upserted=0
+
+for url in "${!fail_counts[@]}"; do
+  domain="$(printf '%s' "${url}" | awk -F/ '{print $3}')"
+  reason="${fail_reasons["${url}"]}"
+  count="${fail_counts["${url}"]}"
+
+  url_esc="$(sql_escape "${url}")"
+  domain_esc="$(sql_escape "${domain}")"
+  reason_esc="$(sql_escape "${reason}")"
+  source_esc="$(sql_escape "${OWUI_BLOCKLIST_SOURCE_NAME}")"
+
+  run_sql "
+INSERT INTO web_blocked_sources (url, domain, reason, first_seen, last_seen, failure_count, source)
+VALUES ('${url_esc}', '${domain_esc}', '${reason_esc}', NOW(), NOW(), ${count}, '${source_esc}')
+ON CONFLICT (url) DO UPDATE
+SET
+  last_seen = NOW(),
+  reason = EXCLUDED.reason,
+  source = EXCLUDED.source,
+  failure_count = web_blocked_sources.failure_count + EXCLUDED.failure_count;
+"
+  upserted=$((upserted + 1))
+done
+
+tmp_text="$(mktemp)"
+tmp_json="$(mktemp)"
+
+"${psql_base[@]}" -tA -c "
+SELECT url
+FROM web_blocked_sources
+WHERE last_seen >= NOW() - INTERVAL '${OWUI_BLOCKLIST_RETENTION_DAYS} days'
+ORDER BY failure_count DESC, last_seen DESC;
+" > "${tmp_text}"
+
+"${psql_base[@]}" -tA -c "
+SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json)
+FROM (
+  SELECT
+    url,
+    domain,
+    reason,
+    first_seen,
+    last_seen,
+    failure_count,
+    source
+  FROM web_blocked_sources
+  WHERE last_seen >= NOW() - INTERVAL '${OWUI_BLOCKLIST_RETENTION_DAYS} days'
+  ORDER BY failure_count DESC, last_seen DESC
+) t;
+" > "${tmp_json}"
+
+mv "${tmp_text}" "${OWUI_BLOCKLIST_OUTPUT_TEXT}"
+mv "${tmp_json}" "${OWUI_BLOCKLIST_OUTPUT_JSON}"
+printf '%s\n' "${now_epoch}" > "${OWUI_BLOCKLIST_STATE_FILE}"
+
+active_count="$(wc -l < "${OWUI_BLOCKLIST_OUTPUT_TEXT}" | tr -d '[:space:]')"
+log "Upserted ${upserted} URL(s); exported ${active_count} active blocked URL(s)"

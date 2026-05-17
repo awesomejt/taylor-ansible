@@ -1,0 +1,4 @@
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+{{ openwebui_blocklist_cron_minute }} {{ openwebui_blocklist_cron_hour }} * * * root . {{ openwebui_blocklist_env_path }} && {{ openwebui_blocklist_script_path }} >> {{ openwebui_blocklist_log_path }} 2>&1

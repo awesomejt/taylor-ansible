@@ -1,0 +1,12 @@
+{{ openwebui_blocklist_log_path }} {
+    su root root
+    {{ openwebui_blocklist_logrotate_frequency }}
+    rotate {{ openwebui_blocklist_logrotate_rotate }}
+    maxsize {{ openwebui_blocklist_logrotate_maxsize }}
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    create 0644 root root
+}
