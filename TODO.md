@@ -73,6 +73,16 @@
 - [x] Re-apply `openwebui.yaml` on Ansible host.
 - [x] Verify runtime env and SearXNG connectivity from Open WebUI container.
 
+## Open WebUI Query Generation Stability (2026-05-16)
+
+- [x] Trace `No search query generated` to query-generation middleware path.
+- [x] Configure Open WebUI `TASK_MODEL` / `TASK_MODEL_EXTERNAL` to `use-chat` so search query generation does not depend on the selected chat model behavior.
+- [x] Explicitly keep `ENABLE_SEARCH_QUERY_GENERATION=true` in role env wiring.
+- [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`).
+- [x] Sync to Ansible host.
+- [x] Re-apply `openwebui.yaml` on Ansible host.
+- [x] Verify runtime task/query env vars in container.
+
 ## LiteLLM + Open WebUI Provider Audit (2026-05-16)
 
 - [x] Verify live oMLX model inventories on primary (`192.168.50.93`) and secondary (`192.168.50.94`) with vault API key.

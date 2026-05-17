@@ -7,6 +7,9 @@ services:
       - {{ openwebui_data_dir }}:/app/backend/data
     environment:
       WEBUI_URL: "{{ openwebui_webui_base_url }}"
+      TASK_MODEL: "{{ openwebui_task_model }}"
+      TASK_MODEL_EXTERNAL: "{{ openwebui_task_model_external }}"
+      ENABLE_SEARCH_QUERY_GENERATION: "{{ openwebui_search_query_generation_enabled | string | lower }}"
       ENABLE_LDAP: "{{ openwebui_auth_ldap_enabled | string | lower }}"
       LDAP_SERVER_LABEL: "{{ openwebui_ldap_server_label }}"
       LDAP_SERVER_HOST: "{{ openwebui_ldap_server_host }}"

@@ -12,6 +12,11 @@ openwebui_data_dir: "{{ openwebui_project_dir }}/data"
 
 openwebui_webui_base_url: "http://chat.taylor.lan"
 
+# Use a stable task model for query/title/tag generation so local chat model
+# selection (for example, Ollama models) does not break tool/query workflows.
+openwebui_task_model: "use-chat"
+openwebui_task_model_external: "use-chat"
+
 # Authentication: LDAP (free, built-in Open WebUI capability)
 openwebui_auth_ldap_enabled: true
 openwebui_ldap_server_label: "LLDAP"
@@ -53,6 +58,7 @@ openwebui_openai_api_keys:
 openwebui_searxng_query_url: "http://searxng:8080/search?q=<query>&format=json"
 openwebui_web_search_enabled: true
 openwebui_web_search_engine: "searxng"
+openwebui_search_query_generation_enabled: true
 
 # Qdrant connection (via shared traefik_proxy network)
 openwebui_qdrant_endpoint: "http://qdrant:6333"

@@ -20,6 +20,7 @@
 - Open WebUI LDAP rollout was applied from Ansible host on 2026-05-16 (`openwebui.yaml`), and container runtime env confirms `ENABLE_LDAP=true`, `LDAP_SERVER_HOST=lldap`, `LDAP_SEARCH_BASE=ou=people,dc=taylor,dc=lan`, `LDAP_USE_TLS=false`.
 - Open WebUI `v0.9.5` reads web search settings from `ENABLE_WEB_SEARCH` and `WEB_SEARCH_ENGINE` (not only legacy `ENABLE_RAG_WEB_SEARCH` / `RAG_WEB_SEARCH_ENGINE`).
 - Open WebUI compose template now sets both key sets for compatibility; this fixed stale-answer behavior where models responded from training data instead of triggering web search.
+- Open WebUI query generation for web search can fail with `No search query generated` when model-specific behavior returns an empty query set; role now pins `TASK_MODEL` and `TASK_MODEL_EXTERNAL` to `use-chat` and keeps `ENABLE_SEARCH_QUERY_GENERATION=true` to stabilize query generation across selected chat models.
 - n8n LDAP was not implemented because official docs mark it as Self-hosted Business/Enterprise feature.
 - AnythingLLM/LiteLLM were not wired for direct LDAP in this pass because no confirmed free native LDAP path was identified in current stack docs.
 
