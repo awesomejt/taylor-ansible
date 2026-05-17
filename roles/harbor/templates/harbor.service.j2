@@ -1,0 +1,18 @@
+[Unit]
+Description=Harbor Compose service
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User={{ harbor_primary_user }}
+WorkingDirectory={{ harbor_install_dir }}
+ExecStart=/usr/bin/docker compose -f {{ harbor_compose_file }} -f {{ harbor_compose_override_file }} up -d
+ExecStop=/usr/bin/docker compose -f {{ harbor_compose_file }} -f {{ harbor_compose_override_file }} down
+ExecReload=/usr/bin/docker compose -f {{ harbor_compose_file }} -f {{ harbor_compose_override_file }} up -d
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

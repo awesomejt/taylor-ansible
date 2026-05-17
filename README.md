@@ -29,6 +29,9 @@ n8n LDAP is not enabled here because upstream docs mark LDAP as a Business/Enter
 
 OpenClaw automation is currently dormant (kept for future use). See `archive/README.md` for archive workflow and `archive/openclaw.md` for current status/reactivation notes.
 
+Legacy Docker Distribution registry automation is now hard-archived at `archive/playbooks/registry.yaml` and `archive/roles/registry/`.
+Harbor is now the primary registry deployment path.
+
 Run Prometheus, Grafana, pgAdmin, and Portainer on the consolidated Docker host:
 
 ```bash
@@ -51,6 +54,14 @@ Run LDAP (LLDAP role) on the consolidated Docker host:
 ```bash
 ansible-playbook -i inventory.ini ldap.yaml --vault-password-file ~/avpass
 ```
+
+Run Harbor on the consolidated Docker host (with PostgreSQL provisioning on `postgres_prod`):
+
+```bash
+ansible-playbook -i inventory.ini harbor.yaml --vault-password-file ~/avpass
+```
+
+Harbor is routed through Traefik at `harbor.taylor.lan`. The local Harbor admin account (`admin`) is still required for bootstrap and break-glass access even when LDAP auth mode is enabled.
 
 Or deploy all four through the aggregate inventory group:
 

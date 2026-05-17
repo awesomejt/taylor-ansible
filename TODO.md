@@ -1,5 +1,20 @@
 # TODO
 
+## Harbor Rollout + Registry Archive (2026-05-16)
+
+- [x] Archive legacy Docker registry playbook and role under `archive/`.
+- [x] Add Harbor playbook and role for Docker Compose host deployment.
+- [x] Wire Harbor to shared `postgres_prod` database (create DB/user in playbook).
+- [x] Configure Harbor reverse proxy routing via Traefik.
+- [x] Configure Harbor LDAP auth against LLDAP when supported (API attempt implemented in role).
+- [x] Add/update sanitized example vault entries for Harbor secrets.
+- [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`).
+- [x] Sync to Ansible host.
+- [x] Set/generated Harbor secrets in vaulted `vars/common/secrets.yaml` on 192.168.50.11.
+- [x] Run Harbor playbook on Ansible host.
+- [x] Verify Harbor UI/API route and document admin-account setup details.
+- [ ] Complete Harbor LDAP configuration manually in UI if API returns `422 Unprocessable Entity` for this Harbor version.
+
 ## Kanban (Vikunja) Rollout (2026-05-16)
 
 - [x] Create `kanban.yaml` playbook using `vikunja` role.

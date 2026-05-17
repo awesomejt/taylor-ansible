@@ -1,0 +1,21 @@
+services:
+  proxy:
+{% if harbor_traefik_enabled | bool %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network={{ harbor_traefik_network }}"
+      - "traefik.http.routers.{{ harbor_traefik_router_name }}.rule=Host(`{{ harbor_traefik_hostname }}`)"
+      - "traefik.http.routers.{{ harbor_traefik_router_name }}.entrypoints={{ harbor_traefik_entrypoint }}"
+      - "traefik.http.services.{{ harbor_traefik_service_name }}.loadbalancer.server.port={{ harbor_proxy_container_port }}"
+{% endif %}
+    networks:
+      - harbor
+{% if harbor_traefik_enabled | bool %}
+      - {{ harbor_traefik_network }}
+{% endif %}
+
+networks:
+{% if harbor_traefik_enabled | bool %}
+  {{ harbor_traefik_network }}:
+    external: true
+{% endif %}

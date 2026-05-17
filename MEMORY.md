@@ -1,3 +1,13 @@
+### Harbor Migration + Registry Archive (2026-05-16)
+
+- Legacy Docker Distribution playbook/role was hard-archived to `archive/playbooks/registry.yaml` and `archive/roles/registry/`; reactivation runbook is `archive/registry.md`.
+- New Harbor deployment path is `harbor.yaml` + `roles/harbor` on the consolidated Docker host (`192.168.50.50`) with inventory group `harbor`.
+- Harbor role uses upstream Harbor installer assets, Traefik routing via compose override, and external PostgreSQL on `postgres_prod` (`192.168.50.15`, db/user `harbor`).
+- Harbor LDAP is attempted via Harbor API configuration using LLDAP bind creds (`vault_lldap_ldap_user_pass`); local Harbor `admin` account remains required for bootstrap/break-glass.
+- New common vault secret key required: `vault_harbor_db_password` (placeholder added to `vars/common/example-secrets.yaml`).
+- Applied from Ansible host on 2026-05-17: Harbor route checks passed (`harbor.taylor.lan` -> 200, `/v2/` -> 401 expected for unauthenticated API).
+- Harbor API LDAP config request currently returns 422 on deployed Harbor version, so LDAP should be finalized manually in Harbor UI Authentication settings.
+
 ### Kanban Service (Vikunja) Added (2026-05-16)
 
 - Added `kanban.yaml` playbook using the new `roles/vikunja` role.

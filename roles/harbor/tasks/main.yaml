@@ -1,0 +1,162 @@
+---
+- name: Ensure harbor role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == 'Debian'
+    fail_msg: "harbor role currently supports Debian/Ubuntu only"
+
+- name: Ensure required Harbor secrets are defined
+  ansible.builtin.assert:
+    that:
+      - harbor_admin_password != 'change-me'
+      - harbor_database_password != 'change-me'
+    fail_msg: "Set vault_harbor_admin_password and vault_harbor_db_password in vars/common/secrets.yaml"
+
+- name: Ensure LDAP bind password is set when Harbor LDAP config is enabled
+  ansible.builtin.assert:
+    that:
+      - harbor_ldap_search_password != 'change-me'
+    fail_msg: "Set vault_lldap_ldap_user_pass in vars/common/secrets.yaml before enabling Harbor LDAP config"
+  when: harbor_ldap_enabled | bool
+
+- name: Ensure Harbor project directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ harbor_primary_user }}"
+    group: "{{ harbor_primary_user }}"
+    mode: "0750"
+  loop:
+    - "{{ harbor_project_dir }}"
+    - "{{ harbor_data_volume }}"
+    - "{{ harbor_log_dir }}"
+
+- name: Download Harbor online installer archive
+  ansible.builtin.get_url:
+    url: "{{ harbor_installer_url }}"
+    dest: "{{ harbor_installer_archive }}"
+    mode: "0644"
+
+- name: Extract Harbor installer
+  ansible.builtin.unarchive:
+    src: "{{ harbor_installer_archive }}"
+    dest: "{{ harbor_project_dir }}"
+    remote_src: true
+    creates: "{{ harbor_install_dir }}/install.sh"
+
+- name: Deploy Harbor configuration file
+  ansible.builtin.template:
+    src: harbor.yml.j2
+    dest: "{{ harbor_install_dir }}/harbor.yml"
+    owner: "{{ harbor_primary_user }}"
+    group: "{{ harbor_primary_user }}"
+    mode: "0640"
+  notify:
+    - Prepare harbor configuration
+    - Prepare harbor configuration without trivy
+    - Restart harbor service
+
+- name: Deploy Harbor Compose override for Traefik
+  ansible.builtin.template:
+    src: docker-compose.override.yml.j2
+    dest: "{{ harbor_compose_override_file }}"
+    owner: "{{ harbor_primary_user }}"
+    group: "{{ harbor_primary_user }}"
+    mode: "0640"
+  notify: Restart harbor service
+
+- name: Deploy Harbor systemd unit
+  ansible.builtin.template:
+    src: harbor.service.j2
+    dest: "{{ harbor_systemd_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart harbor service
+
+- name: Apply pending handlers before readiness checks
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure Harbor service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ harbor_service_name }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Wait for Harbor UI endpoint to be ready
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ harbor_http_port }}/"
+    method: GET
+    status_code:
+      - 200
+      - 301
+      - 302
+      - 303
+      - 307
+      - 308
+  register: harbor_ui_ready
+  retries: 30
+  delay: 10
+  until: harbor_ui_ready.status in [200, 301, 302, 303, 307, 308]
+
+- name: Wait for Harbor API endpoint to be ready
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ harbor_http_port }}/api/v2.0/ping"
+    method: GET
+    status_code: 200
+  register: harbor_api_ready
+  retries: 30
+  delay: 10
+  until: harbor_api_ready.status == 200
+
+- name: Attempt Harbor LDAP configuration via API
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ harbor_http_port }}/api/v2.0/configurations"
+    method: PUT
+    force_basic_auth: true
+    user: "{{ harbor_admin_username }}"
+    password: "{{ harbor_admin_password }}"
+    body_format: json
+    body:
+      auth_mode: ldap_auth
+      ldap_url: "{{ harbor_ldap_url }}"
+      ldap_search_dn: "{{ harbor_ldap_search_dn }}"
+      ldap_search_password: "{{ harbor_ldap_search_password }}"
+      ldap_base_dn: "{{ harbor_ldap_base_dn }}"
+      ldap_filter: "{{ harbor_ldap_filter }}"
+      ldap_uid: "{{ harbor_ldap_uid }}"
+      ldap_scope: "{{ harbor_ldap_scope | int }}"
+      ldap_timeout: "{{ harbor_ldap_timeout | int }}"
+      ldap_verify_cert: "{{ harbor_ldap_verify_cert | bool | lower }}"
+      ldap_group_base_dn: "{{ harbor_ldap_group_base_dn }}"
+      ldap_group_filter: "{{ harbor_ldap_group_filter }}"
+      ldap_group_gid: "{{ harbor_ldap_group_gid }}"
+      ldap_group_member_uid: "{{ harbor_ldap_group_member_uid }}"
+    status_code:
+      - 200
+      - 400
+      - 412
+      - 422
+  register: harbor_ldap_configure
+  changed_when: harbor_ldap_configure.status == 200
+  failed_when: >-
+    (harbor_ldap_configure.status not in [200, 400, 412, 422])
+    or (
+      (harbor_ldap_enforce | bool)
+      and (harbor_ldap_configure.status != 200)
+    )
+  no_log: true
+  when: harbor_ldap_enabled | bool
+
+- name: Report Harbor LDAP API response when not applied
+  ansible.builtin.debug:
+    msg: >-
+      Harbor LDAP configuration request did not return success (status={{ harbor_ldap_configure.status }}).
+      LDAP may require manual setup in Harbor UI depending on Harbor version/API behavior.
+  when:
+    - harbor_ldap_enabled | bool
+    - harbor_ldap_configure is defined
+    - harbor_ldap_configure.status != 200

@@ -1,0 +1,64 @@
+hostname: {{ harbor_hostname }}
+
+http:
+  port: {{ harbor_http_port }}
+
+external_url: {{ harbor_external_url }}
+
+harbor_admin_password: {{ harbor_admin_password }}
+
+database:
+  password: {{ harbor_database_password }}
+  max_idle_conns: 100
+  max_open_conns: 900
+  conn_max_lifetime: 5m
+  conn_max_idle_time: 0
+
+data_volume: {{ harbor_data_volume }}
+
+trivy:
+  ignore_unfixed: false
+  skip_update: {{ harbor_trivy_skip_update | bool | lower }}
+  skip_java_db_update: {{ harbor_trivy_skip_java_db_update | bool | lower }}
+  insecure: {{ harbor_trivy_insecure | bool | lower }}
+
+jobservice:
+  max_job_workers: 10
+  max_job_duration_hours: 24
+  job_loggers:
+    - STD_OUTPUT
+    - FILE
+  logger_sweeper_duration: 1 #days
+
+notification:
+  webhook_job_max_retry: 3
+  webhook_job_http_client_timeout: 3
+
+log:
+  level: {{ harbor_log_level }}
+  local:
+    rotate_count: 50
+    rotate_size: 200M
+    location: {{ harbor_log_dir }}
+
+_version: {{ harbor_config_version }}
+
+external_database:
+  harbor:
+    host: {{ harbor_database_host }}
+    port: {{ harbor_database_port }}
+    db_name: {{ harbor_database_name }}
+    username: {{ harbor_database_user }}
+    password: {{ harbor_database_password }}
+    ssl_mode: {{ harbor_database_ssl_mode }}
+    max_idle_conns: 2
+    max_open_conns: 0
+
+proxy:
+  http_proxy:
+  https_proxy:
+  no_proxy:
+  components:
+    - core
+    - jobservice
+    - trivy

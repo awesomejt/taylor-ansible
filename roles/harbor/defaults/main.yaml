@@ -1,0 +1,61 @@
+---
+harbor_primary_user: root
+harbor_project_name: harbor
+harbor_project_dir: "/opt/{{ harbor_project_name }}"
+harbor_install_dir: "{{ harbor_project_dir }}/harbor"
+harbor_service_name: "{{ harbor_project_name }}.service"
+harbor_systemd_unit_path: "/etc/systemd/system/{{ harbor_service_name }}"
+harbor_compose_file: "{{ harbor_install_dir }}/docker-compose.yml"
+harbor_compose_override_file: "{{ harbor_install_dir }}/docker-compose.override.yml"
+
+harbor_version: "2.15.0"
+harbor_installer_url: "https://github.com/goharbor/harbor/releases/download/v{{ harbor_version }}/harbor-online-installer-v{{ harbor_version }}.tgz"
+harbor_installer_archive: "{{ harbor_project_dir }}/harbor-online-installer-v{{ harbor_version }}.tgz"
+
+harbor_hostname: "harbor.taylor.lan"
+harbor_external_url: "http://{{ harbor_hostname }}"
+harbor_http_port: 18080
+
+harbor_admin_username: admin
+harbor_admin_password: "{{ vault_harbor_admin_password | default('change-me') }}"
+
+harbor_database_host: 192.168.50.15
+harbor_database_port: 5432
+harbor_database_name: harbor
+harbor_database_user: harbor
+harbor_database_password: "{{ vault_harbor_db_password | default('change-me') }}"
+harbor_database_ssl_mode: disable
+
+harbor_data_volume: "{{ harbor_project_dir }}/data"
+harbor_log_dir: "{{ harbor_project_dir }}/logs"
+harbor_log_level: info
+harbor_config_version: "2.15.0"
+
+harbor_with_trivy: true
+harbor_trivy_skip_update: false
+harbor_trivy_skip_java_db_update: false
+harbor_trivy_insecure: false
+
+harbor_traefik_enabled: true
+harbor_traefik_hostname: "{{ harbor_hostname }}"
+harbor_traefik_entrypoint: web
+harbor_traefik_network: traefik_proxy
+harbor_traefik_router_name: harbor
+harbor_traefik_service_name: harbor
+harbor_proxy_container_port: 8080
+
+harbor_ldap_enabled: true
+harbor_ldap_enforce: false
+harbor_ldap_url: "ldap://lldap:3890"
+harbor_ldap_search_dn: "cn=admin,ou=people,dc=taylor,dc=lan"
+harbor_ldap_search_password: "{{ vault_lldap_ldap_user_pass | default('change-me') }}"
+harbor_ldap_base_dn: "ou=people,dc=taylor,dc=lan"
+harbor_ldap_filter: ""
+harbor_ldap_uid: uid
+harbor_ldap_scope: 2
+harbor_ldap_timeout: 5
+harbor_ldap_verify_cert: false
+harbor_ldap_group_base_dn: ""
+harbor_ldap_group_filter: ""
+harbor_ldap_group_gid: cn
+harbor_ldap_group_member_uid: memberUid

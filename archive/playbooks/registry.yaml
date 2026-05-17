@@ -1,6 +1,8 @@
 ---
+# Dormant playbook: retained as rollback path now that Harbor is the primary registry.
+# See archive/registry.md for reactivation workflow.
 - name: Deploy Docker Registry
-  hosts: "{{ target | default('registry') }}"
+  hosts: "{{ target | default('archived_registry') }}"
   become: true
   gather_facts: true
   pre_tasks:
@@ -19,4 +21,4 @@
     - updates
     - common
     - docker
-    - registry
+    - { role: registry, tags: ["registry"] }

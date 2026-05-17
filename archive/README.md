@@ -35,3 +35,4 @@ When reactivating an archived component:
 ## Current Hard-Archived Components
 
 - OpenClaw: `archive/playbooks/openclaw.yaml` + `archive/roles/openclaw/`
+- Docker Registry: `archive/playbooks/registry.yaml` + `archive/roles/registry/`

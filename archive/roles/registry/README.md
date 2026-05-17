@@ -1,5 +1,7 @@
 # registry role
 
+Status: hard-archived. See `archive/registry.md` for reactivation steps.
+
 Purpose:
 
 - Deploy Docker Distribution `registry:3` behind Nginx.
@@ -12,7 +14,7 @@ Typical usage:
 - Run the playbook from the repo root:
 
 ```bash
-ansible-playbook -i inventory.ini registry.yaml
+ANSIBLE_ROLES_PATH=./roles:./archive/roles ansible-playbook -i inventory.ini archive/playbooks/registry.yaml --vault-password-file ~/avpass
 ```
 
 - Expected inventory group:
@@ -32,11 +34,11 @@ What the playbook does:
 
 Role layout:
 
-- `roles/registry/tasks/main.yaml` orchestrates the deployment.
-- `roles/registry/defaults/main.yaml` holds image names, ports, paths, and proxy settings.
-- `roles/registry/templates/compose.yaml.j2` defines the registry, Nginx, and UI containers.
-- `roles/registry/templates/nginx.conf.j2` routes `/` to the UI and `/v2/` to the registry API.
-- `roles/registry/templates/registry-config.yml.j2` configures the registry backend.
+- `archive/roles/registry/tasks/main.yaml` orchestrates the deployment.
+- `archive/roles/registry/defaults/main.yaml` holds image names, ports, paths, and proxy settings.
+- `archive/roles/registry/templates/compose.yaml.j2` defines the registry, Nginx, and UI containers.
+- `archive/roles/registry/templates/nginx.conf.j2` routes `/` to the UI and `/v2/` to the registry API.
+- `archive/roles/registry/templates/registry-config.yml.j2` configures the registry backend.
 
 Default endpoints:
 

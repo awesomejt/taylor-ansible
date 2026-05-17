@@ -1,0 +1,64 @@
+---
+- name: Provision Harbor PostgreSQL database
+  hosts: postgres_prod
+  become: true
+  vars_files:
+    - vars/common/secrets.yaml
+  vars:
+    harbor_db_name: harbor
+    harbor_db_user: harbor
+    harbor_db_password: "{{ vault_harbor_db_password | default('change-me') }}"
+  tasks:
+    - name: Ensure Harbor PostgreSQL user exists
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_user:
+        name: "{{ harbor_db_user }}"
+        password: "{{ harbor_db_password }}"
+        role_attr_flags: LOGIN
+        state: present
+      no_log: true
+
+    - name: Ensure Harbor PostgreSQL database exists
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: "{{ harbor_db_name }}"
+        owner: "{{ harbor_db_user }}"
+        state: present
+
+    - name: Grant all privileges on Harbor database to Harbor user
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_privs:
+        login_db: postgres
+        objs: "{{ harbor_db_name }}"
+        roles: "{{ harbor_db_user }}"
+        privs: ALL
+        type: database
+        state: present
+
+- name: Deploy Harbor
+  hosts: "{{ target | default('harbor') }}"
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/common/vars.yaml
+    - vars/common/secrets.yaml
+  pre_tasks:
+    - name: Wait for apt locks to be released
+      ansible.builtin.shell: |
+        while fuser /var/lib/apt/lists/lock \
+                    /var/lib/dpkg/lock \
+                    /var/lib/dpkg/lock-frontend \
+                    /var/cache/apt/archives/lock >/dev/null 2>&1; do
+          echo "Waiting for apt lock..."
+          sleep 10
+        done
+      changed_when: false
+      timeout: 600
+  roles:
+    - updates
+    - common
+    - docker
+    - harbor

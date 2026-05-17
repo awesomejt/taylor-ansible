@@ -1,0 +1,23 @@
+---
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Prepare harbor configuration
+  ansible.builtin.command: ./prepare --with-trivy
+  args:
+    chdir: "{{ harbor_install_dir }}"
+  changed_when: true
+  when: harbor_with_trivy | bool
+
+- name: Prepare harbor configuration without trivy
+  ansible.builtin.command: ./prepare
+  args:
+    chdir: "{{ harbor_install_dir }}"
+  changed_when: true
+  when: not (harbor_with_trivy | bool)
+
+- name: Restart harbor service
+  ansible.builtin.systemd:
+    name: "{{ harbor_service_name }}"
+    state: restarted
