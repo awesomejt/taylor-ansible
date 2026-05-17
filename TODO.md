@@ -7,9 +7,9 @@
 - [x] Update Hermes secret examples/comments for `vault_hermes_discord_tokens.admin` and `vault_hermes_discord_tokens.jessica`.
 - [x] Add cleanup for stale `hermes-gateway-<profile>` systemd units when profile names are renamed/removed.
 - [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`) — syntax check passed; ansible-lint still reports pre-existing Hermes role baseline violations.
-- [ ] Sync to Ansible host.
-- [ ] Run `hermes.yaml` on Ansible host.
-- [ ] Verify only `hermes-gateway-admin` and `hermes-gateway-jessica` are active after apply.
+- [x] Sync to Ansible host.
+- [x] Run `hermes.yaml` on Ansible host.
+- [x] Verify only `hermes-gateway-admin` and `hermes-gateway-jessica` are active after apply.
 
 ## Hermes AI Stack Endpoint + RAG Wiring (2026-05-17)
 
@@ -20,9 +20,9 @@
 - [x] Make CIFS mount step non-blocking when NAS credentials are not present (`hermes_cifs_require_credentials: false`).
 - [x] Guard global `~/.hermes/.env` and `~/.hermes/config.yaml` patch steps so profile-only deployments do not fail when those files are absent.
 - [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`) — syntax check passed; ansible-lint remains at existing Hermes-role baseline failures.
-- [ ] Sync to Ansible host.
-- [ ] Run `hermes.yaml` on Ansible host.
-- [ ] Verify helper command on Hermes host (`hermes-rag-query "test query" --top-k 3`).
+- [x] Sync to Ansible host.
+- [x] Run `hermes.yaml` on Ansible host.
+- [x] Verify helper command on Hermes host (`hermes-rag-query "test query" --top-k 3`).
 
 ## Harbor Rollout + Registry Archive (2026-05-16)
 

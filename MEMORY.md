@@ -12,6 +12,8 @@
 - Added `/usr/local/bin/hermes-rag-query` utility (deployed by `roles/hermes`) to query shared Qdrant web-memory vectors from the Hermes host.
 - Hermes CIFS mounting can now be non-blocking via `hermes_cifs_require_credentials: false`, allowing Hermes deployment when NAS credentials are not yet staged.
 - Global `~/.hermes/.env` and `~/.hermes/config.yaml` patch tasks are now conditional on file existence so profile-only setups do not fail.
+- Applied from Ansible host on 2026-05-17: `hermes.yaml` completed on `192.168.50.52`; active gateways are `hermes-gateway-admin` and `hermes-gateway-jessica`.
+- Verified on host: admin profile env contains LiteLLM/SearXNG/Qdrant endpoint vars and `hermes-rag-query` returns results when sourced from profile `.env`.
 
 ### Harbor Migration + Registry Archive (2026-05-16)
 
