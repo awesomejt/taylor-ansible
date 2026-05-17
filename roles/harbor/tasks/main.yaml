@@ -31,6 +31,25 @@
     - "{{ harbor_data_volume }}"
     - "{{ harbor_log_dir }}"
 
+- name: Check whether Harbor installer payload is present
+  ansible.builtin.stat:
+    path: "{{ harbor_install_dir }}/install.sh"
+  register: harbor_install_script
+
+- name: Read Harbor installer version marker
+  ansible.builtin.command: "cat {{ harbor_project_dir }}/.harbor-installer-version"
+  register: harbor_installer_version_current
+  changed_when: false
+  failed_when: false
+
+- name: Determine whether Harbor installer extraction is required
+  ansible.builtin.set_fact:
+    harbor_installer_extract_required: >-
+      {{
+        (not harbor_install_script.stat.exists)
+        or ((harbor_installer_version_current.stdout | trim) != harbor_version)
+      }}
+
 - name: Download Harbor online installer archive
   ansible.builtin.get_url:
     url: "{{ harbor_installer_url }}"
@@ -42,7 +61,19 @@
     src: "{{ harbor_installer_archive }}"
     dest: "{{ harbor_project_dir }}"
     remote_src: true
-    creates: "{{ harbor_install_dir }}/install.sh"
+  when: harbor_installer_extract_required | bool
+  notify:
+    - Prepare harbor configuration
+    - Prepare harbor configuration without trivy
+    - Restart harbor service
+
+- name: Persist Harbor installer version marker
+  ansible.builtin.copy:
+    dest: "{{ harbor_project_dir }}/.harbor-installer-version"
+    content: "{{ harbor_version }}\n"
+    owner: "{{ harbor_primary_user }}"
+    group: "{{ harbor_primary_user }}"
+    mode: "0640"
 
 - name: Deploy Harbor configuration file
   ansible.builtin.template:
