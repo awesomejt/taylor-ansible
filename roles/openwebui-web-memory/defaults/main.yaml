@@ -1,0 +1,60 @@
+---
+openwebui_web_memory_enabled: true
+
+openwebui_web_memory_project_dir: /opt/openwebui-web-memory
+openwebui_web_memory_venv_path: "{{ openwebui_web_memory_project_dir }}/venv"
+openwebui_web_memory_script_path: "{{ openwebui_web_memory_project_dir }}/sync.py"
+openwebui_web_memory_query_script_path: "{{ openwebui_web_memory_project_dir }}/query.py"
+openwebui_web_memory_requirements_path: "{{ openwebui_web_memory_project_dir }}/requirements.txt"
+openwebui_web_memory_env_path: /etc/openwebui-web-memory.env
+openwebui_web_memory_log_path: /var/log/openwebui-web-memory.log
+openwebui_web_memory_cron_file: /etc/cron.d/openwebui-web-memory
+openwebui_web_memory_logrotate_file: /etc/logrotate.d/openwebui-web-memory
+
+openwebui_web_memory_cron_enabled: true
+openwebui_web_memory_cron_minute: "17"
+openwebui_web_memory_cron_hour: "*"
+
+openwebui_web_memory_state_dir: /var/lib/openwebui-web-memory
+openwebui_web_memory_state_file: "{{ openwebui_web_memory_state_dir }}/last_run_epoch"
+openwebui_web_memory_blocked_urls_file: /opt/open-webui/data/web-blocklist/blocked-urls.txt
+openwebui_web_memory_openwebui_db_path: /opt/open-webui/data/webui.db
+
+openwebui_web_memory_searxng_url: "http://search.taylor.lan/search"
+openwebui_web_memory_user_agent: "OpenWebUI-WebMemory/1.0"
+openwebui_web_memory_http_timeout: 12
+openwebui_web_memory_max_results_per_query: 5
+openwebui_web_memory_max_urls_per_run: 20
+openwebui_web_memory_query_min_length: 10
+openwebui_web_memory_max_chat_queries: 20
+openwebui_web_memory_seed_queries: []
+
+openwebui_web_memory_min_text_length: 500
+openwebui_web_memory_max_doc_chars: 30000
+openwebui_web_memory_chunk_size: 1200
+openwebui_web_memory_chunk_overlap: 200
+openwebui_web_memory_max_chunks_per_doc: 20
+openwebui_web_memory_crawl_interval_hours: 24
+
+openwebui_web_memory_embedding_provider: local-hash
+openwebui_web_memory_embedding_dimension: 384
+openwebui_web_memory_ollama_url: "http://192.168.50.51:11434"
+openwebui_web_memory_ollama_model: "nomic-embed-text:latest"
+openwebui_web_memory_ollama_timeout: 45
+
+openwebui_web_memory_qdrant_url: "http://qdrant.taylor.lan:80"
+openwebui_web_memory_qdrant_collection: "openwebui_web_memory"
+
+openwebui_web_memory_postgres_host: 192.168.50.15
+openwebui_web_memory_postgres_port: 5432
+openwebui_web_memory_postgres_db: openwebui_web_memory
+openwebui_web_memory_postgres_user: openwebui_web_memory
+openwebui_web_memory_postgres_password: >-
+  {{ vault_openwebui_web_memory_postgres_password
+  | default(vault_litellm_postgres_password
+  | default(vault_openwebui_postgres_password | default('change-me'))) }}
+openwebui_web_memory_postgres_sslmode: prefer
+
+openwebui_web_memory_logrotate_frequency: daily
+openwebui_web_memory_logrotate_rotate: 14
+openwebui_web_memory_logrotate_maxsize: 10M

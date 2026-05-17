@@ -1,0 +1,12 @@
+{{ openwebui_web_memory_log_path }} {
+    su root root
+    {{ openwebui_web_memory_logrotate_frequency }}
+    rotate {{ openwebui_web_memory_logrotate_rotate }}
+    maxsize {{ openwebui_web_memory_logrotate_maxsize }}
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    create 0644 root root
+}

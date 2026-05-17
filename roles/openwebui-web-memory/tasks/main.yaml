@@ -1,0 +1,116 @@
+---
+- name: Ensure role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == "Debian"
+    fail_msg: "openwebui-web-memory role currently supports Debian/Ubuntu only"
+
+- name: Ensure web-memory Postgres password is configured
+  ansible.builtin.assert:
+    that:
+      - (openwebui_web_memory_postgres_password | string | length) > 0
+      - openwebui_web_memory_postgres_password != 'change-me'
+    fail_msg: >-
+      Define vault_openwebui_web_memory_postgres_password in vars/common/secrets.yaml
+      (or ensure a valid fallback password is set) before enabling openwebui-web-memory.
+
+- name: Ensure web-memory dependencies are installed
+  ansible.builtin.package:
+    name:
+      - python3-venv
+      - python3-pip
+      - postgresql-client
+      - jq
+    state: present
+
+- name: Ensure web-memory project directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - "{{ openwebui_web_memory_project_dir }}"
+    - "{{ openwebui_web_memory_state_dir }}"
+
+- name: Deploy web-memory Python requirements
+  ansible.builtin.template:
+    src: requirements.txt.j2
+    dest: "{{ openwebui_web_memory_requirements_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install web-memory Python dependencies in virtualenv
+  ansible.builtin.pip:
+    requirements: "{{ openwebui_web_memory_requirements_path }}"
+    virtualenv: "{{ openwebui_web_memory_venv_path }}"
+    virtualenv_command: python3 -m venv
+
+- name: Deploy web-memory ingestion script
+  ansible.builtin.template:
+    src: web-memory-sync.py.j2
+    dest: "{{ openwebui_web_memory_script_path }}"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy web-memory query utility script
+  ansible.builtin.template:
+    src: web-memory-query.py.j2
+    dest: "{{ openwebui_web_memory_query_script_path }}"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy web-memory environment file
+  ansible.builtin.template:
+    src: openwebui-web-memory.env.j2
+    dest: "{{ openwebui_web_memory_env_path }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: Ensure web-memory log file exists
+  ansible.builtin.file:
+    path: "{{ openwebui_web_memory_log_path }}"
+    state: touch
+    owner: root
+    group: root
+    mode: "0644"
+  changed_when: false
+
+- name: Install cron file for web-memory sync
+  ansible.builtin.template:
+    src: cron-openwebui-web-memory.j2
+    dest: "{{ openwebui_web_memory_cron_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when: openwebui_web_memory_cron_enabled | bool
+
+- name: Remove cron file when web-memory sync is disabled
+  ansible.builtin.file:
+    path: "{{ openwebui_web_memory_cron_file }}"
+    state: absent
+  when: not (openwebui_web_memory_cron_enabled | bool)
+
+- name: Install logrotate config for web-memory logs
+  ansible.builtin.template:
+    src: logrotate-openwebui-web-memory.j2
+    dest: "{{ openwebui_web_memory_logrotate_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Run initial web-memory sync
+  ansible.builtin.shell: |
+    set -euo pipefail
+    . "{{ openwebui_web_memory_env_path }}"
+    "{{ openwebui_web_memory_venv_path }}/bin/python" "{{ openwebui_web_memory_script_path }}"
+  args:
+    executable: /bin/bash
+  register: openwebui_web_memory_initial_sync
+  changed_when: "'SYNC_SUMMARY' in (openwebui_web_memory_initial_sync.stdout | default(''))"

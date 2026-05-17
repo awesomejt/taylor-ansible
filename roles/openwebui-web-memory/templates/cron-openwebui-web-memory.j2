@@ -1,0 +1,4 @@
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+{{ openwebui_web_memory_cron_minute }} {{ openwebui_web_memory_cron_hour }} * * * root . {{ openwebui_web_memory_env_path }} && {{ openwebui_web_memory_venv_path }}/bin/python {{ openwebui_web_memory_script_path }} >> {{ openwebui_web_memory_log_path }} 2>&1

@@ -22,6 +22,12 @@ Run the AI stack setup against hosts in the `ai_stack` inventory group:
 ansible-playbook -i inventory.ini openwebui.yaml
 ```
 
+Run the Open WebUI web-memory ingestion stack (Open WebUI prompt-derived queries -> SearXNG crawl -> PostgreSQL metadata + Qdrant vectors):
+
+```bash
+ansible-playbook -i inventory.ini web-memory.yaml --vault-password-file ~/avpass
+```
+
 The AI stack deploys Open WebUI, LiteLLM, Ollama, AnythingLLM, n8n, Qdrant, SearXNG, and Valkey on the same VM.
 Secrets for this stack are loaded from vars/common/secrets.yaml on the control host, with vars/common/example-secrets.yaml as the fallback template.
 Open WebUI is configured for LDAP login against LLDAP in this repo's open-source/default deployment path.

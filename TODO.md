@@ -120,6 +120,19 @@
 - [x] Re-apply `openwebui.yaml` on Ansible host.
 - [x] Verify blocklist export files and PostgreSQL rows are updating (validated with seeded test row and cleanup).
 
+## Open WebUI Persistent Web-Memory RAG (PostgreSQL + Qdrant) (2026-05-16)
+
+- [x] Add dedicated `web-memory.yaml` playbook for DB provisioning and host automation.
+- [x] Add `roles/openwebui-web-memory` for scheduled ingestion and retrieval tooling.
+- [x] Ingest queries from Open WebUI chat history plus optional seed queries.
+- [x] Persist crawl/query metadata in PostgreSQL (`openwebui_web_memory`).
+- [x] Persist chunk vectors in Qdrant collection (`openwebui_web_memory`).
+- [x] Add local query utility for reusable retrieval workflows (Open WebUI/Hermes).
+- [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`).
+- [x] Sync to Ansible host.
+- [x] Run `web-memory.yaml` on Ansible host.
+- [x] Verify ingestion status, PostgreSQL row counts, and Qdrant point counts.
+
 ## LiteLLM + Open WebUI Provider Audit (2026-05-16)
 
 - [x] Verify live oMLX model inventories on primary (`192.168.50.93`) and secondary (`192.168.50.94`) with vault API key.

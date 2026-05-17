@@ -1,0 +1,67 @@
+---
+- name: Provision Open WebUI web-memory PostgreSQL database
+  hosts: postgres_prod
+  become: true
+  vars_files:
+    - vars/common/secrets.yaml
+  vars:
+    openwebui_web_memory_db_name: openwebui_web_memory
+    openwebui_web_memory_db_user: openwebui_web_memory
+    openwebui_web_memory_db_password: >-
+      {{ vault_openwebui_web_memory_postgres_password
+      | default(vault_litellm_postgres_password
+      | default(vault_openwebui_postgres_password | default('change-me'))) }}
+  tasks:
+    - name: Ensure Open WebUI web-memory PostgreSQL user exists
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_user:
+        name: "{{ openwebui_web_memory_db_user }}"
+        password: "{{ openwebui_web_memory_db_password }}"
+        role_attr_flags: LOGIN
+        state: present
+      no_log: true
+
+    - name: Ensure Open WebUI web-memory PostgreSQL database exists
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: "{{ openwebui_web_memory_db_name }}"
+        owner: "{{ openwebui_web_memory_db_user }}"
+        state: present
+
+    - name: Grant all privileges on Open WebUI web-memory database
+      become: true
+      become_user: postgres
+      community.postgresql.postgresql_privs:
+        login_db: postgres
+        objs: "{{ openwebui_web_memory_db_name }}"
+        roles: "{{ openwebui_web_memory_db_user }}"
+        privs: ALL
+        type: database
+        state: present
+
+- name: Deploy Open WebUI web-memory ingestion and retrieval utilities
+  hosts: "{{ target | default('openwebui') }}"
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/common/vars.yaml
+    - vars/common/secrets.yaml
+  pre_tasks:
+    - name: Wait for apt locks to be released
+      ansible.builtin.shell: |
+        while fuser /var/lib/apt/lists/lock \
+                    /var/lib/dpkg/lock \
+                    /var/lib/dpkg/lock-frontend \
+                    /var/cache/apt/archives/lock >/dev/null 2>&1; do
+          echo "Waiting for apt lock..."
+          sleep 10
+        done
+      changed_when: false
+      timeout: 600
+  roles:
+    - updates
+    - common
+    - role: openwebui-web-memory
+      when: openwebui_web_memory_enabled | default(true) | bool

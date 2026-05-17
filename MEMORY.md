@@ -37,6 +37,10 @@
 - Validation note: after mitigation, user prompt for latest JUnit release returned current release data with citations; behavior where UI reports more searched sites than final retrieved/cited sources is expected due to dedupe + relevance filtering/ranking in later retrieval stage.
 - Open WebUI blocked crawler URLs are now persisted in PostgreSQL (`openwebui_blocklist` DB, `web_blocked_sources` table) via `roles/openwebui-blocklist`; a cron-driven sync script parses Open WebUI fetch warnings, upserts rows, and exports the latest list to `/opt/open-webui/data/web-blocklist/`.
 - `openwebui.yaml` now provisions the `openwebui_blocklist` PostgreSQL DB/user on `postgres_prod` before deploying Open WebUI host automation; sync runs every 15 minutes via `/etc/cron.d/openwebui-web-blocklist`.
+- Added `web-memory.yaml` + `roles/openwebui-web-memory` to persist Open WebUI prompt-derived web memory using PostgreSQL metadata (`openwebui_web_memory`) and Qdrant vectors (`openwebui_web_memory` collection).
+- Web-memory ingestion runs hourly via `/etc/cron.d/openwebui-web-memory`, harvesting recent Open WebUI user prompts from `/opt/open-webui/data/webui.db`, searching via SearXNG, crawling pages, chunking text, and storing vectors in Qdrant.
+- Default embedding provider for this environment is `local-hash` (stable/no external model dependency) with optional `ollama` override retained for future embedding model integration.
+- A local retrieval utility (`/opt/openwebui-web-memory/query.py`) is deployed for reusable query flows and future Hermes integration against the same Qdrant collection.
 - n8n LDAP was not implemented because official docs mark it as Self-hosted Business/Enterprise feature.
 - AnythingLLM/LiteLLM were not wired for direct LDAP in this pass because no confirmed free native LDAP path was identified in current stack docs.
 
