@@ -91,7 +91,8 @@
 - [x] Sync to Ansible host.
 - [x] Re-apply `openwebui.yaml` on Ansible host.
 - [x] Verify runtime env includes `BYPASS_WEB_SEARCH_WEB_LOADER=true`.
-- [ ] Re-test in Open WebUI UI with a fresh chat prompt and confirm citations/sources appear.
+- [x] Re-test in Open WebUI UI with a fresh chat prompt and confirm citations/sources appear.
+- [x] Confirm expected behavior where search can inspect more candidate sites than final cited sources (example observed: 9 searched, 3 retrieved/cited).
 
 ## Open WebUI Blocked-URL Registry (PostgreSQL) (2026-05-16)
 
