@@ -55,6 +55,15 @@
 - [x] Validate LDAP-related playbook changes with syntax check.
 - [x] Validate LDAP-related playbook changes with ansible-lint.
 
+## AI Services LDAP/LLDAP Compatibility Follow-Up (2026-05-16)
+
+- [ ] Confirm Open WebUI LDAP support for the deployed image tag and wire role vars/templates if native LDAP is available in this version.
+- [ ] Evaluate AnythingLLM auth options (native LDAP vs SSO) and document whether LLDAP is directly supported or requires an external IdP bridge.
+- [ ] Evaluate n8n LDAP capability for the deployed edition and wire LLDAP settings if available.
+- [ ] Evaluate LiteLLM Admin UI SSO integration and document an LLDAP-compatible path (for example, LLDAP via OIDC broker) when direct LDAP is not supported.
+- [ ] Decide access-control approach for AI services that do not expose native LDAP auth (SearXNG, Qdrant, Ollama): service-native auth, network-only restriction, or forward-auth.
+- [ ] Apply any newly LDAP/SSO-wired AI service playbooks on the Ansible host after local validation.
+
 ## LiteLLM + Open WebUI Provider Audit (2026-05-16)
 
 - [x] Verify live oMLX model inventories on primary (`192.168.50.93`) and secondary (`192.168.50.94`) with vault API key.

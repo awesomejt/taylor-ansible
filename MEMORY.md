@@ -15,6 +15,7 @@
 - LLDAP role UI proxying is Traefik-based (no active nginx sidecar in compose).
 - Inventory now includes `ldap` as a child group of `lldap` for playbook target clarity.
 - Grafana and pgAdmin Compose roles are now wired for LDAP authentication against LLDAP (`ldap://lldap:3890`) while keeping local/internal fallback logins enabled.
+- AI auth capability snapshot: Open WebUI upstream includes native LDAP/OAuth config flags, n8n documents native LDAP support (edition-dependent), and LiteLLM Admin UI auth is SSO/OIDC-oriented rather than direct LDAP.
 
 ### Dormant Component Archiving (2026-05-16)
 
