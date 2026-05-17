@@ -232,6 +232,14 @@
     state: link
     force: true
 
+- name: Install Hermes RAG query helper
+  ansible.builtin.copy:
+    src: hermes-rag-query.py
+    dest: "{{ hermes_rag_query_cmd | default('/usr/local/bin/hermes-rag-query') }}"
+    owner: root
+    group: root
+    mode: "0755"
+
 - name: Stop and disable legacy single-instance gateway services
   ansible.builtin.systemd:
     name: "{{ item }}"

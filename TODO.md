@@ -11,6 +11,17 @@
 - [ ] Run `hermes.yaml` on Ansible host.
 - [ ] Verify only `hermes-gateway-admin` and `hermes-gateway-jessica` are active after apply.
 
+## Hermes AI Stack Endpoint + RAG Wiring (2026-05-17)
+
+- [x] Confirm LiteLLM remains default provider/base URL for all Hermes profiles.
+- [x] Add Hermes vars for routed AI stack endpoints (LiteLLM, SearXNG, Open WebUI, AnythingLLM, n8n, Qdrant, Ollama).
+- [x] Expose AI stack endpoint and RAG variables in rendered Hermes profile `.env` files.
+- [x] Add `hermes-rag-query` helper utility for querying shared Qdrant web-memory vectors.
+- [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`) — syntax check passed; ansible-lint remains at existing Hermes-role baseline failures.
+- [ ] Sync to Ansible host.
+- [ ] Run `hermes.yaml` on Ansible host.
+- [ ] Verify helper command on Hermes host (`hermes-rag-query "test query" --top-k 3`).
+
 ## Harbor Rollout + Registry Archive (2026-05-16)
 
 - [x] Archive legacy Docker registry playbook and role under `archive/`.

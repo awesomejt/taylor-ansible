@@ -84,10 +84,23 @@ hermes_api_timeout_seconds: 45
 hermes_api_stale_timeout_seconds: 60
 hermes_api_max_retries: 1
 hermes_litellm_base_url: "http://127.0.0.1:4000/v1"
+hermes_litellm_public_url: "http://127.0.0.1:4000/v1"
 hermes_searxng_url: "http://127.0.0.1:8080"
+hermes_searxng_public_url: "http://127.0.0.1:8080"
 hermes_web_backend: "searxng"
 hermes_web_search_backend: "searxng"
 hermes_web_extract_backend: ""
+hermes_openwebui_url: "http://127.0.0.1:3000"
+hermes_anythingllm_url: "http://127.0.0.1:3001"
+hermes_n8n_url: "http://127.0.0.1:5678"
+hermes_qdrant_url: "http://127.0.0.1:6333"
+hermes_qdrant_collection: "openwebui_web_memory"
+hermes_ollama_url: "http://127.0.0.1:11434"
+hermes_rag_query_cmd: "/usr/local/bin/hermes-rag-query"
+hermes_rag_embedding_provider: "local-hash"
+hermes_rag_embedding_dimension: 384
+hermes_rag_ollama_model: "nomic-embed-text:latest"
+hermes_rag_ollama_timeout: 45
 hermes_omlx_api_key: "example"
 hermes_shared_auth_source_dir: "{{ hermes_home_dir }}/.hermes"
 

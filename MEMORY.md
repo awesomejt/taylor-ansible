@@ -5,6 +5,12 @@
 - `hermes_primary_profile`/dashboard target is `admin`.
 - Role now removes stale `hermes-gateway-<profile>.service` units when profile names are renamed or removed.
 
+### Hermes AI Stack Wiring Refresh (2026-05-17)
+
+- Hermes profile `.env` now exports routed AI stack endpoints for LiteLLM, SearXNG, Open WebUI, AnythingLLM, n8n, Qdrant, and Ollama.
+- LiteLLM remains the default model provider for all Hermes profiles via `hermes_litellm_base_url`.
+- Added `/usr/local/bin/hermes-rag-query` utility (deployed by `roles/hermes`) to query shared Qdrant web-memory vectors from the Hermes host.
+
 ### Harbor Migration + Registry Archive (2026-05-16)
 
 - Legacy Docker Distribution playbook/role was hard-archived to `archive/playbooks/registry.yaml` and `archive/roles/registry/`; reactivation runbook is `archive/registry.md`.
