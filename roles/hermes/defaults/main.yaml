@@ -32,11 +32,21 @@ hermes_soul_files:
   - src: "main/SOUL.md"
     dest: "{{ hermes_config_dir }}/SOUL.md"
   - src: "main/SOUL.md"
-    dest: "{{ hermes_config_dir }}/profiles/chat/SOUL.md"
+    dest: "{{ hermes_config_dir }}/profiles/default/SOUL.md"
   - src: "researcher/SOUL.md"
-    dest: "{{ hermes_config_dir }}/profiles/research/SOUL.md"
+    dest: "{{ hermes_config_dir }}/profiles/researcher/SOUL.md"
   - src: "coder/SOUL.md"
     dest: "{{ hermes_config_dir }}/profiles/coding/SOUL.md"
+  - src: "main/SOUL.md"
+    dest: "{{ hermes_config_dir }}/profiles/admin/SOUL.md"
+  - src: "main/SOUL.md"
+    dest: "{{ hermes_config_dir }}/profiles/jessica/SOUL.md"
+  - src: "main/SOUL.md"
+    dest: "{{ hermes_config_dir }}/profiles/rachel/SOUL.md"
+  - src: "main/SOUL.md"
+    dest: "{{ hermes_config_dir }}/profiles/financial-advisor/SOUL.md"
+  - src: "main/SOUL.md"
+    dest: "{{ hermes_config_dir }}/profiles/writer/SOUL.md"
 
 # Hermes package install extras.
 # Use the smallest set needed for the dashboard and Discord gateway.

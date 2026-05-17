@@ -1,11 +1,11 @@
 # Hermes Profiles Refactor Plan
 
-This plan migrates the Hermes role from instance-centric deployment to profile-centric deployment with a single Discord ingress profile first, while preserving future expansion to additional profile-specific bots.
+This plan migrates the Hermes role from instance-centric deployment to profile-centric deployment with a small Discord bot surface (admin + jessica), while preserving future expansion to additional profile-specific bots.
 
 ## Objectives
 
 - Reduce operational complexity by using native Hermes profiles.
-- Start with one Discord ingress bot to avoid duplicate bot responses.
+- Keep Discord enabled only where needed (admin and jessica) to avoid duplicate bot responses.
 - Keep specialist profiles with separate SOUL, memory, sessions, and skills.
 - Keep secrets in Ansible Vault on host 192.168.50.11 with backup/rollback guardrails.
 
@@ -21,10 +21,10 @@ This plan migrates the Hermes role from instance-centric deployment to profile-c
 
 ### Profile types
 
-- Ingress profile:
+- Gateway profiles:
   - Gateway enabled
   - Discord enabled
-  - Receives user prompts and routes work via Kanban/task assignment
+  - Receive user prompts and route work via Kanban/task assignment
 - Worker profiles:
   - Gateway disabled by default
   - No Discord token required
@@ -32,8 +32,8 @@ This plan migrates the Hermes role from instance-centric deployment to profile-c
 
 ### Initial recommended mapping
 
-- ingress: chat (or orchestrator if you prefer to separate user-facing voice from worker personas)
-- workers: research, coding, admin, jessica
+- gateway profiles: admin, jessica
+- workers: default, coding, researcher, rachel, financial-advisor, writer
 
 ## Variable Schema (proposed)
 
@@ -41,9 +41,9 @@ Replace instance-first variables with profile-first variables.
 
 ### New role variables
 
-- hermes_primary_profile: "chat"
+- hermes_primary_profile: "admin"
 - hermes_profiles:
-  - name: chat
+  - name: admin
     gateway_enabled: true
     discord_enabled: true
     discord_require_mention: true
@@ -54,7 +54,7 @@ Replace instance-first variables with profile-first variables.
     fallback_providers: []
     soul_src: main/SOUL.md
     cli_toolsets: ["hermes-cli", "kanban-orchestrator"]
-  - name: research
+  - name: researcher
     gateway_enabled: false
     discord_enabled: false
     provider: custom
@@ -111,7 +111,7 @@ Replace instance-first variables with profile-first variables.
 ### Stage B: Primary switch
 
 - Set explicit hermes_profiles in vars/common/vars.yaml.
-- Enable gateway only on primary ingress profile.
+- Enable gateways only on admin and jessica profiles.
 - Disable gateway on worker profiles.
 
 ### Stage C: Cleanup
@@ -122,8 +122,8 @@ Replace instance-first variables with profile-first variables.
 ## Verification Checklist
 
 1. Syntax check succeeds.
-2. Gateway service online for primary profile.
-3. Single Discord bot responds correctly in:
+2. Gateway services online for admin and jessica profiles.
+3. Discord bots respond correctly in:
    - DM
    - mention-required channels
    - free-response channels

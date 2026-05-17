@@ -243,6 +243,48 @@
     - hermes
   failed_when: false
 
+- name: Build expected Hermes gateway unit list for active profile names
+  ansible.builtin.set_fact:
+    hermes_expected_gateway_units: >-
+      {{ hermes_profiles_effective
+      | map(attribute='name')
+      | map('regex_replace', '^(.*)$', 'hermes-gateway-\1.service')
+      | list }}
+
+- name: Discover existing Hermes per-profile gateway unit files
+  ansible.builtin.find:
+    paths: /etc/systemd/system
+    patterns: "hermes-gateway-*.service"
+    file_type: file
+  register: hermes_existing_gateway_units
+
+- name: Stop and disable stale Hermes per-profile gateway services
+  ansible.builtin.systemd:
+    name: "{{ (item.path | basename) | regex_replace('\\.service$', '') }}"
+    enabled: false
+    state: stopped
+    daemon_reload: true
+  loop: "{{ hermes_existing_gateway_units.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  failed_when: false
+  when: (item.path | basename) not in hermes_expected_gateway_units
+
+- name: Remove stale Hermes per-profile gateway unit files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ hermes_existing_gateway_units.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: hermes_stale_gateway_unit_removals
+  when: (item.path | basename) not in hermes_expected_gateway_units
+
+- name: Reload systemd after removing stale Hermes gateway units
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: (hermes_stale_gateway_unit_removals.results | default([]) | selectattr('changed') | list | length) > 0
+
 # --- Per-profile config, env, and optional gateway service ---
 
 - name: Deploy per-profile Hermes config, env, and optional gateway service

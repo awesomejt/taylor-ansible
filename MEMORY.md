@@ -1,3 +1,10 @@
+### Hermes Profile Baseline Refresh (2026-05-17)
+
+- Hermes profile set is now: `default`, `admin`, `coding`, `researcher`, `jessica`, `rachel`, `financial-advisor`, `writer`.
+- Discord gateways are intentionally limited to `admin` and `jessica` to avoid multi-bot overlap.
+- `hermes_primary_profile`/dashboard target is `admin`.
+- Role now removes stale `hermes-gateway-<profile>.service` units when profile names are renamed or removed.
+
 ### Harbor Migration + Registry Archive (2026-05-16)
 
 - Legacy Docker Distribution playbook/role was hard-archived to `archive/playbooks/registry.yaml` and `archive/roles/registry/`; reactivation runbook is `archive/registry.md`.

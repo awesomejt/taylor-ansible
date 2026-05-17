@@ -1,5 +1,16 @@
 # TODO
 
+## Hermes Profile Reset (2026-05-17)
+
+- [x] Align Hermes profiles to target set: `default`, `admin`, `coding`, `researcher`, `jessica`, `rachel`, `financial-advisor`, `writer`.
+- [x] Keep Discord bots enabled only for `admin` and `jessica`.
+- [x] Update Hermes secret examples/comments for `vault_hermes_discord_tokens.admin` and `vault_hermes_discord_tokens.jessica`.
+- [x] Add cleanup for stale `hermes-gateway-<profile>` systemd units when profile names are renamed/removed.
+- [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`) — syntax check passed; ansible-lint still reports pre-existing Hermes role baseline violations.
+- [ ] Sync to Ansible host.
+- [ ] Run `hermes.yaml` on Ansible host.
+- [ ] Verify only `hermes-gateway-admin` and `hermes-gateway-jessica` are active after apply.
+
 ## Harbor Rollout + Registry Archive (2026-05-16)
 
 - [x] Archive legacy Docker registry playbook and role under `archive/`.
@@ -320,8 +331,8 @@
 - [ ] Verify future addition of a second profile-specific bot remains possible without reworking the core model.
 
 ## Open Questions
-- [ ] Which profile should be the initial Discord ingress profile: `chat`, `admin`, or a new `orchestrator` profile?
-- [ ] Which current profiles should remain directly user-facing versus becoming worker-only?
+- [x] Which profile should be the initial Discord ingress profile: `chat`, `admin`, or a new `orchestrator` profile? (resolved: `admin`)
+- [x] Which current profiles should remain directly user-facing versus becoming worker-only? (resolved: user-facing `admin` + `jessica`; others worker-only)
 - [ ] Should Discord slash command registration be owned only by the primary bot profile from day one?
 - [ ] What retention schedule and destination should secrets backups use on the host?
 

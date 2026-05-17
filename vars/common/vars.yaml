@@ -171,37 +171,37 @@ hermes_cifs_shares:
     opts: "credentials={{ hermes_cifs_credentials_file }},uid={{ hermes_user }},gid={{ hermes_group }},iocharset=utf8,vers=3.1.1,_netdev,nofail,x-systemd.automount,ro"
 
 # Profile-first Hermes deployment.
-# Single-bot-first approach: only primary ingress profile runs gateway + Discord.
-# Worker profiles stay available for Kanban/task delegation with isolated state.
-hermes_primary_profile: "chat"
-hermes_dashboard_instance: "chat"
+# Keep Discord footprint small: only admin and jessica run gateways with Discord.
+# Specialist profiles stay available for Kanban/task delegation with isolated state.
+hermes_primary_profile: "admin"
+hermes_dashboard_instance: "admin"
 hermes_profiles:
-  - name: chat
-    gateway_enabled: true
+  - name: default
+    gateway_enabled: false
     provider: "custom"
     base_url: "{{ hermes_litellm_base_url }}"
     model: "use-chat"
+    cli_toolsets:
+      - "hermes-cli"
+    discord_enabled: false
+    discord_require_mention: true
+    discord_home_channel: ""
+    fallback_providers:
+      - provider: "custom"
+        base_url: "{{ hermes_litellm_base_url }}"
+        model: "use-thinking"
+  # Admin profile handles inbox and Kanban orchestration behavior via its SOUL.
+  - name: admin
+    gateway_enabled: true
+    provider: "custom"
+    base_url: "{{ hermes_litellm_base_url }}"
+    model: "use-thinking"
     cli_toolsets:
       - "hermes-cli"
       - "kanban-orchestrator"
     discord_enabled: true
     discord_require_mention: true
     discord_home_channel: "1500086740352766063"
-    fallback_providers:
-      - provider: "custom"
-        base_url: "{{ hermes_litellm_base_url }}"
-        model: "use-thinking"
-  - name: research
-    gateway_enabled: false
-    provider: "custom"
-    base_url: "{{ hermes_litellm_base_url }}"
-    model: "use-thinking"
-    cli_toolsets:
-      - "hermes-cli"
-      - "kanban-worker"
-    discord_enabled: false
-    discord_require_mention: true
-    discord_home_channel: ""
     fallback_providers:
       - provider: "custom"
         base_url: "{{ hermes_litellm_base_url }}"
@@ -221,16 +221,16 @@ hermes_profiles:
       - provider: "custom"
         base_url: "{{ hermes_litellm_base_url }}"
         model: "use-chat"
-  - name: admin
+  - name: researcher
     gateway_enabled: false
     provider: "custom"
     base_url: "{{ hermes_litellm_base_url }}"
     model: "use-thinking"
     cli_toolsets:
       - "hermes-cli"
-      - "kanban-orchestrator"
+      - "kanban-worker"
     discord_enabled: false
-    discord_require_mention: false
+    discord_require_mention: true
     discord_home_channel: ""
     fallback_providers:
       - provider: "custom"
@@ -247,6 +247,51 @@ hermes_profiles:
     discord_enabled: true
     discord_require_mention: true
     discord_home_channel: "1501437705236643902"
+    fallback_providers:
+      - provider: "custom"
+        base_url: "{{ hermes_litellm_base_url }}"
+        model: "use-thinking"
+  - name: rachel
+    gateway_enabled: false
+    provider: "custom"
+    base_url: "{{ hermes_litellm_base_url }}"
+    model: "use-chat"
+    cli_toolsets:
+      - "hermes-cli"
+      - "kanban-worker"
+    discord_enabled: false
+    discord_require_mention: true
+    discord_home_channel: ""
+    fallback_providers:
+      - provider: "custom"
+        base_url: "{{ hermes_litellm_base_url }}"
+        model: "use-thinking"
+  - name: financial-advisor
+    gateway_enabled: false
+    provider: "custom"
+    base_url: "{{ hermes_litellm_base_url }}"
+    model: "use-thinking"
+    cli_toolsets:
+      - "hermes-cli"
+      - "kanban-worker"
+    discord_enabled: false
+    discord_require_mention: true
+    discord_home_channel: ""
+    fallback_providers:
+      - provider: "custom"
+        base_url: "{{ hermes_litellm_base_url }}"
+        model: "use-chat"
+  - name: writer
+    gateway_enabled: false
+    provider: "custom"
+    base_url: "{{ hermes_litellm_base_url }}"
+    model: "use-chat"
+    cli_toolsets:
+      - "hermes-cli"
+      - "kanban-worker"
+    discord_enabled: false
+    discord_require_mention: true
+    discord_home_channel: ""
     fallback_providers:
       - provider: "custom"
         base_url: "{{ hermes_litellm_base_url }}"
@@ -297,7 +342,8 @@ hermes_nginx_auth_user: "admin"
 # vault_hermes_openrouter_api_key      — optional fallback provider key
 # vault_hermes_dashboard_password      — REQUIRED if hermes_nginx_auth_enable: true
 # vault_hermes_telegram_bot_token      — if any profile enables telegram
-# vault_hermes_discord_tokens.chat     — Discord bot token for chat ingress profile
+# vault_hermes_discord_tokens.admin    — Discord bot token for admin gateway profile
+# vault_hermes_discord_tokens.jessica  — Discord bot token for jessica gateway profile
 # vault_hermes_discord_tokens.<name>   — optional token for future gateway-enabled profile bots
 # vault_hermes_slack_bot_token         — if any profile enables slack
 # vault_hermes_slack_app_token         — if any profile enables slack
