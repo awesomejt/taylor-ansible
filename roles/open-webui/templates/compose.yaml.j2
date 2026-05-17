@@ -10,6 +10,7 @@ services:
       TASK_MODEL: "{{ openwebui_task_model }}"
       TASK_MODEL_EXTERNAL: "{{ openwebui_task_model_external }}"
       ENABLE_SEARCH_QUERY_GENERATION: "{{ openwebui_search_query_generation_enabled | string | lower }}"
+      BYPASS_WEB_SEARCH_WEB_LOADER: "{{ openwebui_bypass_web_search_web_loader | string | lower }}"
       ENABLE_LDAP: "{{ openwebui_auth_ldap_enabled | string | lower }}"
       LDAP_SERVER_LABEL: "{{ openwebui_ldap_server_label }}"
       LDAP_SERVER_HOST: "{{ openwebui_ldap_server_host }}"

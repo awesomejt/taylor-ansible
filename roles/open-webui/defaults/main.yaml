@@ -59,6 +59,9 @@ openwebui_searxng_query_url: "http://searxng:8080/search?q=<query>&format=json"
 openwebui_web_search_enabled: true
 openwebui_web_search_engine: "searxng"
 openwebui_search_query_generation_enabled: true
+# Some sites block automated fetches from the web loader; use search snippets
+# directly as web-search context to avoid no-source fallback.
+openwebui_bypass_web_search_web_loader: true
 
 # Qdrant connection (via shared traefik_proxy network)
 openwebui_qdrant_endpoint: "http://qdrant:6333"

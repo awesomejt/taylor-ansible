@@ -83,6 +83,16 @@
 - [x] Re-apply `openwebui.yaml` on Ansible host.
 - [x] Verify runtime task/query env vars in container.
 
+## Open WebUI No-Sources Web Fetch Mitigation (2026-05-16)
+
+- [x] Confirm runtime warnings show web loader fetch failures against result URLs.
+- [x] Set `BYPASS_WEB_SEARCH_WEB_LOADER=true` so Open WebUI uses search snippets when loader fetches fail.
+- [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`).
+- [x] Sync to Ansible host.
+- [x] Re-apply `openwebui.yaml` on Ansible host.
+- [x] Verify runtime env includes `BYPASS_WEB_SEARCH_WEB_LOADER=true`.
+- [ ] Re-test in Open WebUI UI with a fresh chat prompt and confirm citations/sources appear.
+
 ## LiteLLM + Open WebUI Provider Audit (2026-05-16)
 
 - [x] Verify live oMLX model inventories on primary (`192.168.50.93`) and secondary (`192.168.50.94`) with vault API key.
