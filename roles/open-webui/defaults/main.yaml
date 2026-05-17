@@ -51,6 +51,8 @@ openwebui_openai_api_keys:
 
 # SearXNG connection (via shared traefik_proxy network)
 openwebui_searxng_query_url: "http://searxng:8080/search?q=<query>&format=json"
+openwebui_web_search_enabled: true
+openwebui_web_search_engine: "searxng"
 
 # Qdrant connection (via shared traefik_proxy network)
 openwebui_qdrant_endpoint: "http://qdrant:6333"

@@ -64,6 +64,15 @@
 - [x] Decide access-control approach for AI services that do not expose native LDAP auth (SearXNG, Qdrant, Ollama): keep network-only exposure behind Traefik/internal network unless a free auth proxy is added.
 - [x] Apply any newly LDAP/SSO-wired AI service playbooks on the Ansible host after local validation.
 
+## Open WebUI Web Search Fix (2026-05-16)
+
+- [x] Confirm Open WebUI image expects `ENABLE_WEB_SEARCH` / `WEB_SEARCH_ENGINE` keys.
+- [x] Update Open WebUI compose template to set current web-search keys (and keep legacy keys for compatibility).
+- [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`).
+- [x] Sync to Ansible host.
+- [x] Re-apply `openwebui.yaml` on Ansible host.
+- [x] Verify runtime env and SearXNG connectivity from Open WebUI container.
+
 ## LiteLLM + Open WebUI Provider Audit (2026-05-16)
 
 - [x] Verify live oMLX model inventories on primary (`192.168.50.93`) and secondary (`192.168.50.94`) with vault API key.

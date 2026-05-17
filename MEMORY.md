@@ -18,6 +18,8 @@
 - AI auth capability snapshot: Open WebUI upstream includes native LDAP/OAuth config flags, n8n documents native LDAP support (edition-dependent), and LiteLLM Admin UI auth is SSO/OIDC-oriented rather than direct LDAP.
 - Open WebUI role now enables LDAP auth against LLDAP by default using env-based config (`ENABLE_LDAP`, `LDAP_SERVER_*`, `LDAP_SEARCH_*`, `LDAP_APP_*`) with bind password sourced from `vault_lldap_ldap_user_pass`.
 - Open WebUI LDAP rollout was applied from Ansible host on 2026-05-16 (`openwebui.yaml`), and container runtime env confirms `ENABLE_LDAP=true`, `LDAP_SERVER_HOST=lldap`, `LDAP_SEARCH_BASE=ou=people,dc=taylor,dc=lan`, `LDAP_USE_TLS=false`.
+- Open WebUI `v0.9.5` reads web search settings from `ENABLE_WEB_SEARCH` and `WEB_SEARCH_ENGINE` (not only legacy `ENABLE_RAG_WEB_SEARCH` / `RAG_WEB_SEARCH_ENGINE`).
+- Open WebUI compose template now sets both key sets for compatibility; this fixed stale-answer behavior where models responded from training data instead of triggering web search.
 - n8n LDAP was not implemented because official docs mark it as Self-hosted Business/Enterprise feature.
 - AnythingLLM/LiteLLM were not wired for direct LDAP in this pass because no confirmed free native LDAP path was identified in current stack docs.
 
