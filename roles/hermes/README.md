@@ -46,6 +46,7 @@ Key overridable variables:
 - `hermes_git_user_name` / `hermes_git_user_email`
 - `hermes_soul_repo` / `hermes_soul_files`
 - `hermes_cifs_shares`
+- `hermes_cifs_require_credentials` (if `false`, Hermes setup continues when CIFS creds are missing)
 - `hermes_omlx_base_url` / `hermes_omlx_api_key` (legacy fallback; prefer vault secret)
 - `hermes_litellm_base_url` (OpenAI-compatible LiteLLM endpoint, e.g. `http://192.168.50.91:4000/v1`)
 - `hermes_litellm_public_url` (routed LiteLLM endpoint for operator-facing tooling)

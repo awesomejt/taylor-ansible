@@ -183,6 +183,17 @@
       - hermes_cifs_credentials_file_stat.stat.exists
       - hermes_cifs_credentials_file_stat.stat.isreg
     fail_msg: "Missing CIFS credentials file at {{ hermes_cifs_credentials_file }}"
+  when:
+    - hermes_cifs_shares | length > 0
+    - hermes_cifs_require_credentials | default(true) | bool
+
+- name: Skip CIFS mounts when credentials file is missing and mounts are optional
+  ansible.builtin.debug:
+    msg: "Skipping Hermes CIFS mounts because {{ hermes_cifs_credentials_file }} is missing and hermes_cifs_require_credentials is false"
+  when:
+    - hermes_cifs_shares | length > 0
+    - not (hermes_cifs_credentials_file_stat.stat.exists and hermes_cifs_credentials_file_stat.stat.isreg)
+    - not (hermes_cifs_require_credentials | default(true) | bool)
 
 - name: Configure and mount Hermes CIFS shares
   ansible.posix.mount:
@@ -192,6 +203,10 @@
     opts: "{{ item.opts }}"
     state: mounted
   loop: "{{ hermes_cifs_shares }}"
+  when:
+    - hermes_cifs_shares | length > 0
+    - hermes_cifs_credentials_file_stat.stat.exists
+    - hermes_cifs_credentials_file_stat.stat.isreg
 
 - name: Ensure Hermes config directory exists
   ansible.builtin.file:

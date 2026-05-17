@@ -171,6 +171,7 @@ hermes_ollama_base_url: "{{ hermes_omlx_macmini_url }}"
 # Legacy fallback only; store the real key in vault_hermes_omlx_api_key.
 hermes_omlx_api_key: "example"
 
+hermes_cifs_require_credentials: false
 hermes_cifs_credentials_file: "/etc/samba/credentials/nas"
 hermes_cifs_shares:
   - path: "/mnt/hermes"

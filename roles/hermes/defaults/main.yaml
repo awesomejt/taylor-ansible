@@ -133,6 +133,7 @@ hermes_omlx_monitor_heartbeat_hour: "09"
 hermes_omlx_monitor_heartbeat_minute: "00"
 
 # CIFS mounts for shared Hermes content.
+hermes_cifs_require_credentials: true
 hermes_cifs_credentials_file: "/etc/samba/credentials/nas"
 hermes_cifs_shares:
   - path: "/mnt/hermes"

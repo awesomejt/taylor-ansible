@@ -10,6 +10,7 @@
 - Hermes profile `.env` now exports routed AI stack endpoints for LiteLLM, SearXNG, Open WebUI, AnythingLLM, n8n, Qdrant, and Ollama.
 - LiteLLM remains the default model provider for all Hermes profiles via `hermes_litellm_base_url`.
 - Added `/usr/local/bin/hermes-rag-query` utility (deployed by `roles/hermes`) to query shared Qdrant web-memory vectors from the Hermes host.
+- Hermes CIFS mounting can now be non-blocking via `hermes_cifs_require_credentials: false`, allowing Hermes deployment when NAS credentials are not yet staged.
 
 ### Harbor Migration + Registry Archive (2026-05-16)
 

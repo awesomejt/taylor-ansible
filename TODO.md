@@ -17,6 +17,7 @@
 - [x] Add Hermes vars for routed AI stack endpoints (LiteLLM, SearXNG, Open WebUI, AnythingLLM, n8n, Qdrant, Ollama).
 - [x] Expose AI stack endpoint and RAG variables in rendered Hermes profile `.env` files.
 - [x] Add `hermes-rag-query` helper utility for querying shared Qdrant web-memory vectors.
+- [x] Make CIFS mount step non-blocking when NAS credentials are not present (`hermes_cifs_require_credentials: false`).
 - [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`) — syntax check passed; ansible-lint remains at existing Hermes-role baseline failures.
 - [ ] Sync to Ansible host.
 - [ ] Run `hermes.yaml` on Ansible host.
