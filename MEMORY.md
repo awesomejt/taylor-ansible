@@ -7,6 +7,7 @@
 - New common vault secret key required: `vault_harbor_db_password` (placeholder added to `vars/common/example-secrets.yaml`).
 - Applied from Ansible host on 2026-05-17: Harbor route checks passed (`harbor.taylor.lan` -> 200, `/v2/` -> 401 expected for unauthenticated API).
 - Harbor API LDAP config request currently returns 422 on deployed Harbor version, so LDAP should be finalized manually in Harbor UI Authentication settings.
+- Harbor installer was bumped to `v2.15.1`; upstream `harbor.yml.tmpl` still uses `_version: 2.15.0`, so role keeps `harbor_config_version: "2.15.0"`.
 
 ### Kanban Service (Vikunja) Added (2026-05-16)
 

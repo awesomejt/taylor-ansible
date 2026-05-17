@@ -8,7 +8,7 @@ harbor_systemd_unit_path: "/etc/systemd/system/{{ harbor_service_name }}"
 harbor_compose_file: "{{ harbor_install_dir }}/docker-compose.yml"
 harbor_compose_override_file: "{{ harbor_install_dir }}/docker-compose.override.yml"
 
-harbor_version: "2.15.0"
+harbor_version: "2.15.1"
 harbor_installer_url: "https://github.com/goharbor/harbor/releases/download/v{{ harbor_version }}/harbor-online-installer-v{{ harbor_version }}.tgz"
 harbor_installer_archive: "{{ harbor_project_dir }}/harbor-online-installer-v{{ harbor_version }}.tgz"
 
