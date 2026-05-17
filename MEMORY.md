@@ -11,6 +11,7 @@
 - LiteLLM remains the default model provider for all Hermes profiles via `hermes_litellm_base_url`.
 - Added `/usr/local/bin/hermes-rag-query` utility (deployed by `roles/hermes`) to query shared Qdrant web-memory vectors from the Hermes host.
 - Hermes CIFS mounting can now be non-blocking via `hermes_cifs_require_credentials: false`, allowing Hermes deployment when NAS credentials are not yet staged.
+- Global `~/.hermes/.env` and `~/.hermes/config.yaml` patch tasks are now conditional on file existence so profile-only setups do not fail.
 
 ### Harbor Migration + Registry Archive (2026-05-16)
 

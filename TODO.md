@@ -18,6 +18,7 @@
 - [x] Expose AI stack endpoint and RAG variables in rendered Hermes profile `.env` files.
 - [x] Add `hermes-rag-query` helper utility for querying shared Qdrant web-memory vectors.
 - [x] Make CIFS mount step non-blocking when NAS credentials are not present (`hermes_cifs_require_credentials: false`).
+- [x] Guard global `~/.hermes/.env` and `~/.hermes/config.yaml` patch steps so profile-only deployments do not fail when those files are absent.
 - [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`) — syntax check passed; ansible-lint remains at existing Hermes-role baseline failures.
 - [ ] Sync to Ansible host.
 - [ ] Run `hermes.yaml` on Ansible host.

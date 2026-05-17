@@ -319,13 +319,26 @@
 
 # --- Global default Hermes config (used when no profile is specified) ---
 
+- name: Check whether global Hermes .env exists
+  ansible.builtin.stat:
+    path: "{{ hermes_config_dir }}/.env"
+  register: hermes_global_env_stat
+
+- name: Check whether global Hermes config.yaml exists
+  ansible.builtin.stat:
+    path: "{{ hermes_config_dir }}/config.yaml"
+  register: hermes_global_config_stat
+
 - name: Ensure SEARXNG_URL is set in global Hermes .env
   ansible.builtin.lineinfile:
     path: "{{ hermes_config_dir }}/.env"
     regexp: '^SEARXNG_URL='
     line: "SEARXNG_URL={{ hermes_searxng_url }}"
     create: false
-  when: hermes_config_dir is defined
+  when:
+    - hermes_config_dir is defined
+    - hermes_global_env_stat.stat.exists
+    - hermes_global_env_stat.stat.isreg
 
 - name: Ensure web search backend is configured in global Hermes config.yaml
   ansible.builtin.blockinfile:
@@ -336,7 +349,10 @@
         backend: "{{ hermes_web_backend }}"
         search_backend: "{{ hermes_web_search_backend }}"
     create: false
-  when: hermes_config_dir is defined
+  when:
+    - hermes_config_dir is defined
+    - hermes_global_config_stat.stat.exists
+    - hermes_global_config_stat.stat.isreg
 
 - name: Deploy GitHub credential file for Hermes user
   ansible.builtin.template:
