@@ -43,6 +43,7 @@
 - [x] Update role/docs memory references for ldap-only naming.
 - [x] Define soft/hard archive workflow in `archive/README.md`.
 - [x] Mark OpenClaw as dormant and document reactivation runbook in `archive/openclaw.md`.
+- [x] Hard-archive OpenClaw by moving playbook/role into `archive/` paths and removing active top-level README run instructions.
 
 ## LiteLLM + Open WebUI Provider Audit (2026-05-16)
 

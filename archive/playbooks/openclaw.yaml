@@ -2,7 +2,7 @@
 # Dormant playbook: kept for future reuse.
 # See archive/openclaw.md for reactivation workflow.
 - name: OpenClaw Setup
-  hosts: openclaw
+  hosts: "{{ target | default('archived_openclaw') }}"
   become: true
   gather_facts: true
   vars_files:

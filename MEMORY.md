@@ -17,8 +17,10 @@
 
 ### Dormant Component Archiving (2026-05-16)
 
-- OpenClaw is currently treated as a dormant component (soft-archived, not deleted).
-- Archive workflow is documented in `archive/README.md` with OpenClaw-specific reactivation notes in `archive/openclaw.md`.
+- OpenClaw is currently hard-archived (still retained, but removed from active playbook/role paths).
+- OpenClaw paths were moved to `archive/playbooks/openclaw.yaml` and `archive/roles/openclaw/`.
+- Inventory target for archived OpenClaw is `archived_openclaw`.
+- Archive workflow is documented in `archive/README.md` with component reactivation notes in `archive/openclaw.md`.
 
 ### Compose Ops Services Added (2026-05-16)
 

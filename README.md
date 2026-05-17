@@ -27,12 +27,6 @@ Secrets for this stack are loaded from vars/common/secrets.yaml on the control h
 
 OpenClaw automation is currently dormant (kept for future use). See `archive/README.md` for archive workflow and `archive/openclaw.md` for current status/reactivation notes.
 
-Run OpenClaw setup against hosts in the `openclaw` inventory group when intentionally reactivating it:
-
-```bash
-ansible-playbook -i inventory.ini openclaw.yaml
-```
-
 Run Prometheus, Grafana, pgAdmin, and Portainer on the consolidated Docker host:
 
 ```bash
@@ -73,20 +67,7 @@ The step-ca role supports automated non-interactive initialization when vaulted
 password variables are present. See `roles/step-ca/README.md` for full apply
 workflow, validation commands, and remaining manual backup steps.
 
-The OpenClaw playbook follows the project role pattern and uses:
-
-- `roles/openclaw/tasks/main.yaml`
-- `roles/openclaw/defaults/main.yaml`
-
-Override role defaults with `-e` when needed.
-
-Override the CLI npm package or setup command when needed:
-
-```bash
-ansible-playbook -i inventory.ini openclaw.yaml \
-	-e openclaw_cli_npm_package=@your-org/openclaw-cli \
-	-e 'openclaw_setup_command=openclaw install --yes --no-onboarding'
-```
+OpenClaw is hard-archived in `archive/playbooks/openclaw.yaml` and `archive/roles/openclaw/`; use the reactivation steps in `archive/openclaw.md` when needed.
 
 The DNS role installs Technitium DNS Server. Zone and record management is optional and disabled by default. See `roles/technitium-dns/README.md` and `examples/dns-setup-example.yaml` for details on enabling automated DNS zone management, including RFC2136 update ACLs for ExternalDNS.
 

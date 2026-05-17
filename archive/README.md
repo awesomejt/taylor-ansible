@@ -31,3 +31,7 @@ When reactivating an archived component:
 4. Sync with `./sync-to-ansible.sh`.
 5. Run the playbook from `~/ansible` on `192.168.50.11`.
 6. Verify runtime health endpoints.
+
+## Current Hard-Archived Components
+
+- OpenClaw: `archive/playbooks/openclaw.yaml` + `archive/roles/openclaw/`
