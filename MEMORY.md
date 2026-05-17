@@ -11,9 +11,14 @@
 
 ### LDAP Playbook + Role Alignment (2026-05-16)
 
-- Canonical LDAP playbook name is now `ldap.yaml`; `lldap.yaml` remains as a compatibility playbook.
+- Canonical LDAP playbook name is now `ldap.yaml`; legacy `lldap.yaml` compatibility playbook was retired during cleanup.
 - LLDAP role UI proxying is Traefik-based (no active nginx sidecar in compose).
 - Inventory now includes `ldap` as a child group of `lldap` for playbook target clarity.
+
+### Dormant Component Archiving (2026-05-16)
+
+- OpenClaw is currently treated as a dormant component (soft-archived, not deleted).
+- Archive workflow is documented in `archive/README.md` with OpenClaw-specific reactivation notes in `archive/openclaw.md`.
 
 ### Compose Ops Services Added (2026-05-16)
 
@@ -72,7 +77,7 @@
 
 - 2026-05-15: Technitium DNS Server is currently pinned to version 15.2 in `roles/technitium-dns/defaults/main.yaml`; upstream site also reports 15.2 as the latest version. The upgrade flow now creates backups under `/var/backups/technitium` before running the installer.
 
-- 2026-05-16: LDAP playbook naming now uses `ldap.yaml` (canonical) while `lldap.yaml` remains for compatibility; both deploy `roles/lldap` on the Docker host.
+- 2026-05-16: LDAP playbook naming uses `ldap.yaml` (canonical) for deploying `roles/lldap` on the Docker host.
 - 2026-05-16: LLDAP now runs on 192.168.50.50 (`ldap.taylor.lan`) with Traefik host-based UI routing instead of an nginx sidecar; LDAP protocol access remains direct on TCP 3890 for app integrations.
 - 2026-05-16: Applied `ldap.yaml` from Ansible host; DB/user were present on `postgres_prod` and host checks from 192.168.50.11 passed for both UI (`http://ldap.taylor.lan` = 200) and LDAP TCP (`ldap.taylor.lan:3890` open).
 

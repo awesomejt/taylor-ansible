@@ -77,11 +77,8 @@ From the Ansible host (`192.168.50.11`):
 ```bash
 ssh 192.168.50.11
 cd ~/ansible
-ansible-playbook lldap.yaml --vault-password-file ~/avpass
 ansible-playbook ldap.yaml --vault-password-file ~/avpass
 ```
-
-`ldap.yaml` is the canonical playbook name. `lldap.yaml` remains as a compatibility wrapper.
 
 ## Initial Login
 
@@ -121,6 +118,5 @@ roles/lldap/
 │   └── main.yaml           # Directories, templates, systemd, health check
 └── templates/
     ├── compose.yaml.j2     # Docker Compose (lldap + Traefik labels)
-    ├── lldap.service.j2    # systemd unit
-    └── nginx.conf.j2       # Legacy template (unused)
+    └── lldap.service.j2    # systemd unit
 ```

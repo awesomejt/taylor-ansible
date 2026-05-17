@@ -1,4 +1,6 @@
 ---
+# Dormant playbook: kept for future reuse.
+# See archive/openclaw.md for reactivation workflow.
 - name: OpenClaw Setup
   hosts: openclaw
   become: true

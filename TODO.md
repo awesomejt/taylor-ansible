@@ -36,6 +36,14 @@
 - [x] Run playbook on Ansible host.
 - [x] Verify cron/logrotate installation and run validation once manually.
 
+## Cleanup + Archiving Hygiene (2026-05-16)
+
+- [x] Remove deprecated LDAP compatibility playbook (`lldap.yaml`) and keep `ldap.yaml` as sole entrypoint.
+- [x] Remove unused legacy LLDAP nginx template (`roles/lldap/templates/nginx.conf.j2`).
+- [x] Update role/docs memory references for ldap-only naming.
+- [x] Define soft/hard archive workflow in `archive/README.md`.
+- [x] Mark OpenClaw as dormant and document reactivation runbook in `archive/openclaw.md`.
+
 ## LiteLLM + Open WebUI Provider Audit (2026-05-16)
 
 - [x] Verify live oMLX model inventories on primary (`192.168.50.93`) and secondary (`192.168.50.94`) with vault API key.
@@ -99,7 +107,7 @@
 - [x] Review existing role and playbook scaffolding.
 - [x] Migrate LLDAP web routing from nginx sidecar to Traefik labels/network.
 - [x] Ensure playbook provisions PostgreSQL database/user on `postgres_prod`.
-- [x] Add canonical LDAP playbook name `ldap.yaml` (keep `lldap.yaml` compatibility playbook).
+- [x] Add canonical LDAP playbook name `ldap.yaml` and retire legacy `lldap.yaml` compatibility playbook.
 - [x] Add sanitized LLDAP secret placeholders in `vars/common/example-secrets.yaml`.
 - [x] Add LLDAP secrets to vaulted `vars/common/secrets.yaml` on 192.168.50.11.
 - [x] Validate with syntax check.

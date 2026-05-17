@@ -25,7 +25,9 @@ ansible-playbook -i inventory.ini openwebui.yaml
 The AI stack deploys Open WebUI, LiteLLM, Ollama, AnythingLLM, n8n, Qdrant, SearXNG, and Valkey on the same VM.
 Secrets for this stack are loaded from vars/common/secrets.yaml on the control host, with vars/common/example-secrets.yaml as the fallback template.
 
-Run OpenClaw setup against hosts in the `openclaw` inventory group:
+OpenClaw automation is currently dormant (kept for future use). See `archive/README.md` for archive workflow and `archive/openclaw.md` for current status/reactivation notes.
+
+Run OpenClaw setup against hosts in the `openclaw` inventory group when intentionally reactivating it:
 
 ```bash
 ansible-playbook -i inventory.ini openclaw.yaml

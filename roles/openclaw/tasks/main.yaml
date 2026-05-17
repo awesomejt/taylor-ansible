@@ -46,7 +46,7 @@
     state: present
   when: openclaw_use_deadsnakes_ppa | bool
 
-- name: Install Python {{ openclaw_python_version }} runtime packages
+- name: Install Python runtime packages for version {{ openclaw_python_version }}
   ansible.builtin.apt:
     name:
       - "python{{ openclaw_python_version }}"
@@ -74,13 +74,13 @@
   args:
     creates: /etc/apt/keyrings/nodesource.gpg
 
-- name: Add NodeSource repository for Node.js {{ openclaw_nodejs_major_version }}.x
+- name: Add NodeSource repository for Node.js major version {{ openclaw_nodejs_major_version }}
   ansible.builtin.apt_repository:
     repo: "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_{{ openclaw_nodejs_major_version }}.x nodistro main"
     filename: nodesource
     state: present
 
-- name: Install Node.js {{ openclaw_nodejs_major_version }} LTS
+- name: Install Node.js LTS for major version {{ openclaw_nodejs_major_version }}
   ansible.builtin.apt:
     name: nodejs
     state: present
