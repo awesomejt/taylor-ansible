@@ -3,10 +3,17 @@
 - Added `kanban.yaml` playbook using the new `roles/vikunja` role.
 - Vikunja runs on the consolidated Docker host (`192.168.50.50`) and is routed via Traefik at `kanban.taylor.lan`.
 - Inventory group `kanban` now targets `192.168.50.50`.
-- Compose config uses `vikunja/vikunja:latest` with sqlite persisted at `/opt/vikunja/db` and files at `/opt/vikunja/files`.
+- Compose config uses `vikunja/vikunja:latest` with PostgreSQL on `192.168.50.15` (database `vikunja`) and files persisted at `/opt/vikunja/files`.
 - `VIKUNJA_SERVICE_ENABLEREGISTRATION` is disabled by default (`false`).
+- Vikunja authentication now supports both local auth and LDAP auth against LLDAP (`ldap.taylor.lan:3890`).
 - Added `vault_vikunja_service_secret` placeholder to `vars/common/example-secrets.yaml`.
 - Deployment verified from host with routed response `kanban.taylor.lan -> 200`.
+
+### LDAP Playbook + Role Alignment (2026-05-16)
+
+- Canonical LDAP playbook name is now `ldap.yaml`; `lldap.yaml` remains as a compatibility playbook.
+- LLDAP role UI proxying is Traefik-based (no active nginx sidecar in compose).
+- Inventory now includes `ldap` as a child group of `lldap` for playbook target clarity.
 
 ### Compose Ops Services Added (2026-05-16)
 

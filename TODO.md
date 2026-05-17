@@ -94,18 +94,19 @@
 - [x] Confirm the backup was created before upgrade.
 - [x] Commit changes locally.
 
-## LLDAP Role + Playbook (2026-05-15)
+## LLDAP Role + Playbook (2026-05-15/16)
 
 - [x] Review existing role and playbook scaffolding.
-- [x] Fix compose dependency ordering for lldap/nginx services.
+- [x] Migrate LLDAP web routing from nginx sidecar to Traefik labels/network.
 - [x] Ensure playbook provisions PostgreSQL database/user on `postgres_prod`.
+- [x] Add canonical LDAP playbook name `ldap.yaml` (keep `lldap.yaml` compatibility playbook).
 - [x] Add sanitized LLDAP secret placeholders in `vars/common/example-secrets.yaml`.
 - [x] Add LLDAP secrets to vaulted `vars/common/secrets.yaml` on 192.168.50.11.
 - [x] Validate with syntax check.
 - [x] Validate with ansible-lint.
 - [x] Sync to Ansible host.
-- [x] Run playbook on Ansible host.
-- [x] Verify UI and LDAP endpoints by IP (`http://192.168.50.51`, `ldap://192.168.50.51:3890`).
+- [x] Run playbook on Ansible host (`ldap.yaml`).
+- [x] Verify UI and LDAP endpoints by IP (`http://192.168.50.50`, `ldap://192.168.50.50:3890`).
 - [x] Verify DNS-based endpoint from Ansible host (`ldap.taylor.lan`) after DNS record propagation/fix.
 
 ## HashiCorp Vault Role + Playbook (2026-05-14)
@@ -297,22 +298,22 @@
 
 ### Phase 3: Playbook Refactoring
 
-- [ ] **registry.yaml**: Update inventory target or create consolidated host target; keep role logic unchanged
-- [ ] **lldap.yaml**: 
-  - [ ] Remove embedded postgres provisioning from first play (now external)
-  - [ ] Change lldap_db_host to external postgres_prod via secrets
-  - [ ] Consolidate deploy location
-- [ ] **openwebui.yaml**:
-  - [ ] Remove postgres service from Docker Compose (move to separate postgres_prod deployment if not exists)
-  - [ ] Change compose DATABASE_URL to external postgres_prod host
-  - [ ] Consolidate deploy location
-  - [ ] Ensure LiteLLM points to external Ollama endpoint on `192.168.50.51`
-- [ ] **Create traefik.yaml** (new):
-  - [ ] Traefik service on consolidated host
-  - [ ] Routing to registry, lldap, openwebui, anythingllm, n8n, etc.
+- [x] **registry.yaml**: Update inventory target or create consolidated host target; keep role logic unchanged
+- [x] **ldap/lldap playbooks**:
+  - [x] Remove embedded postgres provisioning from the prior LLDAP-only deployment model
+  - [x] Change lldap DB backend to external `postgres_prod`
+  - [x] Consolidate deploy location on `192.168.50.50`
+- [x] **openwebui.yaml**:
+  - [x] Remove postgres service from Docker Compose (external postgres_prod)
+  - [x] Change compose DATABASE_URL to external postgres_prod host
+  - [x] Consolidate deploy location
+  - [x] Ensure LiteLLM points to external Ollama endpoint on `192.168.50.51`
+- [x] **Create traefik.yaml** (new):
+  - [x] Traefik service on consolidated host
+  - [x] Routing to registry, ldap/lldap, openwebui, anythingllm, n8n, etc.
   - [ ] TLS cert management via step-ca role pattern
-  - [ ] Dashboard UI on traefik.taylor.lan (optional)
-- [ ] Create modular compose templates for consolidated host organization
+  - [x] Dashboard UI on traefik.taylor.lan
+- [x] Create modular compose templates for consolidated host organization
 
 ### Phase 4: Validation & Testing (Local)
 
