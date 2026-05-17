@@ -16,6 +16,10 @@
 - Inventory now includes `ldap` as a child group of `lldap` for playbook target clarity.
 - Grafana and pgAdmin Compose roles are now wired for LDAP authentication against LLDAP (`ldap://lldap:3890`) while keeping local/internal fallback logins enabled.
 - AI auth capability snapshot: Open WebUI upstream includes native LDAP/OAuth config flags, n8n documents native LDAP support (edition-dependent), and LiteLLM Admin UI auth is SSO/OIDC-oriented rather than direct LDAP.
+- Open WebUI role now enables LDAP auth against LLDAP by default using env-based config (`ENABLE_LDAP`, `LDAP_SERVER_*`, `LDAP_SEARCH_*`, `LDAP_APP_*`) with bind password sourced from `vault_lldap_ldap_user_pass`.
+- Open WebUI LDAP rollout was applied from Ansible host on 2026-05-16 (`openwebui.yaml`), and container runtime env confirms `ENABLE_LDAP=true`, `LDAP_SERVER_HOST=lldap`, `LDAP_SEARCH_BASE=ou=people,dc=taylor,dc=lan`, `LDAP_USE_TLS=false`.
+- n8n LDAP was not implemented because official docs mark it as Self-hosted Business/Enterprise feature.
+- AnythingLLM/LiteLLM were not wired for direct LDAP in this pass because no confirmed free native LDAP path was identified in current stack docs.
 
 ### Dormant Component Archiving (2026-05-16)
 

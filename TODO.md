@@ -51,18 +51,18 @@
 - [x] Confirm Vikunja LDAP remains enabled against LLDAP.
 - [x] Add Grafana LDAP auth wiring to role defaults/templates/tasks.
 - [x] Add pgAdmin LDAP auth wiring to role defaults/templates/tasks.
-- [ ] Evaluate whether Open WebUI (chat.taylor.lan) can use LDAP authentication via LLDAP and wire it if supported.
+- [x] Evaluate whether Open WebUI (chat.taylor.lan) can use LDAP authentication via LLDAP and wire it if supported.
 - [x] Validate LDAP-related playbook changes with syntax check.
 - [x] Validate LDAP-related playbook changes with ansible-lint.
 
 ## AI Services LDAP/LLDAP Compatibility Follow-Up (2026-05-16)
 
-- [ ] Confirm Open WebUI LDAP support for the deployed image tag and wire role vars/templates if native LDAP is available in this version.
-- [ ] Evaluate AnythingLLM auth options (native LDAP vs SSO) and document whether LLDAP is directly supported or requires an external IdP bridge.
-- [ ] Evaluate n8n LDAP capability for the deployed edition and wire LLDAP settings if available.
-- [ ] Evaluate LiteLLM Admin UI SSO integration and document an LLDAP-compatible path (for example, LLDAP via OIDC broker) when direct LDAP is not supported.
-- [ ] Decide access-control approach for AI services that do not expose native LDAP auth (SearXNG, Qdrant, Ollama): service-native auth, network-only restriction, or forward-auth.
-- [ ] Apply any newly LDAP/SSO-wired AI service playbooks on the Ansible host after local validation.
+- [x] Confirm Open WebUI LDAP support for the deployed image tag and wire role vars/templates if native LDAP is available in this version.
+- [x] Evaluate AnythingLLM auth options (native LDAP vs SSO) and document whether LLDAP is directly supported or requires an external IdP bridge (no confirmed free native LDAP path in current docs).
+- [x] Evaluate n8n LDAP capability for the deployed edition and wire LLDAP settings if available (skipped: docs mark LDAP as Self-hosted Business/Enterprise feature).
+- [x] Evaluate LiteLLM Admin UI SSO integration and document an LLDAP-compatible path (for example, LLDAP via OIDC broker) when direct LDAP is not supported (skipped for now: not a direct free LDAP path in current stack).
+- [x] Decide access-control approach for AI services that do not expose native LDAP auth (SearXNG, Qdrant, Ollama): keep network-only exposure behind Traefik/internal network unless a free auth proxy is added.
+- [x] Apply any newly LDAP/SSO-wired AI service playbooks on the Ansible host after local validation.
 
 ## LiteLLM + Open WebUI Provider Audit (2026-05-16)
 

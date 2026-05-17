@@ -5,6 +5,13 @@
       - ansible_facts['os_family'] == "Debian"
     fail_msg: "open-webui role currently supports Debian/Ubuntu only"
 
+- name: Ensure LDAP bind password is set when LDAP auth is enabled
+  ansible.builtin.assert:
+    that:
+      - openwebui_ldap_app_password != 'change-me'
+    fail_msg: "Set vault_lldap_ldap_user_pass in vars/common/secrets.yaml before enabling Open WebUI LDAP auth"
+  when: openwebui_auth_ldap_enabled | bool
+
 - name: Ensure Open WebUI directories exist
   ansible.builtin.file:
     path: "{{ item }}"

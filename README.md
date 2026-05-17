@@ -24,6 +24,8 @@ ansible-playbook -i inventory.ini openwebui.yaml
 
 The AI stack deploys Open WebUI, LiteLLM, Ollama, AnythingLLM, n8n, Qdrant, SearXNG, and Valkey on the same VM.
 Secrets for this stack are loaded from vars/common/secrets.yaml on the control host, with vars/common/example-secrets.yaml as the fallback template.
+Open WebUI is configured for LDAP login against LLDAP in this repo's open-source/default deployment path.
+n8n LDAP is not enabled here because upstream docs mark LDAP as a Business/Enterprise feature.
 
 OpenClaw automation is currently dormant (kept for future use). See `archive/README.md` for archive workflow and `archive/openclaw.md` for current status/reactivation notes.
 

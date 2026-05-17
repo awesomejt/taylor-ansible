@@ -12,6 +12,24 @@ openwebui_data_dir: "{{ openwebui_project_dir }}/data"
 
 openwebui_webui_base_url: "http://chat.taylor.lan"
 
+# Authentication: LDAP (free, built-in Open WebUI capability)
+openwebui_auth_ldap_enabled: true
+openwebui_ldap_server_label: "LLDAP"
+openwebui_ldap_server_host: "lldap"
+openwebui_ldap_server_port: 3890
+openwebui_ldap_attribute_for_mail: "mail"
+openwebui_ldap_attribute_for_username: "uid"
+openwebui_ldap_search_base: "ou=people,dc=taylor,dc=lan"
+openwebui_ldap_search_filter: ""
+openwebui_ldap_app_dn: "cn=admin,ou=people,dc=taylor,dc=lan"
+openwebui_ldap_app_password: "{{ vault_lldap_ldap_user_pass | default('change-me') }}"
+openwebui_ldap_use_tls: false
+openwebui_ldap_validate_cert: false
+openwebui_ldap_ciphers: "ALL"
+openwebui_ldap_group_management_enabled: false
+openwebui_ldap_group_creation_enabled: false
+openwebui_ldap_attribute_for_groups: "memberOf"
+
 # LiteLLM connection (via shared traefik_proxy network)
 openwebui_openai_base_url: "http://litellm:4000/v1"
 openwebui_openai_api_key: "{{ vault_litellm_master_key | default(vault_openwebui_litellm_master_key | default('change-me')) }}"
