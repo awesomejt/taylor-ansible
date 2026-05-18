@@ -33,7 +33,7 @@
 - [x] Sync to Ansible host.
 - [x] Run `hermes.yaml` on Ansible host.
 - [x] Verify Hermes CIFS mounts are active on Hermes host (`/mnt/hermes`, `/mnt/content`, `/mnt/recordings`).
-- [ ] Commit changes locally.
+- [x] Commit changes locally.
 
 ## Harbor Rollout + Registry Archive (2026-05-16)
 
