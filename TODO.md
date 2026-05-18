@@ -24,6 +24,17 @@
 - [x] Run `hermes.yaml` on Ansible host.
 - [x] Verify helper command on Hermes host (`hermes-rag-query "test query" --top-k 3`).
 
+## Hermes CIFS Vault Credential Wiring (2026-05-17)
+
+- [x] Wire `roles/hermes` to write `/etc/samba/credentials/nas` from vaulted `vault_hermes_cifs_username` and `vault_hermes_cifs_password`.
+- [x] Add sanitized CIFS placeholders to `vars/common/example-secrets.yaml`.
+- [x] Restore `hermes_cifs_require_credentials: true` in common vars now that CIFS secrets exist.
+- [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`) — syntax check passed; ansible-lint remains at existing Hermes-role baseline violations.
+- [x] Sync to Ansible host.
+- [x] Run `hermes.yaml` on Ansible host.
+- [x] Verify Hermes CIFS mounts are active on Hermes host (`/mnt/hermes`, `/mnt/content`, `/mnt/recordings`).
+- [ ] Commit changes locally.
+
 ## Harbor Rollout + Registry Archive (2026-05-16)
 
 - [x] Archive legacy Docker registry playbook and role under `archive/`.

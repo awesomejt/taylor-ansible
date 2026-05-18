@@ -172,6 +172,31 @@
     mode: "0755"
   loop: "{{ hermes_cifs_shares }}"
 
+- name: Ensure CIFS credentials directory exists
+  ansible.builtin.file:
+    path: "{{ hermes_cifs_credentials_file | dirname }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  when:
+    - hermes_cifs_shares | length > 0
+
+- name: Write Hermes CIFS credentials file from vault secrets
+  ansible.builtin.copy:
+    dest: "{{ hermes_cifs_credentials_file }}"
+    content: |
+      username={{ vault_hermes_cifs_username }}
+      password={{ vault_hermes_cifs_password }}
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  when:
+    - hermes_cifs_shares | length > 0
+    - (vault_hermes_cifs_username | default('') | length) > 0
+    - (vault_hermes_cifs_password | default('') | length) > 0
+
 - name: Verify CIFS credentials file exists
   ansible.builtin.stat:
     path: "{{ hermes_cifs_credentials_file }}"
@@ -182,7 +207,10 @@
     that:
       - hermes_cifs_credentials_file_stat.stat.exists
       - hermes_cifs_credentials_file_stat.stat.isreg
-    fail_msg: "Missing CIFS credentials file at {{ hermes_cifs_credentials_file }}"
+    fail_msg: >-
+      Missing CIFS credentials file at {{ hermes_cifs_credentials_file }}.
+      Set vault_hermes_cifs_username and vault_hermes_cifs_password in
+      vars/common/secrets.yaml or stage the credentials file manually.
   when:
     - hermes_cifs_shares | length > 0
     - hermes_cifs_require_credentials | default(true) | bool

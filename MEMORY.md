@@ -15,6 +15,14 @@
 - Applied from Ansible host on 2026-05-17: `hermes.yaml` completed on `192.168.50.52`; active gateways are `hermes-gateway-admin` and `hermes-gateway-jessica`.
 - Verified on host: admin profile env contains LiteLLM/SearXNG/Qdrant endpoint vars and `hermes-rag-query` returns results when sourced from profile `.env`.
 
+### Hermes CIFS Credential Enforcement Refresh (2026-05-17)
+
+- `roles/hermes` now writes `hermes_cifs_credentials_file` (`/etc/samba/credentials/nas`) from vaulted `vault_hermes_cifs_username` and `vault_hermes_cifs_password` when those keys are set.
+- Common vars switched back to `hermes_cifs_require_credentials: true` now that CIFS secrets are available.
+- `vars/common/example-secrets.yaml` now includes sanitized placeholders for the Hermes CIFS vault keys.
+- Applied from Ansible host on 2026-05-17: `hermes.yaml` completed on `192.168.50.52` with CIFS mount tasks changed.
+- Verified on host: `/mnt/hermes`, `/mnt/content`, and `/mnt/recordings` are mounted as CIFS with the managed credentials file.
+
 ### Harbor Migration + Registry Archive (2026-05-16)
 
 - Legacy Docker Distribution playbook/role was hard-archived to `archive/playbooks/registry.yaml` and `archive/roles/registry/`; reactivation runbook is `archive/registry.md`.

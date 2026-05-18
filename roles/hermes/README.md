@@ -12,7 +12,7 @@ Current scope (profile-first with legacy compatibility):
 - Configure Discord gateway environment settings
 - Configure AI stack endpoint environment settings (LiteLLM, SearXNG, Qdrant, Open WebUI, AnythingLLM, n8n, Ollama)
 - Install `hermes-rag-query` helper for querying shared web-memory vectors in Qdrant
-- Configure CIFS automount shares for Hermes content
+- Configure CIFS automount shares for Hermes content and render the credentials file from vaulted secrets when provided
 - Install and manage systemd services:
 	- `hermes-gateway-<profile>` for profiles where `gateway_enabled: true`
 	- `hermes-dashboard` (web dashboard)
@@ -73,3 +73,4 @@ Primary keys for this role:
 - `vault_hermes_omlx_api_key` (API key for OpenAI-compatible custom endpoints such as oMLX)
 - `vault_openwebui_litellm_master_key` (preferred key for LiteLLM-backed Hermes profiles)
 - `vault_hermes_discord_tokens` (required only for Discord-enabled gateway profiles)
+- `vault_hermes_cifs_username` / `vault_hermes_cifs_password` (used to write `hermes_cifs_credentials_file`)
