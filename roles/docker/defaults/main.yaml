@@ -1,4 +1,7 @@
 docker_primary_user: jason
+docker_additional_group_users:
+  - hermes
+docker_group_users: "{{ ([docker_primary_user] + docker_additional_group_users) | unique }}"
 docker_apt_arch_map:
   x86_64: amd64
   aarch64: arm64

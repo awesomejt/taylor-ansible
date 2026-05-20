@@ -16,6 +16,6 @@
       changed_when: false
       timeout: 600
   roles:
-    - updatess
+    - updates
     - common
     - docker

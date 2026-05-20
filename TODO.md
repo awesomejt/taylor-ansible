@@ -1,5 +1,28 @@
 # TODO
 
+## Docker Access On Hermes (2026-05-20)
+
+- [x] Update Docker role defaults/tasks to ensure both `jason` and `hermes` are added to the `docker` group when present.
+- [x] Ensure Hermes host is targeted by `docker.yaml` inventory group.
+- [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`) for Docker changes.
+- [x] Sync to Ansible host.
+- [x] Run `docker.yaml` on Ansible host for Hermes target.
+- [x] Verify Docker group membership and Docker CLI access on Hermes host.
+- [x] Commit changes locally.
+
+## Hermes Provider Fallback Chain Refresh (2026-05-19)
+
+- [x] Update Hermes profile config to keep LiteLLM primary for all profiles.
+- [x] Add Ollama local-model fallback for all Hermes profiles.
+- [x] Add OpenRouter cloud fallback after local options.
+- [x] Render explicit per-endpoint API keys so LiteLLM auth does not conflict with direct OpenAI fallback.
+- [x] Update Hermes secret examples/docs for OpenAI fallback key.
+- [x] Validate locally (`ansible-playbook --syntax-check`) for `hermes.yaml`.
+- [x] Sync to Ansible host.
+- [x] Run `hermes.yaml` on Ansible host.
+- [x] Verify rendered Hermes profile config shows the new fallback chain.
+- [ ] Stage `vault_hermes_openai_api_key` in `vars/common/secrets.yaml` on the Ansible host so direct OpenAI fallback renders ahead of OpenRouter.
+
 ## Hermes Profile Reset (2026-05-17)
 
 - [x] Align Hermes profiles to target set: `default`, `admin`, `coding`, `researcher`, `jessica`, `rachel`, `financial-advisor`, `writer`.

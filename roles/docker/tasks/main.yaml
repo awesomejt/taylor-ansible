@@ -54,11 +54,26 @@
     name: docker
     state: present
 
-- name: Add primary user to docker group
+- name: Check whether requested docker-group users exist
+  ansible.builtin.command: "id -u {{ item }}"
+  register: docker_group_user_lookup
+  changed_when: false
+  failed_when: false
+  loop: "{{ docker_group_users }}"
+
+- name: Add existing users to docker group
   ansible.builtin.user:
-    name: "{{ docker_primary_user }}"
+    name: "{{ item.item }}"
     groups: docker
     append: true
+  loop: "{{ docker_group_user_lookup.results }}"
+  when: item.rc == 0
+
+- name: Warn for docker-group users not found on host
+  ansible.builtin.debug:
+    msg: "Skipping docker group membership for missing user '{{ item.item }}'"
+  loop: "{{ docker_group_user_lookup.results }}"
+  when: item.rc != 0
 
 - name: Ensure docker service is enabled and running
   ansible.builtin.systemd:

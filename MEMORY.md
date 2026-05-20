@@ -5,10 +5,20 @@
 - `hermes_primary_profile`/dashboard target is `admin`.
 - Role now removes stale `hermes-gateway-<profile>.service` units when profile names are renamed or removed.
 
+### Docker Access On Hermes (2026-05-20)
+
+- `docker.yaml` role list now references `updates` (fixed previous typo `updatess` that blocked syntax/lint/apply).
+- Inventory group `docker` now includes `192.168.50.52` so Docker bootstrap can be applied directly to Hermes with `--limit hermes`.
+- `roles/docker` now manages `docker_group_users` (default: `jason` + `hermes`) and adds each existing user to the `docker` group.
+- Applied from Ansible host (`192.168.50.11`) on 2026-05-20: `ansible-playbook -i inventory.ini docker.yaml --limit hermes`.
+- Verified on host `hermes.taylor.lan`: both `jason` and `hermes` are in `docker` group and can run `docker ps` without root escalation.
+
 ### Hermes AI Stack Wiring Refresh (2026-05-17)
 
 - Hermes profile `.env` now exports routed AI stack endpoints for LiteLLM, SearXNG, Open WebUI, AnythingLLM, n8n, Qdrant, and Ollama.
 - LiteLLM remains the default model provider for all Hermes profiles via `hermes_litellm_base_url`.
+- Hermes profile model config now supports explicit `api_key` rendering so LiteLLM/custom endpoint auth can stay pinned to the LiteLLM key while cloud fallbacks use dedicated provider env vars.
+- Applied on 2026-05-20: all Hermes profiles now render a shared fallback order of LiteLLM primary -> Ollama local model -> OpenRouter cloud fallback; direct OpenAI fallback is templated but only renders when `vault_hermes_openai_api_key` is staged in Ansible vault.
 - Added `/usr/local/bin/hermes-rag-query` utility (deployed by `roles/hermes`) to query shared Qdrant web-memory vectors from the Hermes host.
 - Hermes CIFS mounting can now be non-blocking via `hermes_cifs_require_credentials: false`, allowing Hermes deployment when NAS credentials are not yet staged.
 - Global `~/.hermes/.env` and `~/.hermes/config.yaml` patch tasks are now conditional on file existence so profile-only setups do not fail.
