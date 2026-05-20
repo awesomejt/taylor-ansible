@@ -212,7 +212,7 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: ""
     fallback_providers:
-      - provider: "ollama"
+      - provider: "custom"
         base_url: "{{ hermes_ollama_url }}/v1"
         model: "{{ hermes_ollama_chat_model }}"
       - provider: "openai"
@@ -235,7 +235,7 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: "1500086740352766063"
     fallback_providers:
-      - provider: "ollama"
+      - provider: "custom"
         base_url: "{{ hermes_ollama_url }}/v1"
         model: "{{ hermes_ollama_thinking_model }}"
       - provider: "openai"
@@ -257,7 +257,7 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: ""
     fallback_providers:
-      - provider: "ollama"
+      - provider: "custom"
         base_url: "{{ hermes_ollama_url }}/v1"
         model: "{{ hermes_ollama_coding_model }}"
       - provider: "openai"
@@ -279,7 +279,7 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: ""
     fallback_providers:
-      - provider: "ollama"
+      - provider: "custom"
         base_url: "{{ hermes_ollama_url }}/v1"
         model: "{{ hermes_ollama_thinking_model }}"
       - provider: "openai"
@@ -301,7 +301,7 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: "1501437705236643902"
     fallback_providers:
-      - provider: "ollama"
+      - provider: "custom"
         base_url: "{{ hermes_ollama_url }}/v1"
         model: "{{ hermes_ollama_chat_model }}"
       - provider: "openai"
@@ -323,7 +323,7 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: ""
     fallback_providers:
-      - provider: "ollama"
+      - provider: "custom"
         base_url: "{{ hermes_ollama_url }}/v1"
         model: "{{ hermes_ollama_chat_model }}"
       - provider: "openai"
@@ -345,7 +345,7 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: ""
     fallback_providers:
-      - provider: "ollama"
+      - provider: "custom"
         base_url: "{{ hermes_ollama_url }}/v1"
         model: "{{ hermes_ollama_thinking_model }}"
       - provider: "openai"
@@ -367,7 +367,7 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: ""
     fallback_providers:
-      - provider: "ollama"
+      - provider: "custom"
         base_url: "{{ hermes_ollama_url }}/v1"
         model: "{{ hermes_ollama_chat_model }}"
       - provider: "openai"

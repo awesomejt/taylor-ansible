@@ -21,6 +21,21 @@ router_settings:
     - "{{ litellm_alias_thinking }}":
         - "omlx-secondary-thinking"
         - "ollama-thinking"
+    - "omlx-primary-chat":
+        - "omlx-secondary-chat"
+        - "ollama-chat"
+    - "omlx-secondary-chat":
+        - "ollama-chat"
+    - "omlx-primary-coding":
+        - "omlx-secondary-coding"
+        - "ollama-coding"
+    - "omlx-secondary-coding":
+        - "ollama-coding"
+    - "omlx-primary-thinking":
+        - "omlx-secondary-thinking"
+        - "ollama-thinking"
+    - "omlx-secondary-thinking":
+        - "ollama-thinking"
 
 model_list:
   - model_name: "{{ litellm_alias_chat }}"

@@ -1,5 +1,26 @@
 # TODO
 
+## Hermes Cron Fallback Config Fix (2026-05-20)
+
+- [x] Confirm Hermes cron failures are not caused by LiteLLM fallback itself.
+- [x] Identify Hermes profile fallback config render mismatch.
+- [x] Render `fallback_providers` at top level in Hermes profile config.
+- [x] Use Hermes `custom` provider for direct Ollama local emergency fallback.
+- [x] Keep oMLX primary/secondary cascading inside LiteLLM instead of duplicating it in Hermes.
+- [x] Move oMLX monitor crons from root to the `hermes` user.
+- [x] Troubleshoot LiteLLM fallback timing/logs for cron-sized prompts.
+- [x] Add typed LiteLLM fallback chains from secondary oMLX model groups to Ollama model groups.
+- [x] Validate `hermes.yaml` locally.
+- [x] Validate `litellm.yaml` locally.
+- [x] Sync to Ansible host.
+- [x] Run `hermes.yaml` on Ansible host.
+- [x] Run `litellm.yaml` on Ansible host.
+- [x] Verify rendered admin profile config on Hermes.
+- [x] Verify rendered LiteLLM fallback graph.
+- [x] Verify root crontab has no Hermes-managed entries.
+- [x] Re-run Hermes cron daily summary path with a Hermes-owned working directory.
+- [x] Commit changes locally.
+
 ## Docker Access On Hermes (2026-05-20)
 
 - [x] Update Docker role defaults/tasks to ensure both `jason` and `hermes` are added to the `docker` group when present.

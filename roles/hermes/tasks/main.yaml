@@ -511,16 +511,17 @@
   ansible.builtin.file:
     path: /var/lib/hermes-monitor
     state: directory
-    owner: root
-    group: root
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
     mode: "0755"
+    recurse: true
 
 - name: Ensure oMLX monitor log file exists
   ansible.builtin.file:
     path: /var/log/hermes-monitor.log
     state: touch
-    owner: root
-    group: root
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_group }}"
     mode: "0644"
   changed_when: false
 
@@ -537,8 +538,20 @@
     src: omlx-monitor.env.j2
     dest: /etc/hermes/omlx-monitor.env
     owner: root
-    group: root
+    group: "{{ hermes_group }}"
     mode: "0640"
+
+- name: Remove legacy root oMLX monitor cron job
+  ansible.builtin.cron:
+    name: "oMLX server status monitor"
+    user: root
+    state: absent
+
+- name: Remove legacy root oMLX monitor daily heartbeat cron job
+  ansible.builtin.cron:
+    name: "oMLX server daily heartbeat"
+    user: root
+    state: absent
 
 - name: Install oMLX monitor cron job
   ansible.builtin.cron:
@@ -547,7 +560,7 @@
     job: >-
       . /etc/hermes/omlx-monitor.env && /usr/local/bin/omlx-monitor.sh
       >> /var/log/hermes-monitor.log 2>&1
-    user: root
+    user: "{{ hermes_user }}"
     state: "{{ 'present' if hermes_omlx_monitor_enable | default(true) | bool else 'absent' }}"
 
 - name: Install oMLX monitor daily heartbeat cron job
@@ -558,6 +571,6 @@
     job: >-
       . /etc/hermes/omlx-monitor.env && /usr/local/bin/omlx-monitor.sh --heartbeat
       >> /var/log/hermes-monitor.log 2>&1
-    user: root
+    user: "{{ hermes_user }}"
     state: "{{ 'present' if hermes_omlx_monitor_enable | default(true) | bool else 'absent' }}"
   when: hermes_omlx_monitor_heartbeat_enable | bool

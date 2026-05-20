@@ -13,6 +13,16 @@
 - Applied from Ansible host (`192.168.50.11`) on 2026-05-20: `ansible-playbook -i inventory.ini docker.yaml --limit hermes`.
 - Verified on host `hermes.taylor.lan`: both `jason` and `hermes` are in `docker` group and can run `docker ps` without root escalation.
 
+### Hermes Cron Fallback Config (2026-05-20)
+
+- Hermes cron scheduler reads fallback configuration from top-level `fallback_providers`, not from `model.fallback_providers`.
+- `roles/hermes/templates/hermes-config.yaml.j2` must render the fallback list at the top level so cron tasks can cascade from LiteLLM to direct Ollama/OpenRouter fallbacks.
+- Hermes local Ollama access is not a built-in `ollama` provider; use `provider: custom` with `base_url: http://<ollama-host>:11434/v1`.
+- Hermes profile fallback should stay simple: LiteLLM primary, direct Ollama local emergency fallback, then configured cloud fallback. oMLX primary/secondary cascading belongs in LiteLLM.
+- LiteLLM fallback from `use-thinking` to Ollama was independently validated from the Hermes host while the primary oMLX server was down, but cron-sized prompts can still exceed Hermes' 45s timeout before LiteLLM returns.
+- LiteLLM requires fallback entries for fallback target groups too; alias-level `use-thinking -> omlx-secondary-thinking -> ollama-thinking` is not transitive unless `omlx-secondary-thinking` has its own fallback to `ollama-thinking`.
+- Hermes-managed oMLX monitor cron jobs should run as the `hermes` user, not root; the monitor env file is group-readable by `hermes`, and state/log paths are owned by `hermes`.
+
 ### Hermes AI Stack Wiring Refresh (2026-05-17)
 
 - Hermes profile `.env` now exports routed AI stack endpoints for LiteLLM, SearXNG, Open WebUI, AnythingLLM, n8n, Qdrant, and Ollama.
