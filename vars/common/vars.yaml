@@ -154,6 +154,16 @@ hermes_n8n_url: "http://n8n.taylor.lan"
 hermes_qdrant_url: "http://qdrant.taylor.lan:80"
 hermes_qdrant_collection: "openwebui_web_memory"
 hermes_ollama_url: "http://192.168.50.51:11434"
+hermes_litellm_api_key: "{{ vault_openwebui_litellm_master_key | default(vault_hermes_omlx_api_key | default(hermes_omlx_api_key | default(''))) }}"
+hermes_ollama_chat_model: "llama3.2:latest"
+hermes_ollama_coding_model: "deepseek-coder-v2:latest"
+hermes_ollama_thinking_model: "qwen3.5:latest"
+hermes_openai_chat_model: "gpt-4.1-mini"
+hermes_openai_coding_model: "gpt-4.1-mini"
+hermes_openai_thinking_model: "gpt-4.1"
+hermes_openrouter_chat_model: "openai/gpt-4.1-mini"
+hermes_openrouter_coding_model: "openai/gpt-4.1-mini"
+hermes_openrouter_thinking_model: "openai/gpt-4.1"
 hermes_rag_embedding_provider: "local-hash"
 hermes_rag_embedding_dimension: 384
 hermes_rag_ollama_model: "nomic-embed-text:latest"
@@ -194,6 +204,7 @@ hermes_profiles:
     gateway_enabled: false
     provider: "custom"
     base_url: "{{ hermes_litellm_base_url }}"
+    api_key: "{{ hermes_litellm_api_key }}"
     model: "use-chat"
     cli_toolsets:
       - "hermes-cli"
@@ -201,14 +212,21 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: ""
     fallback_providers:
-      - provider: "custom"
-        base_url: "{{ hermes_litellm_base_url }}"
-        model: "use-thinking"
+      - provider: "ollama"
+        base_url: "{{ hermes_ollama_url }}/v1"
+        model: "{{ hermes_ollama_chat_model }}"
+      - provider: "openai"
+        enabled: "{{ (vault_hermes_openai_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openai_chat_model }}"
+      - provider: "openrouter"
+        enabled: "{{ (vault_hermes_openrouter_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openrouter_chat_model }}"
   # Admin profile handles inbox and Kanban orchestration behavior via its SOUL.
   - name: admin
     gateway_enabled: true
     provider: "custom"
     base_url: "{{ hermes_litellm_base_url }}"
+    api_key: "{{ hermes_litellm_api_key }}"
     model: "use-thinking"
     cli_toolsets:
       - "hermes-cli"
@@ -217,13 +235,20 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: "1500086740352766063"
     fallback_providers:
-      - provider: "custom"
-        base_url: "{{ hermes_litellm_base_url }}"
-        model: "use-chat"
+      - provider: "ollama"
+        base_url: "{{ hermes_ollama_url }}/v1"
+        model: "{{ hermes_ollama_thinking_model }}"
+      - provider: "openai"
+        enabled: "{{ (vault_hermes_openai_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openai_thinking_model }}"
+      - provider: "openrouter"
+        enabled: "{{ (vault_hermes_openrouter_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openrouter_thinking_model }}"
   - name: coding
     gateway_enabled: false
     provider: "custom"
     base_url: "{{ hermes_litellm_base_url }}"
+    api_key: "{{ hermes_litellm_api_key }}"
     model: "use-coding"
     cli_toolsets:
       - "hermes-cli"
@@ -232,13 +257,20 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: ""
     fallback_providers:
-      - provider: "custom"
-        base_url: "{{ hermes_litellm_base_url }}"
-        model: "use-chat"
+      - provider: "ollama"
+        base_url: "{{ hermes_ollama_url }}/v1"
+        model: "{{ hermes_ollama_coding_model }}"
+      - provider: "openai"
+        enabled: "{{ (vault_hermes_openai_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openai_coding_model }}"
+      - provider: "openrouter"
+        enabled: "{{ (vault_hermes_openrouter_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openrouter_coding_model }}"
   - name: researcher
     gateway_enabled: false
     provider: "custom"
     base_url: "{{ hermes_litellm_base_url }}"
+    api_key: "{{ hermes_litellm_api_key }}"
     model: "use-thinking"
     cli_toolsets:
       - "hermes-cli"
@@ -247,13 +279,20 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: ""
     fallback_providers:
-      - provider: "custom"
-        base_url: "{{ hermes_litellm_base_url }}"
-        model: "use-chat"
+      - provider: "ollama"
+        base_url: "{{ hermes_ollama_url }}/v1"
+        model: "{{ hermes_ollama_thinking_model }}"
+      - provider: "openai"
+        enabled: "{{ (vault_hermes_openai_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openai_thinking_model }}"
+      - provider: "openrouter"
+        enabled: "{{ (vault_hermes_openrouter_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openrouter_thinking_model }}"
   - name: jessica
     gateway_enabled: true
     provider: "custom"
     base_url: "{{ hermes_litellm_base_url }}"
+    api_key: "{{ hermes_litellm_api_key }}"
     model: "use-chat"
     cli_toolsets:
       - "hermes-cli"
@@ -262,13 +301,20 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: "1501437705236643902"
     fallback_providers:
-      - provider: "custom"
-        base_url: "{{ hermes_litellm_base_url }}"
-        model: "use-thinking"
+      - provider: "ollama"
+        base_url: "{{ hermes_ollama_url }}/v1"
+        model: "{{ hermes_ollama_chat_model }}"
+      - provider: "openai"
+        enabled: "{{ (vault_hermes_openai_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openai_chat_model }}"
+      - provider: "openrouter"
+        enabled: "{{ (vault_hermes_openrouter_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openrouter_chat_model }}"
   - name: rachel
     gateway_enabled: false
     provider: "custom"
     base_url: "{{ hermes_litellm_base_url }}"
+    api_key: "{{ hermes_litellm_api_key }}"
     model: "use-chat"
     cli_toolsets:
       - "hermes-cli"
@@ -277,13 +323,20 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: ""
     fallback_providers:
-      - provider: "custom"
-        base_url: "{{ hermes_litellm_base_url }}"
-        model: "use-thinking"
+      - provider: "ollama"
+        base_url: "{{ hermes_ollama_url }}/v1"
+        model: "{{ hermes_ollama_chat_model }}"
+      - provider: "openai"
+        enabled: "{{ (vault_hermes_openai_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openai_chat_model }}"
+      - provider: "openrouter"
+        enabled: "{{ (vault_hermes_openrouter_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openrouter_chat_model }}"
   - name: financial-advisor
     gateway_enabled: false
     provider: "custom"
     base_url: "{{ hermes_litellm_base_url }}"
+    api_key: "{{ hermes_litellm_api_key }}"
     model: "use-thinking"
     cli_toolsets:
       - "hermes-cli"
@@ -292,13 +345,20 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: ""
     fallback_providers:
-      - provider: "custom"
-        base_url: "{{ hermes_litellm_base_url }}"
-        model: "use-chat"
+      - provider: "ollama"
+        base_url: "{{ hermes_ollama_url }}/v1"
+        model: "{{ hermes_ollama_thinking_model }}"
+      - provider: "openai"
+        enabled: "{{ (vault_hermes_openai_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openai_thinking_model }}"
+      - provider: "openrouter"
+        enabled: "{{ (vault_hermes_openrouter_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openrouter_thinking_model }}"
   - name: writer
     gateway_enabled: false
     provider: "custom"
     base_url: "{{ hermes_litellm_base_url }}"
+    api_key: "{{ hermes_litellm_api_key }}"
     model: "use-chat"
     cli_toolsets:
       - "hermes-cli"
@@ -307,9 +367,15 @@ hermes_profiles:
     discord_require_mention: true
     discord_home_channel: ""
     fallback_providers:
-      - provider: "custom"
-        base_url: "{{ hermes_litellm_base_url }}"
-        model: "use-thinking"
+      - provider: "ollama"
+        base_url: "{{ hermes_ollama_url }}/v1"
+        model: "{{ hermes_ollama_chat_model }}"
+      - provider: "openai"
+        enabled: "{{ (vault_hermes_openai_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openai_chat_model }}"
+      - provider: "openrouter"
+        enabled: "{{ (vault_hermes_openrouter_api_key | default('') | length) > 0 }}"
+        model: "{{ hermes_openrouter_chat_model }}"
 
 # Terminal backend for agent tool execution
 hermes_terminal_backend: "local"

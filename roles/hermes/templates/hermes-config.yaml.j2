@@ -3,13 +3,21 @@ model:
   default: "{{ hermes_instance.model }}"
   provider: "{{ hermes_instance.provider }}"
   base_url: "{{ hermes_instance.base_url }}"
+{% if hermes_instance.api_key is defined %}
+  api_key: "{{ hermes_instance.api_key }}"
+{% endif %}
 {% if hermes_instance.fallback_providers is defined and (hermes_instance.fallback_providers | length > 0) %}
   fallback_providers:
 {% for fallback in hermes_instance.fallback_providers %}
+{% if fallback.enabled is not defined or fallback.enabled | bool %}
     - provider: "{{ fallback.provider }}"
       model: "{{ fallback.model }}"
 {% if fallback.base_url is defined %}
       base_url: "{{ fallback.base_url }}"
+{% endif %}
+{% if fallback.api_key is defined %}
+      api_key: "{{ fallback.api_key }}"
+{% endif %}
 {% endif %}
 {% endfor %}
 {% endif %}

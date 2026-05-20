@@ -50,6 +50,7 @@ Key overridable variables:
 - `hermes_omlx_base_url` / `hermes_omlx_api_key` (legacy fallback; prefer vault secret)
 - `hermes_litellm_base_url` (OpenAI-compatible LiteLLM endpoint, e.g. `http://192.168.50.91:4000/v1`)
 - `hermes_litellm_public_url` (routed LiteLLM endpoint for operator-facing tooling)
+- `hermes_litellm_api_key` (explicit API key used for LiteLLM/custom endpoint auth so direct OpenAI fallback can use its own key)
 - `hermes_searxng_url` (SearXNG base URL, e.g. `http://192.168.50.91:8081`)
 - `hermes_searxng_public_url` (routed SearXNG endpoint)
 - `hermes_openwebui_url` / `hermes_anythingllm_url` / `hermes_n8n_url`
@@ -70,6 +71,7 @@ Hermes secrets should be stored in:
 Primary keys for this role:
 
 - `vault_hermes_openrouter_api_key` (optional fallback provider key)
+- `vault_hermes_openai_api_key` (optional direct OpenAI fallback provider key)
 - `vault_hermes_omlx_api_key` (API key for OpenAI-compatible custom endpoints such as oMLX)
 - `vault_openwebui_litellm_master_key` (preferred key for LiteLLM-backed Hermes profiles)
 - `vault_hermes_discord_tokens` (required only for Discord-enabled gateway profiles)
