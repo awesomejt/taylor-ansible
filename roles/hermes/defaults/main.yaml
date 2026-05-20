@@ -52,7 +52,7 @@ hermes_soul_files:
 # Use the smallest set needed for the dashboard and Discord gateway.
 # Avoid "all" because it pulls optional matrix extras that require local
 # build tooling (python-olm/libolm).
-hermes_python_extras: "web,messaging"
+hermes_python_extras: "web,messaging,mcp"
 
 # Hermes profile deployment model.
 # Preferred: define hermes_profiles (profile-centric schema).
@@ -124,6 +124,13 @@ hermes_nginx_ssl_enable: false
 hermes_nginx_auth_enable: false
 hermes_nginx_auth_user: "admin"
 hermes_nginx_htpasswd_file: "/etc/nginx/hermes.htpasswd"
+
+# External MCP Servers to connect to
+hermes_mcp_servers:
+  qdrant:
+    url: "http://mcp-qdrant.taylor.lan/mcp/"
+  searxng:
+    url: "http://mcp-searxng.taylor.lan/mcp"
 
 # oMLX server availability monitor.
 # Polls both oMLX endpoints every 5 minutes and sends a Discord webhook alert on state transitions.

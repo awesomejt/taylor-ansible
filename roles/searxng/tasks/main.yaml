@@ -70,3 +70,15 @@
   until: searxng_ready is succeeded
   retries: 24
   delay: 5
+
+- name: Wait for SearXNG MCP server to be ready
+  ansible.builtin.uri:
+    url: "http://127.0.0.1/health"
+    headers:
+      Host: "{{ searxng_mcp_traefik_hostname }}"
+    status_code: 200
+  register: searxng_mcp_ready
+  until: searxng_mcp_ready is succeeded
+  retries: 24
+  delay: 5
+  when: searxng_mcp_enabled | bool

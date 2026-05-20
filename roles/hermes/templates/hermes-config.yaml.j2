@@ -46,3 +46,19 @@ platform_toolsets:
 {% set _discord_toolsets = hermes_instance.discord_toolsets | default(['hermes-discord']) %}
   discord: {{ _discord_toolsets | to_json }}
 {% endif %}
+
+{% if hermes_mcp_servers is defined and hermes_mcp_servers | length > 0 %}
+mcp_servers:
+{% for key, val in hermes_mcp_servers.items() %}
+  {{ key }}:
+{% if val.url is defined %}
+    url: "{{ val.url }}"
+{% endif %}
+{% if val.command is defined %}
+    command: "{{ val.command }}"
+{% if val.args is defined %}
+    args: {{ val.args | to_json }}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}

@@ -14,6 +14,34 @@ services:
       - traefik_proxy
     pull_policy: always
 
+{% if qdrant_mcp_enabled | bool %}
+  qdrant-mcp:
+    image: {{ qdrant_mcp_image }}
+    container_name: {{ qdrant_mcp_container_name }}
+    restart: {{ qdrant_restart_policy }}
+    depends_on:
+      - qdrant
+    command:
+      - uvx
+      - mcp-server-qdrant
+      - --transport
+      - {{ qdrant_mcp_transport }}
+    environment:
+      FASTMCP_SERVER_HOST: "0.0.0.0"
+      FASTMCP_SERVER_PORT: "{{ qdrant_mcp_port }}"
+      QDRANT_URL: "{{ qdrant_mcp_qdrant_url }}"
+      COLLECTION_NAME: "{{ qdrant_mcp_collection_name }}"
+      EMBEDDING_MODEL: "{{ qdrant_mcp_embedding_model }}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.qdrant-mcp.rule=Host(`{{ qdrant_mcp_traefik_hostname }}`)"
+      - "traefik.http.routers.qdrant-mcp.entrypoints={{ qdrant_mcp_traefik_entrypoint }}"
+      - "traefik.http.services.qdrant-mcp.loadbalancer.server.port={{ qdrant_mcp_port }}"
+    networks:
+      - traefik_proxy
+    pull_policy: always
+{% endif %}
+
 networks:
   traefik_proxy:
     external: true

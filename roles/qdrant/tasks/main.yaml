@@ -53,3 +53,20 @@
   until: qdrant_ready is succeeded
   retries: 24
   delay: 5
+
+- name: Wait for Qdrant MCP server to be ready
+  ansible.builtin.uri:
+    url: "http://127.0.0.1/mcp"
+    headers:
+      Host: "{{ qdrant_mcp_traefik_hostname }}"
+    status_code:
+      - 200
+      - 400
+      - 404
+      - 405
+      - 406
+  register: qdrant_mcp_ready
+  until: qdrant_mcp_ready is succeeded
+  retries: 24
+  delay: 5
+  when: qdrant_mcp_enabled | bool

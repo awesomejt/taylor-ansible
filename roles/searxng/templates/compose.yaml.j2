@@ -33,6 +33,27 @@ services:
       - traefik_proxy
     pull_policy: always
 
+{% if searxng_mcp_enabled | bool %}
+  searxng-mcp:
+    image: {{ searxng_mcp_image }}
+    container_name: {{ searxng_mcp_container_name }}
+    restart: {{ searxng_restart_policy }}
+    depends_on:
+      - searxng
+    environment:
+      SEARXNG_URL: {{ searxng_mcp_searxng_url }}
+      MCP_HTTP_PORT: "{{ searxng_mcp_port }}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.searxng-mcp.rule=Host(`{{ searxng_mcp_traefik_hostname }}`)"
+      - "traefik.http.routers.searxng-mcp.entrypoints={{ searxng_mcp_traefik_entrypoint }}"
+      - "traefik.http.services.searxng-mcp.loadbalancer.server.port={{ searxng_mcp_port }}"
+    networks:
+      - internal
+      - traefik_proxy
+    pull_policy: always
+{% endif %}
+
 networks:
   internal:
     driver: bridge

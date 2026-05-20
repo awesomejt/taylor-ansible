@@ -1,5 +1,16 @@
 # TODO
 
+## Qdrant + SearXNG MCP Servers (2026-05-20)
+
+- [x] Decide deployment direction: embed MCP services into existing Qdrant/SearXNG compose stacks.
+- [x] Add Qdrant role defaults/tasks/templates for MCP sidecar deployment.
+- [x] Add SearXNG role defaults/tasks/templates for MCP sidecar deployment.
+- [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`) for `qdrant.yaml` and `searxng.yaml`.
+- [x] Sync to Ansible host.
+- [x] Run `qdrant.yaml` on Ansible host.
+- [x] Run `searxng.yaml` on Ansible host.
+- [x] Verify routed MCP endpoints respond (`mcp-qdrant.taylor.lan`, `mcp-searxng.taylor.lan`).
+
 ## Hermes Cron Fallback Config Fix (2026-05-20)
 
 - [x] Confirm Hermes cron failures are not caused by LiteLLM fallback itself.

@@ -35,6 +35,13 @@
 - Applied from Ansible host on 2026-05-17: `hermes.yaml` completed on `192.168.50.52`; active gateways are `hermes-gateway-admin` and `hermes-gateway-jessica`.
 - Verified on host: admin profile env contains LiteLLM/SearXNG/Qdrant endpoint vars and `hermes-rag-query` returns results when sourced from profile `.env`.
 
+### Qdrant + SearXNG MCP Sidecars (2026-05-20)
+
+- MCP servers are embedded in existing service roles/stacks (not a standalone `mcp-servers` role) to keep service lifecycle coupled with their backing dependencies.
+- `roles/qdrant` now supports a Qdrant MCP sidecar (default enabled) exposed via Traefik at `mcp-qdrant.taylor.lan`.
+- `roles/searxng` now supports a SearXNG MCP sidecar (default enabled) exposed via Traefik at `mcp-searxng.taylor.lan`.
+- OpenCode remote MCP URLs should target the HTTP endpoint path `/mcp` for both services.
+
 ### Hermes CIFS Credential Enforcement Refresh (2026-05-17)
 
 - `roles/hermes` now writes `hermes_cifs_credentials_file` (`/etc/samba/credentials/nas`) from vaulted `vault_hermes_cifs_username` and `vault_hermes_cifs_password` when those keys are set.
