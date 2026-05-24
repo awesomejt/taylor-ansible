@@ -1,0 +1,11 @@
+# ESO read-only policy
+# Grants External Secrets Operator read access to secrets under
+# {{ vault_kv_mount }}/{{ vault_eso_kv_path }}/ in KV v2.
+
+path "{{ vault_kv_mount }}/data/{{ vault_eso_kv_path }}/*" {
+  capabilities = ["read"]
+}
+
+path "{{ vault_kv_mount }}/metadata/{{ vault_eso_kv_path }}/*" {
+  capabilities = ["read", "list"]
+}

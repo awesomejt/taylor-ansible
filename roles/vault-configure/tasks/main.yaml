@@ -1,0 +1,157 @@
+---
+# All vault CLI commands run on the vault host using the local listener.
+# VAULT_TOKEN is set per-task via the environment block below.
+
+- name: Set Vault CLI environment
+  ansible.builtin.set_fact:
+    _vault_env:
+      VAULT_ADDR: "{{ vault_configure_addr }}"
+      VAULT_TOKEN: "{{ vault_configure_token }}"
+  no_log: true
+
+# ── KV v2 secrets engine ───────────────────────────────────────────────────
+
+- name: Enable KV v2 secrets engine at {{ vault_kv_mount }}/
+  ansible.builtin.command: vault secrets enable -version=2 -path={{ vault_kv_mount }} kv
+  environment: "{{ _vault_env }}"
+  register: _kv_enable
+  changed_when: "'Success' in _kv_enable.stdout"
+  failed_when:
+    - _kv_enable.rc != 0
+    - "'path is already in use' not in _kv_enable.stderr"
+  no_log: true
+
+# ── AppRole auth method ────────────────────────────────────────────────────
+
+- name: Enable AppRole auth method at {{ vault_approle_path }}/
+  ansible.builtin.command: vault auth enable -path={{ vault_approle_path }} approle
+  environment: "{{ _vault_env }}"
+  register: _approle_enable
+  changed_when: "'Success' in _approle_enable.stdout"
+  failed_when:
+    - _approle_enable.rc != 0
+    - "'path is already in use' not in _approle_enable.stderr"
+  no_log: true
+
+# ── Policies ───────────────────────────────────────────────────────────────
+
+- name: Ensure temp directory for policy files exists
+  ansible.builtin.file:
+    path: "{{ vault_configure_tmp_dir }}"
+    state: directory
+    mode: "0700"
+
+- name: Render ESO policy
+  ansible.builtin.template:
+    src: policy-eso.hcl.j2
+    dest: "{{ vault_configure_tmp_dir }}/policy-eso.hcl"
+    mode: "0600"
+
+- name: Write ESO policy to Vault
+  ansible.builtin.command: >-
+    vault policy write {{ vault_eso_policy_name }}
+    {{ vault_configure_tmp_dir }}/policy-eso.hcl
+  environment: "{{ _vault_env }}"
+  register: _eso_policy
+  changed_when: true
+  no_log: true
+
+- name: Render admin policy
+  ansible.builtin.template:
+    src: policy-admin.hcl.j2
+    dest: "{{ vault_configure_tmp_dir }}/policy-admin.hcl"
+    mode: "0600"
+
+- name: Write admin policy to Vault
+  ansible.builtin.command: >-
+    vault policy write {{ vault_admin_policy_name }}
+    {{ vault_configure_tmp_dir }}/policy-admin.hcl
+  environment: "{{ _vault_env }}"
+  register: _admin_policy
+  changed_when: true
+  no_log: true
+
+- name: Remove temp policy files
+  ansible.builtin.file:
+    path: "{{ vault_configure_tmp_dir }}"
+    state: absent
+
+# ── ESO AppRole role ───────────────────────────────────────────────────────
+
+- name: Create or update ESO AppRole role
+  ansible.builtin.command: >-
+    vault write auth/{{ vault_approle_path }}/role/{{ vault_eso_role_name }}
+    token_policies={{ vault_eso_policy_name }}
+    token_ttl={{ vault_eso_token_ttl }}
+    token_max_ttl={{ vault_eso_token_max_ttl }}
+    secret_id_ttl={{ vault_eso_secret_id_ttl }}
+  environment: "{{ _vault_env }}"
+  register: _eso_role
+  changed_when: true
+  no_log: true
+
+- name: Read ESO AppRole role-id
+  ansible.builtin.command: >-
+    vault read -field=role_id
+    auth/{{ vault_approle_path }}/role/{{ vault_eso_role_name }}/role-id
+  environment: "{{ _vault_env }}"
+  register: _eso_role_id
+  changed_when: false
+  no_log: true
+
+- name: Generate ESO AppRole secret-id
+  ansible.builtin.command: >-
+    vault write -field=secret_id -f
+    auth/{{ vault_approle_path }}/role/{{ vault_eso_role_name }}/secret-id
+  environment: "{{ _vault_env }}"
+  register: _eso_secret_id
+  changed_when: true
+  no_log: true
+  when: (vault_eso_secret_id | default('') | string | length) == 0
+
+- name: Show ESO AppRole credentials for operator to store
+  ansible.builtin.debug:
+    msg: |
+      ================================================================
+      ESO AppRole credentials — add to vars/common/secrets.yaml on
+      the Ansible host (192.168.50.11) using:
+        ansible-vault edit vars/common/secrets.yaml --vault-password-file ~/avpass
+
+      vault_eso_role_id:   "{{ _eso_role_id.stdout }}"
+      vault_eso_secret_id: "{{ _eso_secret_id.stdout }}"
+
+      Once stored, re-running this playbook will skip secret-id generation.
+      ================================================================
+  when: (vault_eso_secret_id | default('') | string | length) == 0
+
+# ── Admin token ────────────────────────────────────────────────────────────
+
+- name: Create admin token
+  ansible.builtin.command: >-
+    vault token create
+    -display-name={{ vault_admin_token_display_name }}
+    -policy={{ vault_admin_policy_name }}
+    -ttl={{ vault_admin_token_ttl }}
+    -orphan
+    -field=token
+  environment: "{{ _vault_env }}"
+  register: _admin_token
+  changed_when: true
+  no_log: true
+  when: (vault_admin_token | default('') | string | length) == 0
+
+- name: Show admin token for operator to store
+  ansible.builtin.debug:
+    msg: |
+      ================================================================
+      Admin token created — add to vars/common/secrets.yaml on
+      the Ansible host (192.168.50.11) using:
+        ansible-vault edit vars/common/secrets.yaml --vault-password-file ~/avpass
+
+      vault_admin_token: "{{ _admin_token.stdout }}"
+
+      Once stored, re-running this playbook will skip token creation.
+      After storing, retire the root token:
+        VAULT_ADDR=http://127.0.0.1:8200 vault token revoke <root-token>
+      ================================================================
+  when: (vault_admin_token | default('') | string | length) == 0

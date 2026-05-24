@@ -1,0 +1,57 @@
+---
+# vault-configure.yaml
+#
+# Configures HashiCorp Vault after initialization and unseal:
+#   - KV v2 secrets engine
+#   - AppRole auth method
+#   - ESO read-only policy and AppRole role
+#   - Admin policy and long-lived admin token
+#
+# Prerequisites (manual, one-time):
+#   1. vault operator init   — run on 192.168.50.13, store keys + root token offline
+#   2. vault operator unseal — run after every restart; see roles/vault-configure/README.md
+#   3. vars/common/secrets.yaml must exist with vault_root_token set
+#
+# Run from the Ansible host (192.168.50.11):
+#   ansible-playbook vault-configure.yaml --vault-password-file ~/avpass
+
+- name: Validate Vault state before configuration
+  hosts: localhost
+  gather_facts: false
+  vars:
+    _vault_health_url: "http://{{ groups['vault'][0] }}/v1/sys/health"
+  tasks:
+    - name: Check Vault health endpoint
+      ansible.builtin.uri:
+        url: "{{ _vault_health_url }}"
+        method: GET
+        status_code: [200, 429, 472, 473, 501, 503]
+      register: vault_health
+
+    - name: Fail if Vault is not initialized
+      ansible.builtin.fail:
+        msg: >-
+          Vault at {{ groups['vault'][0] }} is not initialized.
+          SSH to the vault host and run: vault operator init
+          Store all unseal keys and the root token in a safe offline location.
+          See roles/vault-configure/README.md for the full bootstrap sequence.
+      when: not vault_health.json.initialized
+
+    - name: Fail if Vault is sealed
+      ansible.builtin.fail:
+        msg: >-
+          Vault is sealed. Unseal it before running this playbook.
+          Options:
+            CLI: ssh {{ groups['vault'][0] }}
+                 VAULT_ADDR=http://127.0.0.1:8200 vault operator unseal
+            UI:  http://{{ groups['vault'][0] }}/ui/
+          Vault must be unsealed manually after every restart.
+      when: vault_health.json.sealed
+
+- name: Configure Vault — engines, auth methods, policies, and credentials
+  hosts: vault
+  gather_facts: false
+  vars_files:
+    - vars/common/secrets.yaml
+  roles:
+    - vault-configure

@@ -1,0 +1,40 @@
+---
+# --- Vault connection (tasks run on the vault host, using local listener) ---
+vault_configure_addr: "http://127.0.0.1:8200"
+
+# Token used by configure tasks. Defaults to vault_root_token on first run.
+# After vault_admin_token is created and stored in secrets.yaml, you may
+# switch to: vault_configure_token: "{{ vault_admin_token }}"
+vault_configure_token: "{{ vault_root_token }}"
+
+# --- KV v2 secrets engine ---
+vault_kv_mount: secret
+
+# --- AppRole auth method ---
+# Path where AppRole is enabled (leave as 'approle' unless you have a reason to change it)
+vault_approle_path: approle
+
+# --- ESO AppRole role ---
+# AppRole role and policy for External Secrets Operator
+vault_eso_role_name: eso
+vault_eso_policy_name: eso
+
+# KV path prefix ESO is allowed to read (reads secret/data/<prefix>/*)
+vault_eso_kv_path: k3s
+
+# Token TTL for tokens issued to ESO. Short TTL + auto-renewal is recommended.
+vault_eso_token_ttl: 1h
+vault_eso_token_max_ttl: 4h
+
+# secret_id TTL — 0 means never expires (acceptable for homelab)
+vault_eso_secret_id_ttl: 0
+
+# --- Admin policy and token ---
+vault_admin_policy_name: admin
+vault_admin_token_display_name: ansible-admin
+
+# Admin token TTL — 8760h = 1 year. Set to 0 to inherit system default (~32 days).
+vault_admin_token_ttl: 8760h
+
+# --- Temp directory for policy files on the vault host ---
+vault_configure_tmp_dir: /tmp/vault-configure

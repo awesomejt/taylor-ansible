@@ -1,3 +1,16 @@
+### HashiCorp Vault Post-Init Configuration (2026-05-24)
+
+- Added `vault-configure.yaml` playbook and `roles/vault-configure` for post-unseal automation.
+- Vault at 192.168.50.13 is now confirmed: initialized, Vault 1.19.2, Raft storage, nginx proxy on :80 (not :8200 from the network).
+- Configure playbook is intentionally separate from `vault.yaml` (install) — different lifecycle and different credentials.
+- Bootstrap sequence: `vault operator init` (manual, once) → `vault operator unseal` (manual, after each restart) → `vault-configure.yaml` (automated, idempotent).
+- First run requires `vault_root_token` in `vars/common/secrets.yaml`. After first run: store printed `vault_admin_token` + `vault_eso_secret_id` + `vault_eso_role_id` in secrets.yaml, then retire root token.
+- Admin token (`vault_admin_token`) is a 1-year orphan token with `admin` policy. Root token goes offline as break-glass once admin token is stored.
+- ESO AppRole: `eso` role + `eso` policy, read-only on `secret/data/k3s/*`. role_id + secret_id printed on first run for operator to store.
+- ESO ClusterSecretStore will use AppRole auth pointing at `http://192.168.50.13` (nginx proxy on port 80, not 8200).
+- Re-run safety: KV/AppRole enable are idempotent; policies always upsert; admin token and ESO secret_id are only generated when the corresponding secrets.yaml var is empty.
+- Decision: yes to admin token even in homelab — root token goes offline, not overkill.
+
 ### Hermes Profile Baseline Refresh (2026-05-17)
 
 - Hermes profile set is now: `default`, `admin`, `coding`, `researcher`, `jessica`, `rachel`, `financial-advisor`, `writer`.

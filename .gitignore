@@ -5,3 +5,5 @@
 *.tfstate.backup
 *.log
 temp/
+
+.env
