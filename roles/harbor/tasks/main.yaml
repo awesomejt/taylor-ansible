@@ -191,3 +191,80 @@
     - harbor_ldap_enabled | bool
     - harbor_ldap_configure is defined
     - harbor_ldap_configure.status != 200
+
+- name: Ensure Harbor projects exist
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ harbor_http_port }}/api/v2.0/projects"
+    method: POST
+    force_basic_auth: true
+    user: "{{ harbor_admin_username }}"
+    password: "{{ harbor_admin_password }}"
+    body_format: json
+    body:
+      project_name: "{{ item.name }}"
+      public: "{{ item.public | bool }}"
+      metadata:
+        public: "{{ item.public | bool | lower }}"
+    status_code:
+      - 201
+      - 409
+  loop: "{{ harbor_projects }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: _harbor_project_result
+  changed_when: _harbor_project_result.status == 201
+  no_log: true
+  when: harbor_projects | length > 0
+
+- name: Ensure Harbor robot account secrets are configured
+  ansible.builtin.assert:
+    that:
+      - item.secret != 'change-me'
+    fail_msg: >-
+      Set vault_harbor_robot_{{ item.name }}_secret in vars/common/secrets.yaml
+      before running. Generate with: openssl rand -hex 20
+  loop: "{{ harbor_robot_accounts }}"
+  loop_control:
+    label: "{{ item.name }}"
+  no_log: true
+  when: harbor_robot_accounts | length > 0
+
+- name: Fetch existing Harbor system robot accounts
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ harbor_http_port }}/api/v2.0/robots?level=system&page_size=100"
+    method: GET
+    force_basic_auth: true
+    user: "{{ harbor_admin_username }}"
+    password: "{{ harbor_admin_password }}"
+    status_code: 200
+  register: _harbor_existing_robots
+  no_log: true
+  when: harbor_robot_accounts | length > 0
+
+- name: Create Harbor system robot accounts
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ harbor_http_port }}/api/v2.0/robots"
+    method: POST
+    force_basic_auth: true
+    user: "{{ harbor_admin_username }}"
+    password: "{{ harbor_admin_password }}"
+    body_format: json
+    body:
+      name: "{{ item.name }}"
+      level: system
+      secret: "{{ item.secret }}"
+      description: "{{ item.description | default('') }}"
+      disable: false
+      duration: -1
+      permissions: "{{ harbor_robot_permissions }}"
+    status_code: 201
+  loop: "{{ harbor_robot_accounts }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when:
+    - harbor_robot_accounts | length > 0
+    - >-
+      ('robot$' + item.name) not in
+      (_harbor_existing_robots.json | map(attribute='name') | list)
+  no_log: true
+  changed_when: true
