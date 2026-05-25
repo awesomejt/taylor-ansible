@@ -3,6 +3,9 @@
   hosts: "{{ target | default('vault') }}"
   become: true
   gather_facts: true
+  vars_files:
+    - "vars/common/vars.yaml"
+    - "vars/common/secrets.yaml"
   pre_tasks:
     - name: Wait for apt locks to be released
       ansible.builtin.shell: |
