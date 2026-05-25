@@ -38,7 +38,7 @@ harbor_trivy_insecure: false
 
 harbor_traefik_enabled: true
 harbor_traefik_hostname: "{{ harbor_hostname }}"
-harbor_traefik_entrypoint: web
+harbor_traefik_entrypoint: websecure
 harbor_traefik_network: traefik_proxy
 harbor_traefik_router_name: harbor
 harbor_traefik_service_name: harbor

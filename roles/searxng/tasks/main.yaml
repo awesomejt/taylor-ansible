@@ -76,7 +76,12 @@
     url: "http://127.0.0.1/health"
     headers:
       Host: "{{ searxng_mcp_traefik_hostname }}"
-    status_code: 200
+    status_code:
+      - 200
+      - 301
+      - 302
+      - 307
+      - 308
   register: searxng_mcp_ready
   until: searxng_mcp_ready is succeeded
   retries: 24

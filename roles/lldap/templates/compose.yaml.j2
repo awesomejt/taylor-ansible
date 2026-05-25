@@ -20,6 +20,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.lldap.rule=Host(`{{ lldap_traefik_hostname }}`)"
       - "traefik.http.routers.lldap.entrypoints={{ lldap_traefik_entrypoint }}"
+      - "traefik.http.routers.lldap.tls=true"
       - "traefik.http.services.lldap.loadbalancer.server.port={{ lldap_web_port }}"
     networks:
       - traefik_proxy

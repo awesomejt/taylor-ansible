@@ -8,14 +8,28 @@ services:
       - "--api.dashboard={{ traefik_dashboard_enable | lower }}"
       - "--api.insecure={{ traefik_dashboard_insecure | lower }}"
       - "--entryPoints.web.address=:{{ traefik_http_port }}"
+{% if traefik_tls_enabled | bool %}
+      - "--entryPoints.websecure.address=:{{ traefik_https_port }}"
+      - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
+      - "--providers.file.directory=/dynamic"
+      - "--providers.file.watch=true"
+{% endif %}
       - "--providers.docker=true"
       - "--providers.docker.exposedByDefault={{ traefik_exposed_by_default | lower }}"
       - "--providers.docker.network={{ traefik_network_name }}"
     ports:
       - "{{ traefik_http_port }}:{{ traefik_http_port }}"
       - "{{ traefik_dashboard_port }}:{{ traefik_dashboard_port }}"
+{% if traefik_tls_enabled | bool %}
+      - "{{ traefik_https_port }}:{{ traefik_https_port }}"
+{% endif %}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+{% if traefik_tls_enabled | bool %}
+      - {{ traefik_tls_cert_dir }}:/certs:ro
+      - {{ traefik_tls_dynamic_dir }}:/dynamic:ro
+{% endif %}
     networks:
       - traefik_proxy
     pull_policy: always

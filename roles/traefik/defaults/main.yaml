@@ -23,3 +23,10 @@ traefik_exposed_by_default: false
 
 traefik_systemd_unit: traefik.service
 traefik_systemd_unit_path: "/etc/systemd/system/{{ traefik_systemd_unit }}"
+
+# TLS — set traefik_tls_enabled: true and provide vault_traefik_tls_cert / vault_traefik_tls_key
+traefik_tls_enabled: false
+traefik_tls_cert_dir: /opt/traefik/certs
+traefik_tls_dynamic_dir: /opt/traefik/dynamic
+traefik_tls_cert_file: wildcard.crt
+traefik_tls_key_file: wildcard.key

@@ -20,6 +20,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.anythingllm.rule=Host(`{{ anythingllm_traefik_hostname }}`)"
       - "traefik.http.routers.anythingllm.entrypoints={{ anythingllm_traefik_entrypoint }}"
+      - "traefik.http.routers.anythingllm.tls=true"
       - "traefik.http.services.anythingllm.loadbalancer.server.port=3001"
     networks:
       - traefik_proxy

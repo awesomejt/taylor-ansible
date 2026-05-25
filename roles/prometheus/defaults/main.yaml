@@ -18,7 +18,7 @@ prometheus_evaluation_interval: 30s
 # Traefik integration
 prometheus_network_name: traefik_proxy
 prometheus_traefik_hostname: "prometheus.taylor.lan"
-prometheus_traefik_entrypoint: web
+prometheus_traefik_entrypoint: websecure
 
 prometheus_systemd_unit: prometheus.service
 prometheus_systemd_unit_path: "/etc/systemd/system/{{ prometheus_systemd_unit }}"

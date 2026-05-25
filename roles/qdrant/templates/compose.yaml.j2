@@ -9,6 +9,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.qdrant.rule=Host(`{{ qdrant_traefik_hostname }}`)"
       - "traefik.http.routers.qdrant.entrypoints={{ qdrant_traefik_entrypoint }}"
+      - "traefik.http.routers.qdrant.tls=true"
       - "traefik.http.services.qdrant.loadbalancer.server.port=6333"
     networks:
       - traefik_proxy
@@ -36,6 +37,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.qdrant-mcp.rule=Host(`{{ qdrant_mcp_traefik_hostname }}`)"
       - "traefik.http.routers.qdrant-mcp.entrypoints={{ qdrant_mcp_traefik_entrypoint }}"
+      - "traefik.http.routers.qdrant-mcp.tls=true"
       - "traefik.http.services.qdrant-mcp.loadbalancer.server.port={{ qdrant_mcp_port }}"
     networks:
       - traefik_proxy

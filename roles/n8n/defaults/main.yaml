@@ -22,7 +22,7 @@ n8n_secure_cookie: "{{ (n8n_protocol | lower) == 'https' }}"
 # Traefik integration
 n8n_network_name: traefik_proxy
 n8n_traefik_hostname: "n8n.taylor.lan"
-n8n_traefik_entrypoint: web
+n8n_traefik_entrypoint: websecure
 
 n8n_systemd_unit: n8n.service
 n8n_systemd_unit_path: "/etc/systemd/system/{{ n8n_systemd_unit }}"

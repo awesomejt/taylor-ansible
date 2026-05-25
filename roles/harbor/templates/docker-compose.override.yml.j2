@@ -6,6 +6,7 @@ services:
       - "traefik.docker.network={{ harbor_traefik_network }}"
       - "traefik.http.routers.{{ harbor_traefik_router_name }}.rule=Host(`{{ harbor_traefik_hostname }}`)"
       - "traefik.http.routers.{{ harbor_traefik_router_name }}.entrypoints={{ harbor_traefik_entrypoint }}"
+      - "traefik.http.routers.{{ harbor_traefik_router_name }}.tls=true"
       - "traefik.http.services.{{ harbor_traefik_service_name }}.loadbalancer.server.port={{ harbor_proxy_container_port }}"
 {% endif %}
     networks:

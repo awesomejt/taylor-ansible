@@ -1,4 +1,10 @@
 # Common variables
+
+# Traefik TLS — wildcard cert from step-ca, stored in secrets.yaml
+# vault_traefik_tls_cert: <PEM cert content for *.taylor.lan / *.dev.lab / *.stage.lab / *.prod.lab>
+# vault_traefik_tls_key: <PEM private key content>
+traefik_tls_enabled: true
+
 technitium_api_url: "http://192.168.50.53:5380"
 technitium_username: "admin"
 technitium_password: "{{ vault_technitium_password | default('admin') }}"
@@ -145,13 +151,13 @@ hermes_api_stale_timeout_seconds: 60
 hermes_api_max_retries: 1
 # Keep LiteLLM as the default provider for all Hermes profiles.
 hermes_litellm_base_url: "http://192.168.50.50:4000/v1"
-hermes_litellm_public_url: "http://litellm.taylor.lan/v1"
+hermes_litellm_public_url: "https://litellm.taylor.lan/v1"
 hermes_searxng_url: "http://192.168.50.50:8081"
-hermes_searxng_public_url: "http://search.taylor.lan"
-hermes_openwebui_url: "http://chat.taylor.lan"
-hermes_anythingllm_url: "http://anythingllm.taylor.lan"
-hermes_n8n_url: "http://n8n.taylor.lan"
-hermes_qdrant_url: "http://qdrant.taylor.lan:80"
+hermes_searxng_public_url: "https://search.taylor.lan"
+hermes_openwebui_url: "https://chat.taylor.lan"
+hermes_anythingllm_url: "https://anythingllm.taylor.lan"
+hermes_n8n_url: "https://n8n.taylor.lan"
+hermes_qdrant_url: "https://qdrant.taylor.lan"
 hermes_qdrant_collection: "openwebui_web_memory"
 hermes_ollama_url: "http://192.168.50.51:11434"
 hermes_litellm_api_key: "{{ vault_openwebui_litellm_master_key | default(vault_hermes_omlx_api_key | default(hermes_omlx_api_key | default(''))) }}"

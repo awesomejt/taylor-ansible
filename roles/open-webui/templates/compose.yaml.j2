@@ -44,6 +44,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.openwebui.rule=Host(`{{ openwebui_traefik_hostname }}`)"
       - "traefik.http.routers.openwebui.entrypoints={{ openwebui_traefik_entrypoint }}"
+      - "traefik.http.routers.openwebui.tls=true"
       - "traefik.http.services.openwebui.loadbalancer.server.port=8080"
     networks:
       - traefik_proxy

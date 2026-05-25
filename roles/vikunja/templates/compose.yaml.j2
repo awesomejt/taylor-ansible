@@ -36,6 +36,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.vikunja.rule=Host(`{{ vikunja_traefik_hostname }}`)"
       - "traefik.http.routers.vikunja.entrypoints={{ vikunja_traefik_entrypoint }}"
+      - "traefik.http.routers.vikunja.tls=true"
       - "traefik.http.services.vikunja.loadbalancer.server.port=3456"
     networks:
       - traefik_proxy

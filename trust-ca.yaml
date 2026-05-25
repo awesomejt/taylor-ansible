@@ -1,0 +1,8 @@
+---
+- name: Install internal CA trust on managed Ubuntu VMs
+  hosts: all:!step_ca
+  gather_facts: false
+  vars_files:
+    - vars/common/vars.yaml
+  roles:
+    - trust-ca

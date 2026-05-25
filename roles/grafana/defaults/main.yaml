@@ -38,7 +38,7 @@ grafana_ldap_search_base_dns:
 # Traefik integration
 grafana_network_name: traefik_proxy
 grafana_traefik_hostname: "grafana.taylor.lan"
-grafana_traefik_entrypoint: web
+grafana_traefik_entrypoint: websecure
 
 grafana_systemd_unit: grafana.service
 grafana_systemd_unit_path: "/etc/systemd/system/{{ grafana_systemd_unit }}"

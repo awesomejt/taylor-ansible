@@ -13,7 +13,7 @@ portainer_data_dir: "{{ portainer_project_dir }}/data"
 # Traefik integration
 portainer_network_name: traefik_proxy
 portainer_traefik_hostname: "portainer.taylor.lan"
-portainer_traefik_entrypoint: web
+portainer_traefik_entrypoint: websecure
 
 portainer_systemd_unit: portainer.service
 portainer_systemd_unit_path: "/etc/systemd/system/{{ portainer_systemd_unit }}"

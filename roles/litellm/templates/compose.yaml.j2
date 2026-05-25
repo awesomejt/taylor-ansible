@@ -18,6 +18,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.litellm.rule=Host(`{{ litellm_traefik_hostname }}`)"
       - "traefik.http.routers.litellm.entrypoints={{ litellm_traefik_entrypoint }}"
+      - "traefik.http.routers.litellm.tls=true"
       - "traefik.http.services.litellm.loadbalancer.server.port={{ litellm_port }}"
     networks:
       - traefik_proxy

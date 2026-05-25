@@ -27,6 +27,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.searxng.rule=Host(`{{ searxng_traefik_hostname }}`)"
       - "traefik.http.routers.searxng.entrypoints={{ searxng_traefik_entrypoint }}"
+      - "traefik.http.routers.searxng.tls=true"
       - "traefik.http.services.searxng.loadbalancer.server.port=8080"
     networks:
       - internal
@@ -47,6 +48,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.searxng-mcp.rule=Host(`{{ searxng_mcp_traefik_hostname }}`)"
       - "traefik.http.routers.searxng-mcp.entrypoints={{ searxng_mcp_traefik_entrypoint }}"
+      - "traefik.http.routers.searxng-mcp.tls=true"
       - "traefik.http.services.searxng-mcp.loadbalancer.server.port={{ searxng_mcp_port }}"
     networks:
       - internal

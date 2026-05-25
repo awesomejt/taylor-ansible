@@ -34,8 +34,8 @@ lldap_db_user: lldap
 
 # --- Traefik UI routing ---
 lldap_traefik_hostname: ldap.taylor.lan
-lldap_traefik_entrypoint: web
+lldap_traefik_entrypoint: websecure
 
 # --- Misc ---
 lldap_verbose: false
-lldap_http_url: "http://{{ lldap_traefik_hostname }}"
+lldap_http_url: "https://{{ lldap_traefik_hostname }}"

@@ -10,7 +10,7 @@ openwebui_restart_policy: unless-stopped
 
 openwebui_data_dir: "{{ openwebui_project_dir }}/data"
 
-openwebui_webui_base_url: "http://chat.taylor.lan"
+openwebui_webui_base_url: "https://chat.taylor.lan"
 
 # Use a stable task model for query/title/tag generation so local chat model
 # selection (for example, Ollama models) does not break tool/query workflows.
@@ -73,7 +73,7 @@ openwebui_ollama_base_url: "http://192.168.50.51:11434"
 # Traefik integration
 openwebui_network_name: traefik_proxy
 openwebui_traefik_hostname: "chat.taylor.lan"
-openwebui_traefik_entrypoint: web
+openwebui_traefik_entrypoint: websecure
 
 openwebui_systemd_unit: open-webui.service
 openwebui_systemd_unit_path: "/etc/systemd/system/{{ openwebui_systemd_unit }}"

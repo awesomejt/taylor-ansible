@@ -1,0 +1,5 @@
+---
+trust_ca_cert_src_host: "{{ groups['step_ca'][0] }}"
+trust_ca_cert_src_path: /etc/step/certs/root_ca.crt
+trust_ca_cert_dest_dir: /usr/local/share/ca-certificates
+trust_ca_cert_filename: taylor-lan-root-ca.crt

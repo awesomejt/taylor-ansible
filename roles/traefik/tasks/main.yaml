@@ -31,6 +31,55 @@
     mode: "0644"
   notify: Restart traefik service
 
+- name: Ensure Traefik TLS cert directory exists
+  ansible.builtin.file:
+    path: "{{ traefik_tls_cert_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+  when: traefik_tls_enabled | bool
+
+- name: Ensure Traefik dynamic config directory exists
+  ansible.builtin.file:
+    path: "{{ traefik_tls_dynamic_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: traefik_tls_enabled | bool
+
+- name: Deploy TLS certificate
+  ansible.builtin.copy:
+    dest: "{{ traefik_tls_cert_dir }}/{{ traefik_tls_cert_file }}"
+    content: "{{ vault_traefik_tls_cert }}"
+    owner: root
+    group: root
+    mode: '0644'
+  when: traefik_tls_enabled | bool
+  notify: Restart traefik service
+
+- name: Deploy TLS private key
+  ansible.builtin.copy:
+    dest: "{{ traefik_tls_cert_dir }}/{{ traefik_tls_key_file }}"
+    content: "{{ vault_traefik_tls_key }}"
+    owner: root
+    group: root
+    mode: '0600'
+  when: traefik_tls_enabled | bool
+  no_log: true
+  notify: Restart traefik service
+
+- name: Deploy Traefik dynamic TLS config
+  ansible.builtin.template:
+    src: tls.yaml.j2
+    dest: "{{ traefik_tls_dynamic_dir }}/tls.yaml"
+    owner: root
+    group: root
+    mode: '0644'
+  when: traefik_tls_enabled | bool
+  notify: Restart traefik service
+
 - name: Ensure Traefik service is enabled and running
   ansible.builtin.systemd:
     name: "{{ traefik_systemd_unit }}"

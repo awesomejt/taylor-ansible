@@ -59,7 +59,7 @@ litellm_alias_thinking: use-thinking
 # Traefik integration
 litellm_network_name: traefik_proxy
 litellm_traefik_hostname: "litellm.taylor.lan"
-litellm_traefik_entrypoint: web
+litellm_traefik_entrypoint: websecure
 
 litellm_systemd_unit: litellm.service
 litellm_systemd_unit_path: "/etc/systemd/system/{{ litellm_systemd_unit }}"

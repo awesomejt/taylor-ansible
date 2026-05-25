@@ -88,6 +88,34 @@ The step-ca role supports automated non-interactive initialization when vaulted
 password variables are present. See `roles/step-ca/README.md` for full apply
 workflow, validation commands, and remaining manual backup steps.
 
+## Internal CA Trust
+
+Install the internal root CA certificate (`certs.taylor.lan Root CA`) on all managed Ubuntu VMs:
+
+```bash
+ansible-playbook -i inventory.ini trust-ca.yaml
+```
+
+This distributes `/etc/step/certs/root_ca.crt` from the `step_ca` host into each VM's system trust store
+(`/usr/local/share/ca-certificates/taylor-lan-root-ca.crt`) and runs `update-ca-certificates`.
+
+Run this playbook when:
+- Adding a new VM to the inventory (so internal HTTPS services resolve without `--cacert`)
+- After rebuilding the step-ca server (new cert fingerprint requires re-distribution)
+
+The role is idempotent — `update-ca-certificates` only runs if the cert file changes.
+
+If hosts are unreachable due to stale SSH host keys (common after VM rebuilds), clear the old key first:
+
+```bash
+ssh-keygen -f ~/.ssh/known_hosts -R <ip>
+ssh -o StrictHostKeyChecking=accept-new <ip> 'echo ok'
+```
+
+Then re-run the playbook. The wildcard TLS cert for `*.taylor.lan`, `*.dev.lab`, `*.stage.lab`, and
+`*.prod.lab` is stored in Vault at `secret/k3s/wildcard-tls` (keys: `tls.crt`, `tls.key`) for use
+by External Secrets Operator.
+
 OpenClaw is hard-archived in `archive/playbooks/openclaw.yaml` and `archive/roles/openclaw/`; use the reactivation steps in `archive/openclaw.md` when needed.
 
 The DNS role installs Technitium DNS Server. Zone and record management is optional and disabled by default. See `roles/technitium-dns/README.md` and `examples/dns-setup-example.yaml` for details on enabling automated DNS zone management, including RFC2136 update ACLs for ExternalDNS.

@@ -15,7 +15,7 @@ vikunja_db_dir: "{{ vikunja_project_dir }}/db"
 vikunja_container_uid: "1000"
 vikunja_container_gid: "1000"
 
-vikunja_service_public_url: "http://kanban.taylor.lan/"
+vikunja_service_public_url: "https://kanban.taylor.lan/"
 vikunja_service_secret: "{{ vault_vikunja_service_secret | default('change-me') }}"
 vikunja_service_enable_registration: false
 
@@ -44,7 +44,7 @@ vikunja_database_path: /db/vikunja.db
 # Traefik integration
 vikunja_network_name: traefik_proxy
 vikunja_traefik_hostname: "kanban.taylor.lan"
-vikunja_traefik_entrypoint: web
+vikunja_traefik_entrypoint: websecure
 
 vikunja_systemd_unit: vikunja.service
 vikunja_systemd_unit_path: "/etc/systemd/system/{{ vikunja_systemd_unit }}"

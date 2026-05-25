@@ -33,7 +33,7 @@ pgadmin_ldap_connection_timeout: 10
 # Traefik integration
 pgadmin_network_name: traefik_proxy
 pgadmin_traefik_hostname: "pgadmin.taylor.lan"
-pgadmin_traefik_entrypoint: web
+pgadmin_traefik_entrypoint: websecure
 
 pgadmin_systemd_unit: pgadmin.service
 pgadmin_systemd_unit_path: "/etc/systemd/system/{{ pgadmin_systemd_unit }}"
