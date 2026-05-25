@@ -32,3 +32,33 @@
     autoclean: true
     autoremove: true
     lock_timeout: 600
+
+- name: Ensure systemd-resolved drop-in directory exists
+  become: true
+  ansible.builtin.file:
+    path: /etc/systemd/resolved.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Configure systemd-resolved to route all DNS via local server
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/systemd/resolved.conf.d/10-local-dns.conf
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      [Resolve]
+      DNS=192.168.50.53
+      Domains=~.
+  register: _resolved_dropin
+
+- name: Restart systemd-resolved to apply DNS routing config
+  become: true
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    state: restarted
+  when: _resolved_dropin.changed
+  failed_when: false

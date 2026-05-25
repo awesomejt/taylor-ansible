@@ -3,7 +3,9 @@
   hosts: postgres_prod
   become: true
   vars_files:
+    - vars/common/vars.yaml
     - vars/common/secrets.yaml
+    - vars/vault-secrets.yaml
   vars:
     vikunja_db_name: vikunja
     vikunja_db_user: vikunja
@@ -45,6 +47,7 @@
   vars_files:
     - vars/common/vars.yaml
     - vars/common/secrets.yaml
+    - vars/vault-secrets.yaml
   pre_tasks:
     - name: Wait for apt locks to be released
       ansible.builtin.shell: |

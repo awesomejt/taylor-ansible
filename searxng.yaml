@@ -6,6 +6,7 @@
   vars_files:
     - vars/common/vars.yaml
     - vars/common/secrets.yaml
+    - vars/vault-secrets.yaml
   pre_tasks:
     - name: Wait for apt locks to be released
       ansible.builtin.shell: |

@@ -3,7 +3,9 @@
   hosts: postgres_prod
   become: true
   vars_files:
+    - vars/common/vars.yaml
     - vars/common/secrets.yaml
+    - vars/vault-secrets.yaml
   vars:
     openwebui_blocklist_db_name: openwebui_blocklist
     openwebui_blocklist_db_user: openwebui_blocklist
@@ -48,6 +50,7 @@
   vars_files:
     - "vars/common/vars.yaml"
     - "vars/common/secrets.yaml"
+    - "vars/vault-secrets.yaml"
   pre_tasks:
     - name: Wait for apt locks to be released
       ansible.builtin.shell: |

@@ -3,7 +3,9 @@
   hosts: postgres_prod
   become: true
   vars_files:
+    - vars/common/vars.yaml
     - vars/common/secrets.yaml
+    - vars/vault-secrets.yaml
   vars:
     harbor_db_name: harbor
     harbor_db_user: harbor
@@ -45,6 +47,7 @@
   vars_files:
     - vars/common/vars.yaml
     - vars/common/secrets.yaml
+    - vars/vault-secrets.yaml
   pre_tasks:
     - name: Wait for apt locks to be released
       ansible.builtin.shell: |
