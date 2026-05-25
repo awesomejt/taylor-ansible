@@ -1,0 +1,146 @@
+---
+- name: Populate HashiCorp Vault with infrastructure secrets
+  hosts: vault
+  become: false
+  gather_facts: false
+  vars_files:
+    - vars/common/vars.yaml
+    - vars/common/secrets.yaml
+  vars:
+    _vault_addr: "http://127.0.0.1:8200"
+    _vault_token: "{{ vault_admin_token }}"
+    _vault_secrets:
+
+      # ── Traefik ───────────────────────────────────────────────────────────
+      # Moved from secret/k3s/wildcard-tls — cert is site-wide, not k3s-only
+      - path: infra/traefik/wildcard-tls
+        data:
+          tls.crt: "{{ vault_traefik_tls_cert }}"
+          tls.key: "{{ vault_traefik_tls_key }}"
+
+      # ── Harbor ────────────────────────────────────────────────────────────
+      - path: infra/harbor/admin
+        data:
+          password: "{{ vault_harbor_admin_password }}"
+      - path: infra/harbor/db
+        data:
+          password: "{{ vault_harbor_db_password }}"
+      - path: infra/harbor/robot-local
+        data:
+          secret: "{{ vault_harbor_robot_local_secret }}"
+      - path: infra/harbor/robot-opencode
+        data:
+          secret: "{{ vault_harbor_robot_opencode_secret }}"
+      - path: infra/harbor/robot-hermes
+        data:
+          secret: "{{ vault_harbor_robot_hermes_secret }}"
+
+      # ── LLDAP ─────────────────────────────────────────────────────────────
+      - path: infra/lldap/jwt-secret
+        data:
+          value: "{{ vault_lldap_jwt_secret }}"
+      - path: infra/lldap/ldap-user-pass
+        data:
+          password: "{{ vault_lldap_ldap_user_pass }}"
+      - path: infra/lldap/db-password
+        data:
+          password: "{{ vault_lldap_db_password }}"
+
+      # ── Hermes ────────────────────────────────────────────────────────────
+      - path: infra/hermes/github-token
+        data:
+          token: "{{ vault_hermes_gh_token }}"
+      - path: infra/hermes/openrouter-api-key
+        data:
+          key: "{{ vault_hermes_openrouter_api_key }}"
+      - path: infra/hermes/discord-tokens
+        data:
+          admin: "{{ vault_hermes_discord_tokens.admin }}"
+          jessica: "{{ vault_hermes_discord_tokens.jessica }}"
+          chat: "{{ vault_hermes_discord_tokens.chat }}"
+          research: "{{ vault_hermes_discord_tokens.research }}"
+          coding: "{{ vault_hermes_discord_tokens.coding }}"
+      - path: infra/hermes/omlx-monitor-webhook
+        data:
+          url: "{{ vault_hermes_omlx_monitor_webhook }}"
+
+      # ── AI stack ──────────────────────────────────────────────────────────
+      - path: infra/litellm/master-key
+        data:
+          key: "{{ vault_litellm_master_key }}"
+      - path: infra/litellm/postgres-password
+        data:
+          password: "{{ vault_litellm_postgres_password }}"
+      - path: infra/searxng/secret-key
+        data:
+          key: "{{ vault_searxng_secret_key }}"
+      - path: infra/n8n/encryption-key
+        data:
+          key: "{{ vault_n8n_encryption_key }}"
+      - path: infra/openwebui-blocklist/db-password
+        data:
+          password: "{{ vault_openwebui_blocklist_postgres_password }}"
+
+      # ── Vikunja ───────────────────────────────────────────────────────────
+      - path: infra/vikunja/service-secret
+        data:
+          secret: "{{ vault_vikunja_service_secret }}"
+      - path: infra/vikunja/db-password
+        data:
+          password: "{{ vault_vikunja_db_password }}"
+
+      # ── k3s workload secrets (ESO-accessible via secret/k3s/*) ────────────
+      - path: k3s/external-dns
+        data:
+          dev: "{{ vault_external_dns_dev_rfc2136_tsig_secret }}"
+          stage: "{{ vault_external_dns_stage_rfc2136_tsig_secret }}"
+          prod: "{{ vault_external_dns_prod_rfc2136_tsig_secret }}"
+
+  tasks:
+    - name: Verify Vault is unsealed and reachable
+      ansible.builtin.uri:
+        url: "{{ _vault_addr }}/v1/sys/health"
+        method: GET
+        status_code: 200
+      register: _vault_health
+      failed_when: _vault_health.json.sealed | default(true) | bool
+
+    - name: Check whether each secret path already exists in Vault
+      ansible.builtin.uri:
+        url: "{{ _vault_addr }}/v1/secret/data/{{ item.path }}"
+        method: GET
+        headers:
+          X-Vault-Token: "{{ _vault_token }}"
+        status_code: [200, 404]
+      loop: "{{ _vault_secrets }}"
+      loop_control:
+        label: "{{ item.path }}"
+      register: _vault_checks
+      no_log: true
+
+    - name: Write secrets not yet present in Vault
+      ansible.builtin.uri:
+        url: "{{ _vault_addr }}/v1/secret/data/{{ item.item.path }}"
+        method: POST
+        headers:
+          X-Vault-Token: "{{ _vault_token }}"
+        body_format: json
+        body:
+          data: "{{ item.item.data }}"
+        status_code: 200
+      loop: "{{ _vault_checks.results }}"
+      loop_control:
+        label: "{{ item.item.path }}"
+      when: item.status == 404
+      no_log: true
+      changed_when: true
+
+    - name: Remove deprecated secret/k3s/wildcard-tls
+      ansible.builtin.uri:
+        url: "{{ _vault_addr }}/v1/secret/metadata/k3s/wildcard-tls"
+        method: DELETE
+        headers:
+          X-Vault-Token: "{{ _vault_token }}"
+        status_code: [204, 404]
+      register: _delete_wildcard_tls
+      changed_when: _delete_wildcard_tls.status == 204
