@@ -118,6 +118,27 @@
 
 # --- Nginx reverse proxy --------------------------------------------------
 
+- name: Deploy vault nginx TLS certificate
+  ansible.builtin.copy:
+    dest: "{{ vault_proxy_tls_cert_path }}"
+    content: "{{ vault_traefik_tls_cert }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when: vault_proxy_tls_enabled | bool
+  notify: Reload nginx
+
+- name: Deploy vault nginx TLS private key
+  ansible.builtin.copy:
+    dest: "{{ vault_proxy_tls_key_path }}"
+    content: "{{ vault_traefik_tls_key }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  when: vault_proxy_tls_enabled | bool
+  notify: Reload nginx
+
 - name: Remove nginx default site
   ansible.builtin.file:
     path: /etc/nginx/sites-enabled/default

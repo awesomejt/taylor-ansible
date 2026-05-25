@@ -44,9 +44,9 @@ vault_proxy_http_port: 80
 vault_proxy_tls_enabled: false
 vault_proxy_tls_port: 443
 vault_proxy_tls_force_https: false
-vault_proxy_tls_cert_path: "/certs/vault.crt"
-vault_proxy_tls_key_path: "/certs/vault.key"
 vault_proxy_certs_dir: /opt/vault-proxy/certs
+vault_proxy_tls_cert_path: "{{ vault_proxy_certs_dir }}/wildcard.crt"
+vault_proxy_tls_key_path: "{{ vault_proxy_certs_dir }}/wildcard.key"
 
 vault_nginx_config_path: /etc/nginx/sites-available/vault.conf
 vault_nginx_enabled_path: /etc/nginx/sites-enabled/vault.conf

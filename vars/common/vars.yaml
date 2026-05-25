@@ -44,6 +44,11 @@ openclaw_discord_channel_development_id: "1499959791202603180"
 openclaw_discord_channel_research_id: "1499959898291830874"
 openclaw_discord_channel_reports_id: "1499960253163241502"
 
+# Vault — nginx TLS proxy (Vault listener stays HTTP on 127.0.0.1:8200)
+vault_proxy_tls_enabled: true
+vault_proxy_tls_force_https: true
+vault_api_addr: "https://vault.taylor.lan"
+
 # Dedicated Ollama host with optional reverse proxy for browser access.
 # API clients should continue using :11434 directly.
 ollama_nginx_enable: true
