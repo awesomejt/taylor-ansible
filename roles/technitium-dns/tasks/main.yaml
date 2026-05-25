@@ -351,3 +351,83 @@
   loop: "{{ technitium_zones | subelements('records', skip_missing=True) }}"
   when: technitium_zones | length > 0 and item.1.domain is defined
   failed_when: false  # Record might already exist
+
+# --- Nginx reverse proxy for admin UI ---
+
+- name: Install nginx for Technitium admin UI proxy
+  become: true
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    lock_timeout: 600
+  when: technitium_nginx_enable | bool
+
+- name: Ensure Technitium nginx SSL certificate directory exists
+  become: true
+  ansible.builtin.file:
+    path: "{{ technitium_nginx_ssl_cert_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  when: technitium_nginx_enable | bool and technitium_nginx_ssl_enable | bool
+
+- name: Deploy Technitium nginx TLS certificate
+  become: true
+  ansible.builtin.copy:
+    dest: "{{ technitium_nginx_ssl_cert_file }}"
+    content: "{{ vault_traefik_tls_cert }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when: technitium_nginx_enable | bool and technitium_nginx_ssl_enable | bool
+  notify: Reload nginx
+
+- name: Deploy Technitium nginx TLS private key
+  become: true
+  ansible.builtin.copy:
+    dest: "{{ technitium_nginx_ssl_key_file }}"
+    content: "{{ vault_traefik_tls_key }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  when: technitium_nginx_enable | bool and technitium_nginx_ssl_enable | bool
+  notify: Reload nginx
+
+- name: Deploy Technitium nginx site config
+  become: true
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/technitium
+    owner: root
+    group: root
+    mode: "0644"
+  when: technitium_nginx_enable | bool
+  notify: Reload nginx
+
+- name: Enable Technitium nginx site
+  become: true
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/technitium
+    dest: /etc/nginx/sites-enabled/technitium
+    state: link
+  when: technitium_nginx_enable | bool
+  notify: Reload nginx
+
+- name: Disable nginx default site
+  become: true
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  when: technitium_nginx_enable | bool
+  notify: Reload nginx
+
+- name: Ensure nginx is enabled and running
+  become: true
+  ansible.builtin.systemd:
+    name: nginx
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: technitium_nginx_enable | bool

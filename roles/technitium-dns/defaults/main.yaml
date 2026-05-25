@@ -26,3 +26,14 @@ technitium_zones: []
 # TSIG keys to configure on the Technitium server (managed via API)
 
 technitium_tsig_keys: []
+
+# Nginx reverse proxy for Technitium admin UI
+technitium_nginx_enable: false
+technitium_nginx_server_name: "dns.taylor.lan"
+technitium_nginx_http_port: 80
+technitium_nginx_https_port: 443
+technitium_nginx_ssl_enable: false
+technitium_nginx_ssl_cert_dir: /etc/nginx/ssl
+technitium_nginx_ssl_cert_file: "{{ technitium_nginx_ssl_cert_dir }}/wildcard.crt"
+technitium_nginx_ssl_key_file: "{{ technitium_nginx_ssl_cert_dir }}/wildcard.key"
+technitium_nginx_backend_port: 5380

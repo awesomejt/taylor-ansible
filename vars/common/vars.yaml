@@ -8,6 +8,9 @@ traefik_tls_enabled: true
 technitium_api_url: "http://192.168.50.53:5380"
 technitium_username: "admin"
 technitium_password: "{{ vault_technitium_password | default('admin') }}"
+technitium_nginx_enable: true
+technitium_nginx_server_name: "dns.taylor.lan"
+technitium_nginx_ssl_enable: true
 
 k3s_external_dns_rfc2136_tsig_keyname_dev: "external-dns-dev"
 k3s_external_dns_rfc2136_tsig_keyname_stage: "external-dns-stage"
