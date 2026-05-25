@@ -1,5 +1,13 @@
 # TODO
 
+## Ansible Project Code Review (2026-05-25)
+
+- [x] Inventory project structure and current Vault migration state.
+- [x] Review playbooks, roles, secret handling, and validation setup.
+- [x] Record findings in `docs/reviews`.
+- [x] Run safe local validation/read-only checks.
+- [x] Commit review documentation locally.
+
 ## Qdrant + SearXNG MCP Servers (2026-05-20)
 
 - [x] Decide deployment direction: embed MCP services into existing Qdrant/SearXNG compose stacks.
