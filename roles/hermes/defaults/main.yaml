@@ -121,6 +121,9 @@ hermes_nginx_server_name: "{{ inventory_hostname }}"
 hermes_nginx_http_port: 80
 hermes_nginx_https_port: 443
 hermes_nginx_ssl_enable: false
+hermes_nginx_ssl_cert_dir: /etc/nginx/ssl
+hermes_nginx_ssl_cert_file: "{{ hermes_nginx_ssl_cert_dir }}/wildcard.crt"
+hermes_nginx_ssl_key_file: "{{ hermes_nginx_ssl_cert_dir }}/wildcard.key"
 hermes_nginx_auth_enable: false
 hermes_nginx_auth_user: "admin"
 hermes_nginx_htpasswd_file: "/etc/nginx/hermes.htpasswd"
@@ -128,9 +131,9 @@ hermes_nginx_htpasswd_file: "/etc/nginx/hermes.htpasswd"
 # External MCP Servers to connect to
 hermes_mcp_servers:
   qdrant:
-    url: "http://mcp-qdrant.taylor.lan/mcp/"
+    url: "https://mcp-qdrant.taylor.lan/mcp/"
   searxng:
-    url: "http://mcp-searxng.taylor.lan/mcp"
+    url: "https://mcp-searxng.taylor.lan/mcp"
 
 # oMLX server availability monitor.
 # Polls both oMLX endpoints every 5 minutes and sends a Discord webhook alert on state transitions.
