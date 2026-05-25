@@ -49,6 +49,8 @@ openclaw_discord_channel_reports_id: "1499960253163241502"
 ollama_nginx_enable: true
 ollama_nginx_server_name: "ollama.taylor.lan"
 ollama_nginx_http_port: 80
+ollama_nginx_https_port: 443
+ollama_nginx_ssl_enable: true
 
 # AI stack shared defaults
 # AI stack — each service has its own role with defaults in roles/<name>/defaults/main.yaml.
@@ -152,14 +154,14 @@ hermes_api_max_retries: 1
 # Keep LiteLLM as the default provider for all Hermes profiles.
 hermes_litellm_base_url: "http://192.168.50.50:4000/v1"
 hermes_litellm_public_url: "https://litellm.taylor.lan/v1"
-hermes_searxng_url: "http://192.168.50.50:8081"
+hermes_searxng_url: "https://search.taylor.lan"
 hermes_searxng_public_url: "https://search.taylor.lan"
 hermes_openwebui_url: "https://chat.taylor.lan"
 hermes_anythingllm_url: "https://anythingllm.taylor.lan"
 hermes_n8n_url: "https://n8n.taylor.lan"
 hermes_qdrant_url: "https://qdrant.taylor.lan"
 hermes_qdrant_collection: "openwebui_web_memory"
-hermes_ollama_url: "http://192.168.50.51:11434"
+hermes_ollama_url: "https://ollama.taylor.lan"
 hermes_litellm_api_key: "{{ vault_openwebui_litellm_master_key | default(vault_hermes_omlx_api_key | default(hermes_omlx_api_key | default(''))) }}"
 hermes_ollama_chat_model: "llama3.2:latest"
 hermes_ollama_coding_model: "deepseek-coder-v2:latest"
@@ -418,7 +420,7 @@ hermes_nginx_enable: true
 hermes_nginx_server_name: "hermes.taylor.lan"
 hermes_nginx_http_port: 80
 hermes_nginx_https_port: 443
-hermes_nginx_ssl_enable: false
+hermes_nginx_ssl_enable: true
 # Basic auth strongly recommended — dashboard stores all API keys
 hermes_nginx_auth_enable: true
 hermes_nginx_auth_user: "admin"

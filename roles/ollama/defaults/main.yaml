@@ -27,6 +27,11 @@ ollama_nginx_container_name: ollama-nginx
 ollama_nginx_server_name: "ollama.taylor.lan"
 ollama_nginx_bind_address: "0.0.0.0"
 ollama_nginx_http_port: 80
+ollama_nginx_https_port: 443
+ollama_nginx_ssl_enable: false
+ollama_nginx_ssl_cert_dir: "{{ ollama_project_dir }}/certs"
+ollama_nginx_ssl_cert_file: /etc/nginx/ssl/wildcard.crt
+ollama_nginx_ssl_key_file: /etc/nginx/ssl/wildcard.key
 ollama_nginx_config_dir: "{{ ollama_project_dir }}/nginx"
 ollama_nginx_config_path: "{{ ollama_nginx_config_dir }}/default.conf"
 ollama_nginx_proxy_host: "{{ ollama_container_name }}"

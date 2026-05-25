@@ -1,7 +1,26 @@
+{% if ollama_nginx_ssl_enable | bool %}
+server {
+  listen {{ ollama_nginx_http_port }};
+  server_name {{ ollama_nginx_server_name }};
+  return 301 https://$host$request_uri;
+}
+
+server {
+  listen {{ ollama_nginx_https_port }} ssl;
+  server_name {{ ollama_nginx_server_name }};
+
+  ssl_certificate {{ ollama_nginx_ssl_cert_file }};
+  ssl_certificate_key {{ ollama_nginx_ssl_key_file }};
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_ciphers HIGH:!aNULL:!MD5;
+  ssl_prefer_server_ciphers on;
+
+{% else %}
 server {
   listen {{ ollama_nginx_http_port }};
   server_name {{ ollama_nginx_server_name }};
 
+{% endif %}
   location / {
     proxy_pass http://{{ ollama_nginx_proxy_host }}:{{ ollama_nginx_proxy_port }};
     proxy_http_version 1.1;

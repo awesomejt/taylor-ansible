@@ -27,6 +27,36 @@
   loop_control:
     label: "{{ item }}"
 
+- name: Ensure Ollama nginx SSL certificate directory exists
+  ansible.builtin.file:
+    path: "{{ ollama_nginx_ssl_cert_dir }}"
+    state: directory
+    owner: "{{ ollama_primary_user }}"
+    group: "{{ ollama_primary_user }}"
+    mode: "0700"
+  when: ollama_nginx_enable | bool and ollama_nginx_ssl_enable | bool
+
+- name: Deploy Ollama nginx TLS certificate
+  ansible.builtin.copy:
+    dest: "{{ ollama_nginx_ssl_cert_dir }}/wildcard.crt"
+    content: "{{ vault_traefik_tls_cert }}"
+    owner: "{{ ollama_primary_user }}"
+    group: "{{ ollama_primary_user }}"
+    mode: "0644"
+  when: ollama_nginx_enable | bool and ollama_nginx_ssl_enable | bool
+  notify: Restart ollama service
+
+- name: Deploy Ollama nginx TLS private key
+  ansible.builtin.copy:
+    dest: "{{ ollama_nginx_ssl_cert_dir }}/wildcard.key"
+    content: "{{ vault_traefik_tls_key }}"
+    owner: "{{ ollama_primary_user }}"
+    group: "{{ ollama_primary_user }}"
+    mode: "0600"
+  no_log: true
+  when: ollama_nginx_enable | bool and ollama_nginx_ssl_enable | bool
+  notify: Restart ollama service
+
 - name: Deploy nginx reverse proxy configuration for Ollama compose sidecar
   ansible.builtin.template:
     src: nginx.conf.j2
@@ -73,7 +103,7 @@
 - name: Wait for nginx reverse proxy port to be ready
   ansible.builtin.wait_for:
     host: 127.0.0.1
-    port: "{{ ollama_nginx_http_port }}"
+    port: "{{ ollama_nginx_https_port if ollama_nginx_ssl_enable | bool else ollama_nginx_http_port }}"
     timeout: 60
   when: ollama_nginx_enable | bool
 

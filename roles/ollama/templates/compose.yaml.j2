@@ -20,7 +20,13 @@ services:
       - ollama
     ports:
       - "{{ ollama_nginx_bind_address }}:{{ ollama_nginx_http_port }}:80"
+{% if ollama_nginx_ssl_enable | bool %}
+      - "{{ ollama_nginx_bind_address }}:{{ ollama_nginx_https_port }}:443"
+{% endif %}
     volumes:
       - {{ ollama_nginx_config_path }}:/etc/nginx/conf.d/default.conf:ro
+{% if ollama_nginx_ssl_enable | bool %}
+      - {{ ollama_nginx_ssl_cert_dir }}:/etc/nginx/ssl:ro
+{% endif %}
     pull_policy: always
 {% endif %}
