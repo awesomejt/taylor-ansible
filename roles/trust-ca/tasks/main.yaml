@@ -15,4 +15,6 @@
     owner: root
     group: root
     mode: '0644'
-  notify: Update CA certificates
+  notify:
+    - Update CA certificates
+    - Restart Docker if present
