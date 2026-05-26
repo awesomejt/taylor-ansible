@@ -1,0 +1,82 @@
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: agent_workbench
+      POSTGRES_USER: agent_workbench
+      POSTGRES_PASSWORD: "{{ awb_db_password }}"
+    volumes:
+      - db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent_workbench"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - internal
+    restart: unless-stopped
+
+  migrations:
+    build: api
+    command: uv run alembic upgrade head
+    environment:
+      APP_ENV: prod
+      DATABASE_URL: "postgresql+psycopg://agent_workbench:{{ awb_db_password }}@db/agent_workbench"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+    restart: "no"
+
+  api:
+    build: api
+    command: uv run agent-workbench-api
+    environment:
+      APP_ENV: prod
+      DATABASE_URL: "postgresql+psycopg://agent_workbench:{{ awb_db_password }}@db/agent_workbench"
+      SECRET_KEY: "{{ awb_secret_key }}"
+      API_HOST: "0.0.0.0"
+      API_PORT: "{{ awb_api_port }}"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.awb-api.rule=Host(`{{ awb_api_hostname }}`)"
+      - "traefik.http.routers.awb-api.entrypoints={{ awb_traefik_entrypoint }}"
+      - "traefik.http.routers.awb-api.tls=true"
+      - "traefik.http.services.awb-api.loadbalancer.server.port={{ awb_api_port }}"
+    networks:
+      - internal
+      - {{ awb_network_name }}
+    restart: unless-stopped
+
+  web:
+    build: web
+    environment:
+      AWB_API_URL: "http://api:{{ awb_api_port }}"
+      PORT: "{{ awb_web_port }}"
+    depends_on:
+      - api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.awb-web.rule=Host(`{{ awb_web_hostname }}`)"
+      - "traefik.http.routers.awb-web.entrypoints={{ awb_traefik_entrypoint }}"
+      - "traefik.http.routers.awb-web.tls=true"
+      - "traefik.http.services.awb-web.loadbalancer.server.port={{ awb_web_port }}"
+    networks:
+      - internal
+      - {{ awb_network_name }}
+    restart: unless-stopped
+
+networks:
+  internal:
+    driver: bridge
+  {{ awb_network_name }}:
+    external: true
+
+volumes:
+  db_data:

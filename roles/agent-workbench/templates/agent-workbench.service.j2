@@ -1,0 +1,17 @@
+[Unit]
+Description=Agent Workbench
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=exec
+WorkingDirectory={{ awb_project_dir }}
+ExecStart=/usr/bin/docker compose -f {{ awb_compose_server_file }} up --remove-orphans
+ExecStop=/usr/bin/docker compose -f {{ awb_compose_server_file }} down
+Restart=on-failure
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

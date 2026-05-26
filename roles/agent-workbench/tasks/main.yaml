@@ -1,0 +1,96 @@
+---
+# ── GitHub SSH deploy key ─────────────────────────────────────────────────────
+
+- name: Ensure /root/.ssh directory exists
+  ansible.builtin.file:
+    path: /root/.ssh
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Deploy GitHub SSH deploy key
+  ansible.builtin.copy:
+    dest: "{{ awb_github_ssh_key_path }}"
+    content: "{{ awb_github_ssh_private_key }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  when: awb_github_ssh_private_key | length > 0
+
+- name: Add GitHub to root known_hosts
+  ansible.builtin.known_hosts:
+    name: github.com
+    key: "{{ lookup('pipe', 'ssh-keyscan -H github.com') }}"
+    state: present
+    path: /root/.ssh/known_hosts
+
+# ── Clone / update repository ─────────────────────────────────────────────────
+
+- name: Clone or update Agent Workbench repository
+  ansible.builtin.git:
+    repo: "{{ awb_git_repo }}"
+    dest: "{{ awb_project_dir }}"
+    version: "{{ awb_git_branch }}"
+    force: true
+    update: true
+  environment:
+    GIT_SSH_COMMAND: "ssh -i {{ awb_github_ssh_key_path }} -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
+  register: _awb_git
+
+# ── Production compose file ───────────────────────────────────────────────────
+
+- name: Deploy production compose file
+  ansible.builtin.template:
+    src: compose.server.yaml.j2
+    dest: "{{ awb_compose_server_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+  register: _awb_compose
+  notify: Rebuild AWB
+
+# ── Docker build ──────────────────────────────────────────────────────────────
+
+- name: Build Agent Workbench Docker images
+  ansible.builtin.command:
+    cmd: docker compose -f "{{ awb_compose_server_file }}" build
+    chdir: "{{ awb_project_dir }}"
+  changed_when: true
+  when: _awb_git.changed or _awb_compose.changed
+  notify: Restart AWB
+
+# ── Systemd ───────────────────────────────────────────────────────────────────
+
+- name: Deploy Agent Workbench systemd unit
+  ansible.builtin.template:
+    src: agent-workbench.service.j2
+    dest: "{{ awb_systemd_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart AWB
+
+- name: Ensure Agent Workbench service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ awb_systemd_unit }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Apply pending handlers
+  ansible.builtin.meta: flush_handlers
+
+# ── Readiness check ───────────────────────────────────────────────────────────
+
+- name: Wait for Agent Workbench API to be ready
+  ansible.builtin.uri:
+    url: "https://{{ awb_api_hostname }}/health"
+    validate_certs: false
+    status_code:
+      - 200
+  register: _awb_api_ready
+  until: _awb_api_ready is succeeded
+  retries: 36
+  delay: 5

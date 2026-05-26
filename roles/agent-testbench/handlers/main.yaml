@@ -1,0 +1,12 @@
+---
+- name: Rebuild ATB
+  ansible.builtin.command:
+    cmd: docker compose -f "{{ atb_compose_server_file }}" build
+    chdir: "{{ atb_project_dir }}"
+  changed_when: true
+
+- name: Restart ATB
+  ansible.builtin.systemd:
+    name: "{{ atb_systemd_unit }}"
+    state: restarted
+    daemon_reload: true

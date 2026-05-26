@@ -1,0 +1,70 @@
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: "{{ atb_db_user }}"
+      POSTGRES_PASSWORD: "{{ atb_db_password }}"
+      POSTGRES_DB: "{{ atb_db_name }}"
+    volumes:
+      - db_data:/var/lib/postgresql
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{ atb_db_user }}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./api
+    environment:
+      DATABASE_URL: "postgresql://{{ atb_db_user }}:{{ atb_db_password }}@db:5432/{{ atb_db_name }}"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:{{ atb_api_port }}/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.atb-api.rule=Host(`{{ atb_api_hostname }}`)"
+      - "traefik.http.routers.atb-api.entrypoints={{ atb_traefik_entrypoint }}"
+      - "traefik.http.routers.atb-api.tls=true"
+      - "traefik.http.services.atb-api.loadbalancer.server.port={{ atb_api_port }}"
+    networks:
+      - internal
+      - {{ atb_network_name }}
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+      args:
+        VITE_API_URL: "https://{{ atb_api_hostname }}"
+    depends_on:
+      - api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.atb-web.rule=Host(`{{ atb_web_hostname }}`)"
+      - "traefik.http.routers.atb-web.entrypoints={{ atb_traefik_entrypoint }}"
+      - "traefik.http.routers.atb-web.tls=true"
+      - "traefik.http.services.atb-web.loadbalancer.server.port={{ atb_web_port }}"
+    networks:
+      - internal
+      - {{ atb_network_name }}
+    restart: unless-stopped
+
+networks:
+  internal:
+    driver: bridge
+  {{ atb_network_name }}:
+    external: true
+
+volumes:
+  db_data:

@@ -1,0 +1,10 @@
+---
+- name: Deploy Agent Testbench
+  hosts: "{{ target | default('compose') }}"
+  become: true
+  vars_files:
+    - vars/common/vars.yaml
+    - vars/common/secrets.yaml
+    - vars/vault-secrets.yaml
+  roles:
+    - agent-testbench

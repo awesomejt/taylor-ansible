@@ -1,0 +1,21 @@
+---
+atb_project_dir: /opt/agent-testbench
+atb_git_repo: "git@github.com:awesomejt/agent-testbench.git"
+atb_git_branch: main
+atb_github_ssh_key_path: /root/.ssh/compose_deploy_id_rsa
+atb_github_ssh_private_key: "{{ vault_compose_github_deploy_key_private | default('') }}"
+
+atb_api_hostname: atb-api.taylor.lan
+atb_web_hostname: atb-web.taylor.lan
+atb_traefik_entrypoint: websecure
+atb_network_name: traefik_proxy
+atb_api_port: 5000
+atb_web_port: 3000
+
+atb_db_user: testbench
+atb_db_password: "{{ vault_atb_db_password | default('change-me') }}"
+atb_db_name: testbench
+
+atb_compose_server_file: "{{ atb_project_dir }}/compose.server.yaml"
+atb_systemd_unit: agent-testbench.service
+atb_systemd_unit_path: "/etc/systemd/system/{{ atb_systemd_unit }}"

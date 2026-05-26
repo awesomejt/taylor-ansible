@@ -1,0 +1,96 @@
+---
+# ── GitHub SSH deploy key ─────────────────────────────────────────────────────
+
+- name: Ensure /root/.ssh directory exists
+  ansible.builtin.file:
+    path: /root/.ssh
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Deploy GitHub SSH deploy key
+  ansible.builtin.copy:
+    dest: "{{ atb_github_ssh_key_path }}"
+    content: "{{ atb_github_ssh_private_key }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  when: atb_github_ssh_private_key | length > 0
+
+- name: Add GitHub to root known_hosts
+  ansible.builtin.known_hosts:
+    name: github.com
+    key: "{{ lookup('pipe', 'ssh-keyscan -H github.com') }}"
+    state: present
+    path: /root/.ssh/known_hosts
+
+# ── Clone / update repository ─────────────────────────────────────────────────
+
+- name: Clone or update Agent Testbench repository
+  ansible.builtin.git:
+    repo: "{{ atb_git_repo }}"
+    dest: "{{ atb_project_dir }}"
+    version: "{{ atb_git_branch }}"
+    force: true
+    update: true
+  environment:
+    GIT_SSH_COMMAND: "ssh -i {{ atb_github_ssh_key_path }} -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
+  register: _atb_git
+
+# ── Production compose file ───────────────────────────────────────────────────
+
+- name: Deploy production compose file
+  ansible.builtin.template:
+    src: compose.server.yaml.j2
+    dest: "{{ atb_compose_server_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+  register: _atb_compose
+  notify: Rebuild ATB
+
+# ── Docker build ──────────────────────────────────────────────────────────────
+
+- name: Build Agent Testbench Docker images
+  ansible.builtin.command:
+    cmd: docker compose -f "{{ atb_compose_server_file }}" build
+    chdir: "{{ atb_project_dir }}"
+  changed_when: true
+  when: _atb_git.changed or _atb_compose.changed
+  notify: Restart ATB
+
+# ── Systemd ───────────────────────────────────────────────────────────────────
+
+- name: Deploy Agent Testbench systemd unit
+  ansible.builtin.template:
+    src: agent-testbench.service.j2
+    dest: "{{ atb_systemd_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart ATB
+
+- name: Ensure Agent Testbench service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ atb_systemd_unit }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Apply pending handlers
+  ansible.builtin.meta: flush_handlers
+
+# ── Readiness check ───────────────────────────────────────────────────────────
+
+- name: Wait for Agent Testbench API to be ready
+  ansible.builtin.uri:
+    url: "https://{{ atb_api_hostname }}/health"
+    validate_certs: false
+    status_code:
+      - 200
+  register: _atb_api_ready
+  until: _atb_api_ready is succeeded
+  retries: 36
+  delay: 5
