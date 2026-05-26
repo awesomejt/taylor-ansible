@@ -45,10 +45,18 @@ opencode_groovy_version: "5.0.6"
 opencode_gradle_version: "9.5.1"
 opencode_maven_version: "3.9.16"
 
+# ── Global npm packages ───────────────────────────────────────────────────────
+opencode_npm_global_packages:
+  - typescript
+  - ts-node
+
 # ── Claude Code CLI ───────────────────────────────────────────────────────────
 # Installed via npm after NVM setup. Set to false to skip.
 opencode_install_cli: true
 opencode_cli_npm_package: "@anthropic-ai/claude-code"
+
+# ── Docker access ─────────────────────────────────────────────────────────────
+opencode_docker_access: true
 
 # ── GitHub SSH access ─────────────────────────────────────────────────────────
 # Populated via Vault lookup in vault-secrets.yaml
