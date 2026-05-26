@@ -28,22 +28,22 @@ opencode_go_package: "golang-go"
 
 # ── Python / uv ───────────────────────────────────────────────────────────────
 opencode_install_uv: true
-opencode_uv_version: "0.7.8"
+opencode_uv_version: "0.11.16"
 
 # ── Node.js / NVM ─────────────────────────────────────────────────────────────
 opencode_install_nvm: true
-opencode_nvm_version: "0.40.3"
+opencode_nvm_version: "0.40.4"
 opencode_node_versions:
-  - "lts/*"    # current LTS (22.x)
-  - "node"     # latest (24.x+)
+  - "lts/*"    # current LTS (24.x / krypton)
+  - "node"     # latest (26.x+)
 opencode_node_default: "lts/*"
 
 # ── Java ecosystem / SDKMAN ───────────────────────────────────────────────────
 opencode_install_sdkman: true
-opencode_java_version: "21.0.7-tem"     # Temurin LTS
-opencode_groovy_version: "4.0.24"
-opencode_gradle_version: "8.14.1"
-opencode_maven_version: "3.9.9"
+opencode_java_version: "25.0.3-tem"     # Java 25 LTS (Temurin)
+opencode_groovy_version: "5.0.6"
+opencode_gradle_version: "9.5.1"
+opencode_maven_version: "3.9.16"
 
 # ── Claude Code CLI ───────────────────────────────────────────────────────────
 # Installed via npm after NVM setup. Set to false to skip.

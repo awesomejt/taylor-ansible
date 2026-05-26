@@ -120,15 +120,24 @@
     lock_timeout: 600
   when: opencode_install_go | bool
 
-- name: Install Go
+- name: Install Go (latest from PPA)
   become: true
   ansible.builtin.apt:
     name: "{{ opencode_go_package }}"
-    state: present
+    state: latest
     lock_timeout: 600
   when: opencode_install_go | bool
 
 # ── Python / uv ───────────────────────────────────────────────────────────────
+
+- name: Check installed uv version
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.command: "{{ opencode_home_dir }}/.local/bin/uv --version"
+  register: _uv_installed_version
+  changed_when: false
+  failed_when: false
+  when: opencode_install_uv | bool
 
 - name: Download uv installer
   become: true
@@ -136,7 +145,10 @@
     url: "https://github.com/astral-sh/uv/releases/download/{{ opencode_uv_version }}/uv-installer.sh"
     dest: /tmp/uv-installer.sh
     mode: "0755"
-  when: opencode_install_uv | bool
+    force: true
+  when:
+    - opencode_install_uv | bool
+    - _uv_installed_version.rc != 0 or opencode_uv_version not in _uv_installed_version.stdout
 
 - name: Install uv for opencode user
   become: true
@@ -145,11 +157,24 @@
   environment:
     HOME: "{{ opencode_home_dir }}"
     UV_INSTALL_DIR: "{{ opencode_home_dir }}/.local/bin"
-  args:
-    creates: "{{ opencode_home_dir }}/.local/bin/uv"
-  when: opencode_install_uv | bool
+  when:
+    - opencode_install_uv | bool
+    - _uv_installed_version.rc != 0 or opencode_uv_version not in _uv_installed_version.stdout
 
 # ── Node.js / NVM ─────────────────────────────────────────────────────────────
+
+- name: Check installed NVM version
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.shell:
+    cmd: "bash -c 'source {{ opencode_home_dir }}/.nvm/nvm.sh && nvm --version'"
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    NVM_DIR: "{{ opencode_home_dir }}/.nvm"
+  register: _nvm_installed_version
+  changed_when: false
+  failed_when: false
+  when: opencode_install_nvm | bool
 
 - name: Download NVM install script
   become: true
@@ -157,7 +182,10 @@
     url: "https://raw.githubusercontent.com/nvm-sh/nvm/v{{ opencode_nvm_version }}/install.sh"
     dest: /tmp/nvm-install.sh
     mode: "0755"
-  when: opencode_install_nvm | bool
+    force: true
+  when:
+    - opencode_install_nvm | bool
+    - _nvm_installed_version.rc != 0 or opencode_nvm_version not in _nvm_installed_version.stdout
 
 - name: Install NVM for opencode user
   become: true
@@ -166,9 +194,9 @@
   environment:
     HOME: "{{ opencode_home_dir }}"
     NVM_DIR: "{{ opencode_home_dir }}/.nvm"
-  args:
-    creates: "{{ opencode_home_dir }}/.nvm/nvm.sh"
-  when: opencode_install_nvm | bool
+  when:
+    - opencode_install_nvm | bool
+    - _nvm_installed_version.rc != 0 or opencode_nvm_version not in _nvm_installed_version.stdout
 
 - name: Install Node.js versions via NVM
   become: true
@@ -284,11 +312,11 @@
 
 # ── OpenCode CLI ──────────────────────────────────────────────────────────────
 
-- name: Check if OpenCode CLI is installed
+- name: Check if Claude Code CLI is installed
   become: true
   become_user: "{{ opencode_user }}"
   ansible.builtin.shell:
-    cmd: "bash -lc 'source {{ opencode_home_dir }}/.nvm/nvm.sh && nvm use default && command -v opencode'"
+    cmd: "bash -lc 'source {{ opencode_home_dir }}/.nvm/nvm.sh && nvm use default && command -v claude'"
   environment:
     HOME: "{{ opencode_home_dir }}"
     NVM_DIR: "{{ opencode_home_dir }}/.nvm"
