@@ -1,30 +1,10 @@
 services:
-  db:
-    image: postgres:18
-    environment:
-      POSTGRES_DB: agent_workbench
-      POSTGRES_USER: agent_workbench
-      POSTGRES_PASSWORD: "{{ awb_db_password }}"
-    volumes:
-      - db_data:/var/lib/postgresql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agent_workbench"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-    networks:
-      - internal
-    restart: unless-stopped
-
   migrations:
     build: api
     command: uv run alembic upgrade head
     environment:
       APP_ENV: prod
-      DATABASE_URL: "postgresql+psycopg://agent_workbench:{{ awb_db_password }}@db/agent_workbench"
-    depends_on:
-      db:
-        condition: service_healthy
+      DATABASE_URL: "postgresql+psycopg://agent_workbench:{{ awb_db_password }}@{{ awb_db_host }}/agent_workbench"
     networks:
       - internal
     restart: "no"
@@ -34,13 +14,11 @@ services:
     command: uv run agent-workbench-api
     environment:
       APP_ENV: prod
-      DATABASE_URL: "postgresql+psycopg://agent_workbench:{{ awb_db_password }}@db/agent_workbench"
+      DATABASE_URL: "postgresql+psycopg://agent_workbench:{{ awb_db_password }}@{{ awb_db_host }}/agent_workbench"
       SECRET_KEY: "{{ awb_secret_key }}"
       API_HOST: "0.0.0.0"
       API_PORT: "{{ awb_api_port }}"
     depends_on:
-      db:
-        condition: service_healthy
       migrations:
         condition: service_completed_successfully
     labels:
@@ -77,6 +55,3 @@ networks:
     driver: bridge
   {{ awb_network_name }}:
     external: true
-
-volumes:
-  db_data:

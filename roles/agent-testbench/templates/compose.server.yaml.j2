@@ -1,30 +1,28 @@
 services:
-  db:
+  migrate:
     image: postgres:18
     environment:
-      POSTGRES_USER: "{{ atb_db_user }}"
-      POSTGRES_PASSWORD: "{{ atb_db_password }}"
-      POSTGRES_DB: "{{ atb_db_name }}"
+      PGHOST: "{{ atb_db_host }}"
+      PGPORT: "5432"
+      PGUSER: "{{ atb_db_user }}"
+      PGPASSWORD: "{{ atb_db_password }}"
+      PGDATABASE: "{{ atb_db_name }}"
+    command: >-
+      bash -c 'for f in /docker-entrypoint-initdb.d/*.sql; do echo "Applying $$f"; psql -f "$$f"; done; echo "Migrations complete"'
     volumes:
-      - db_data:/var/lib/postgresql
       - ./db/migrations:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U {{ atb_db_user }}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
     networks:
       - internal
-    restart: unless-stopped
+    restart: "no"
 
   api:
     build:
       context: ./api
     environment:
-      DATABASE_URL: "postgresql://{{ atb_db_user }}:{{ atb_db_password }}@db:5432/{{ atb_db_name }}"
+      DATABASE_URL: "postgresql://{{ atb_db_user }}:{{ atb_db_password }}@{{ atb_db_host }}:5432/{{ atb_db_name }}"
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:{{ atb_api_port }}/health')"]
       interval: 10s
@@ -65,6 +63,3 @@ networks:
     driver: bridge
   {{ atb_network_name }}:
     external: true
-
-volumes:
-  db_data:

@@ -12,6 +12,7 @@ awb_network_name: traefik_proxy
 awb_api_port: 8000
 awb_web_port: 3000
 
+awb_db_host: 192.168.50.15
 awb_db_password: "{{ vault_awb_db_password | default('change-me') }}"
 awb_secret_key: "{{ vault_awb_secret_key | default('dev-insecure-change-me') }}"
 

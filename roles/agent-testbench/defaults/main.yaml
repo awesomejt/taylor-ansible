@@ -12,6 +12,7 @@ atb_network_name: traefik_proxy
 atb_api_port: 5000
 atb_web_port: 3000
 
+atb_db_host: 192.168.50.15
 atb_db_user: testbench
 atb_db_password: "{{ vault_atb_db_password | default('change-me') }}"
 atb_db_name: testbench

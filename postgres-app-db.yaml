@@ -1,0 +1,73 @@
+---
+# Creates ATB (testbench) and AWB (agent_workbench) PostgreSQL roles and databases
+# on the target environment's dedicated PostgreSQL VM.
+#
+# Usage:
+#   ansible-playbook postgres-app-db.yaml -e env=dev
+#   ansible-playbook postgres-app-db.yaml -e env=stage
+#   ansible-playbook postgres-app-db.yaml          # defaults to prod
+#
+# Vault paths (KV v2, secret/ mount):
+#   apps/agent-testbench/db  — keys: password (prod), password_dev, password_stage
+#   apps/agent-workbench/db  — keys: password (prod), password_dev, password_stage
+
+- name: Create ATB and AWB databases on PostgreSQL
+  hosts: "postgres_{{ env | default('prod') }}"
+  become: true
+  vars_files:
+    - vars/common/vars.yaml
+    - vars/common/secrets.yaml
+  vars:
+    _env: "{{ env | default('prod') }}"
+    _atb_db_password: >-
+      {{ lookup('community.hashi_vault.hashi_vault',
+         'secret/data/apps/agent-testbench/db:password' ~ ('' if _env == 'prod' else '_' ~ _env),
+         url=vault_api_addr, auth_method='token', token=vault_admin_token) }}
+    _awb_db_password: >-
+      {{ lookup('community.hashi_vault.hashi_vault',
+         'secret/data/apps/agent-workbench/db:password' ~ ('' if _env == 'prod' else '_' ~ _env),
+         url=vault_api_addr, auth_method='token', token=vault_admin_token) }}
+
+  tasks:
+    # ── Agent Testbench ────────────────────────────────────────────────────────
+
+    - name: Ensure ATB PostgreSQL role exists
+      become_user: postgres
+      community.postgresql.postgresql_user:
+        name: testbench
+        password: "{{ _atb_db_password }}"
+        role_attr_flags: LOGIN
+      no_log: true
+
+    - name: Ensure ATB database exists
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: testbench
+        owner: testbench
+        encoding: UTF8
+        template: template0
+
+    # ── Agent Workbench ────────────────────────────────────────────────────────
+
+    - name: Ensure AWB PostgreSQL role exists
+      become_user: postgres
+      community.postgresql.postgresql_user:
+        name: agent_workbench
+        password: "{{ _awb_db_password }}"
+        role_attr_flags: LOGIN
+      no_log: true
+
+    - name: Ensure AWB database exists
+      become_user: postgres
+      community.postgresql.postgresql_db:
+        name: agent_workbench
+        owner: agent_workbench
+        encoding: UTF8
+        template: template0
+
+    - name: Reassign AWB schema/table ownership from legacy awb user if it exists
+      become_user: postgres
+      community.postgresql.postgresql_query:
+        db: agent_workbench
+        query: "REASSIGN OWNED BY awb TO agent_workbench"
+      failed_when: false
