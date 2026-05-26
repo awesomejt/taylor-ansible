@@ -1,0 +1,57 @@
+---
+# Service user
+opencode_user: opencode
+opencode_group: opencode
+opencode_home_dir: "/home/{{ opencode_user }}"
+opencode_sudo_nopasswd: true
+
+opencode_git_user_name: "OpenCode Agent"
+opencode_git_user_email: "opencode@taylor.lan"
+
+# ── System packages ───────────────────────────────────────────────────────────
+opencode_system_packages:
+  - build-essential
+  - pkg-config
+  - libssl-dev
+  - jq
+  - ripgrep
+  - fd-find
+  - tmux
+  - htop
+  - tree
+  - shellcheck
+
+# ── Go ────────────────────────────────────────────────────────────────────────
+opencode_install_go: true
+opencode_go_ppa: "ppa:longsleep/golang-backports"
+opencode_go_package: "golang-go"
+
+# ── Python / uv ───────────────────────────────────────────────────────────────
+opencode_install_uv: true
+opencode_uv_version: "0.7.8"
+
+# ── Node.js / NVM ─────────────────────────────────────────────────────────────
+opencode_install_nvm: true
+opencode_nvm_version: "0.40.3"
+opencode_node_versions:
+  - "lts/*"    # current LTS (22.x)
+  - "node"     # latest (24.x+)
+opencode_node_default: "lts/*"
+
+# ── Java ecosystem / SDKMAN ───────────────────────────────────────────────────
+opencode_install_sdkman: true
+opencode_java_version: "21.0.7-tem"     # Temurin LTS
+opencode_groovy_version: "4.0.24"
+opencode_gradle_version: "8.14.1"
+opencode_maven_version: "3.9.9"
+
+# ── Claude Code CLI ───────────────────────────────────────────────────────────
+# Installed via npm after NVM setup. Set to false to skip.
+opencode_install_cli: true
+opencode_cli_npm_package: "@anthropic-ai/claude-code"
+
+# ── GitHub SSH access ─────────────────────────────────────────────────────────
+# Populated via Vault lookup in vault-secrets.yaml
+opencode_github_ssh_private_key: "{{ vault_opencode_github_ssh_private_key | default('') }}"
+opencode_github_ssh_public_key: "{{ vault_opencode_github_ssh_public_key | default('') }}"
+opencode_github_known_host: "github.com"

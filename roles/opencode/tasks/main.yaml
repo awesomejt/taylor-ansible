@@ -1,0 +1,313 @@
+---
+# ── User ──────────────────────────────────────────────────────────────────────
+
+- name: Create opencode group
+  become: true
+  ansible.builtin.group:
+    name: "{{ opencode_group }}"
+    state: present
+
+- name: Create opencode user
+  become: true
+  ansible.builtin.user:
+    name: "{{ opencode_user }}"
+    group: "{{ opencode_group }}"
+    home: "{{ opencode_home_dir }}"
+    shell: /bin/bash
+    create_home: true
+    state: present
+
+- name: Grant opencode passwordless sudo
+  become: true
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/{{ opencode_user }}"
+    content: "{{ opencode_user }} ALL=(ALL) NOPASSWD:ALL\n"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: "visudo -cf %s"
+  when: opencode_sudo_nopasswd | bool
+
+# ── SSH key (GitHub access) ───────────────────────────────────────────────────
+
+- name: Ensure .ssh directory exists
+  become: true
+  ansible.builtin.file:
+    path: "{{ opencode_home_dir }}/.ssh"
+    state: directory
+    owner: "{{ opencode_user }}"
+    group: "{{ opencode_group }}"
+    mode: "0700"
+
+- name: Deploy GitHub SSH private key
+  become: true
+  ansible.builtin.copy:
+    dest: "{{ opencode_home_dir }}/.ssh/id_rsa"
+    content: "{{ opencode_github_ssh_private_key }}"
+    owner: "{{ opencode_user }}"
+    group: "{{ opencode_group }}"
+    mode: "0600"
+  no_log: true
+  when: opencode_github_ssh_private_key | length > 0
+
+- name: Deploy GitHub SSH public key
+  become: true
+  ansible.builtin.copy:
+    dest: "{{ opencode_home_dir }}/.ssh/id_rsa.pub"
+    content: "{{ opencode_github_ssh_public_key }}"
+    owner: "{{ opencode_user }}"
+    group: "{{ opencode_group }}"
+    mode: "0644"
+  when: opencode_github_ssh_public_key | length > 0
+
+- name: Add GitHub to known_hosts
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.known_hosts:
+    name: "{{ opencode_github_known_host }}"
+    key: "{{ lookup('pipe', 'ssh-keyscan -H ' + opencode_github_known_host) }}"
+    state: present
+    path: "{{ opencode_home_dir }}/.ssh/known_hosts"
+
+# ── Git ───────────────────────────────────────────────────────────────────────
+
+- name: Configure git user name
+  become: true
+  become_user: "{{ opencode_user }}"
+  community.general.git_config:
+    name: user.name
+    value: "{{ opencode_git_user_name }}"
+    scope: global
+
+- name: Configure git user email
+  become: true
+  become_user: "{{ opencode_user }}"
+  community.general.git_config:
+    name: user.email
+    value: "{{ opencode_git_user_email }}"
+    scope: global
+
+- name: Configure git default branch
+  become: true
+  become_user: "{{ opencode_user }}"
+  community.general.git_config:
+    name: init.defaultBranch
+    value: main
+    scope: global
+
+# ── System dev packages ───────────────────────────────────────────────────────
+
+- name: Install system dev packages
+  become: true
+  ansible.builtin.apt:
+    name: "{{ opencode_system_packages }}"
+    state: present
+    lock_timeout: 600
+
+# ── Go ────────────────────────────────────────────────────────────────────────
+
+- name: Add Go PPA
+  become: true
+  ansible.builtin.command: add-apt-repository -y "{{ opencode_go_ppa }}"
+  args:
+    creates: "/etc/apt/sources.list.d/longsleep-ubuntu-golang-backports-{{ ansible_distribution_release }}.sources"
+  when: opencode_install_go | bool
+
+- name: Update apt cache after adding Go PPA
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    lock_timeout: 600
+  when: opencode_install_go | bool
+
+- name: Install Go
+  become: true
+  ansible.builtin.apt:
+    name: "{{ opencode_go_package }}"
+    state: present
+    lock_timeout: 600
+  when: opencode_install_go | bool
+
+# ── Python / uv ───────────────────────────────────────────────────────────────
+
+- name: Download uv installer
+  become: true
+  ansible.builtin.get_url:
+    url: "https://github.com/astral-sh/uv/releases/download/{{ opencode_uv_version }}/uv-installer.sh"
+    dest: /tmp/uv-installer.sh
+    mode: "0755"
+  when: opencode_install_uv | bool
+
+- name: Install uv for opencode user
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.command: bash /tmp/uv-installer.sh
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    UV_INSTALL_DIR: "{{ opencode_home_dir }}/.local/bin"
+  args:
+    creates: "{{ opencode_home_dir }}/.local/bin/uv"
+  when: opencode_install_uv | bool
+
+# ── Node.js / NVM ─────────────────────────────────────────────────────────────
+
+- name: Download NVM install script
+  become: true
+  ansible.builtin.get_url:
+    url: "https://raw.githubusercontent.com/nvm-sh/nvm/v{{ opencode_nvm_version }}/install.sh"
+    dest: /tmp/nvm-install.sh
+    mode: "0755"
+  when: opencode_install_nvm | bool
+
+- name: Install NVM for opencode user
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.command: bash /tmp/nvm-install.sh
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    NVM_DIR: "{{ opencode_home_dir }}/.nvm"
+  args:
+    creates: "{{ opencode_home_dir }}/.nvm/nvm.sh"
+  when: opencode_install_nvm | bool
+
+- name: Install Node.js versions via NVM
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.shell:
+    cmd: "bash -lc 'source {{ opencode_home_dir }}/.nvm/nvm.sh && nvm install {{ item }}'"
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    NVM_DIR: "{{ opencode_home_dir }}/.nvm"
+  loop: "{{ opencode_node_versions }}"
+  register: _nvm_install
+  changed_when: "'is already installed' not in _nvm_install.stdout"
+  when: opencode_install_nvm | bool
+
+- name: Set default Node.js version
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.shell:
+    cmd: "bash -lc 'source {{ opencode_home_dir }}/.nvm/nvm.sh && nvm alias default {{ opencode_node_default }} && nvm use default'"
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    NVM_DIR: "{{ opencode_home_dir }}/.nvm"
+  changed_when: false
+  when: opencode_install_nvm | bool
+
+- name: Update npm to latest
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.shell:
+    cmd: "bash -lc 'source {{ opencode_home_dir }}/.nvm/nvm.sh && nvm use default && npm install -g npm@latest'"
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    NVM_DIR: "{{ opencode_home_dir }}/.nvm"
+  changed_when: false
+  when: opencode_install_nvm | bool
+
+# ── Java ecosystem / SDKMAN ───────────────────────────────────────────────────
+
+- name: Download SDKMAN install script
+  become: true
+  ansible.builtin.get_url:
+    url: "https://get.sdkman.io"
+    dest: /tmp/sdkman-install.sh
+    mode: "0755"
+  when: opencode_install_sdkman | bool
+
+- name: Install SDKMAN for opencode user
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.command: bash /tmp/sdkman-install.sh
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    SDKMAN_DIR: "{{ opencode_home_dir }}/.sdkman"
+  args:
+    creates: "{{ opencode_home_dir }}/.sdkman/bin/sdkman-init.sh"
+  when: opencode_install_sdkman | bool
+
+- name: Install Java (Temurin LTS) via SDKMAN
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.shell:
+    cmd: >-
+      bash -c 'source {{ opencode_home_dir }}/.sdkman/bin/sdkman-init.sh &&
+      sdk install java {{ opencode_java_version }} < /dev/null'
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    SDKMAN_DIR: "{{ opencode_home_dir }}/.sdkman"
+  args:
+    creates: "{{ opencode_home_dir }}/.sdkman/candidates/java/{{ opencode_java_version }}"
+  when: opencode_install_sdkman | bool
+
+- name: Install Groovy via SDKMAN
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.shell:
+    cmd: >-
+      bash -c 'source {{ opencode_home_dir }}/.sdkman/bin/sdkman-init.sh &&
+      sdk install groovy {{ opencode_groovy_version }} < /dev/null'
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    SDKMAN_DIR: "{{ opencode_home_dir }}/.sdkman"
+  args:
+    creates: "{{ opencode_home_dir }}/.sdkman/candidates/groovy/{{ opencode_groovy_version }}"
+  when: opencode_install_sdkman | bool
+
+- name: Install Gradle via SDKMAN
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.shell:
+    cmd: >-
+      bash -c 'source {{ opencode_home_dir }}/.sdkman/bin/sdkman-init.sh &&
+      sdk install gradle {{ opencode_gradle_version }} < /dev/null'
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    SDKMAN_DIR: "{{ opencode_home_dir }}/.sdkman"
+  args:
+    creates: "{{ opencode_home_dir }}/.sdkman/candidates/gradle/{{ opencode_gradle_version }}"
+  when: opencode_install_sdkman | bool
+
+- name: Install Maven via SDKMAN
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.shell:
+    cmd: >-
+      bash -c 'source {{ opencode_home_dir }}/.sdkman/bin/sdkman-init.sh &&
+      sdk install maven {{ opencode_maven_version }} < /dev/null'
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    SDKMAN_DIR: "{{ opencode_home_dir }}/.sdkman"
+  args:
+    creates: "{{ opencode_home_dir }}/.sdkman/candidates/maven/{{ opencode_maven_version }}"
+  when: opencode_install_sdkman | bool
+
+# ── OpenCode CLI ──────────────────────────────────────────────────────────────
+
+- name: Check if OpenCode CLI is installed
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.shell:
+    cmd: "bash -lc 'source {{ opencode_home_dir }}/.nvm/nvm.sh && nvm use default && command -v opencode'"
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    NVM_DIR: "{{ opencode_home_dir }}/.nvm"
+  register: _opencode_check
+  changed_when: false
+  failed_when: false
+  when:
+    - opencode_install_cli | bool
+    - opencode_install_nvm | bool
+
+- name: Install Claude Code CLI via npm
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.shell:
+    cmd: "bash -lc 'source {{ opencode_home_dir }}/.nvm/nvm.sh && nvm use default && npm install -g {{ opencode_cli_npm_package }}'"
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    NVM_DIR: "{{ opencode_home_dir }}/.nvm"
+  when:
+    - opencode_install_cli | bool
+    - opencode_install_nvm | bool
+    - _opencode_check.rc != 0

@@ -158,6 +158,17 @@ sync_with_rsync() {
         --exclude=.DS_Store
         --exclude=*.swp
         --exclude=temp/
+        # Never upload local-only state that git ignores
+        --exclude=.env
+        --exclude=.ansible/
+        --exclude=.codex/
+        --exclude=.agents/
+        # Protect remote-only secrets from --delete: these files exist only on
+        # the Ansible host and must never be removed by a local sync.
+        "--filter=protect vars/common/secrets.yaml"
+        "--filter=protect vars/dev/secrets.yaml"
+        "--filter=protect vars/stage/secrets.yaml"
+        "--filter=protect vars/prod/secrets.yaml"
     )
 
     if [ "${DELETE_REMOTE}" = "true" ]; then

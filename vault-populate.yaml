@@ -18,6 +18,12 @@
           tls.crt: "{{ vault_traefik_tls_cert }}"
           tls.key: "{{ vault_traefik_tls_key }}"
 
+      # ── OpenCode ──────────────────────────────────────────────────────────
+      - path: infra/opencode/github-ssh-key
+        data:
+          private_key: "{{ vault_opencode_github_ssh_private_key }}"
+          public_key: "{{ vault_opencode_github_ssh_public_key }}"
+
       # ── Harbor ────────────────────────────────────────────────────────────
       - path: infra/harbor/admin
         data:

@@ -2,6 +2,31 @@
 
 Ansible playbooks and roles for homelab hosts.
 
+## Ansible Control Host Prerequisites
+
+The following must be installed on the Ansible host (`192.168.50.11`) before running any playbooks that use HashiCorp Vault lookups (`vars/vault-secrets.yaml`):
+
+**1. Install Ansible Galaxy collections:**
+
+```bash
+ansible-galaxy collection install -r requirements.yaml
+```
+
+**2. Install the `hvac` Python library** (required by the `community.hashi_vault` lookup plugin):
+
+```bash
+sudo apt-get install -y python3-hvac
+```
+
+**3. Trust the internal root CA** so Vault HTTPS lookups succeed:
+
+```bash
+ssh 192.168.50.9 "sudo cat /etc/step/certs/root_ca.crt" | sudo tee /usr/local/share/ca-certificates/taylor-lan-root-ca.crt
+sudo update-ca-certificates
+```
+
+These steps are one-time setup after provisioning or rebuilding the Ansible host.
+
 ## Playbooks
 
 Run system updates on all managed servers:

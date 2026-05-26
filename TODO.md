@@ -1,5 +1,62 @@
 # TODO
 
+## OpenCode VM Setup (2026-05-25)
+
+- [ ] Confirm OpenCode VM IP and update `inventory.ini` `[opencode]` group (currently placeholder 192.168.50.55)
+- [ ] Add `vault_opencode_github_ssh_private_key` and `vault_opencode_github_ssh_public_key` to `vars/common/secrets.yaml` on Ansible host (generated 2026-05-25, private key provided to operator)
+- [ ] Run `vault-populate.yaml` to write OpenCode SSH key to `secret/infra/opencode/github-ssh-key`
+- [ ] Register OpenCode public key in GitHub: Settings → SSH keys (or repo deploy key)
+- [ ] Sync and run: `ansible-playbook opencode.yaml --vault-password-file ~/avpass`
+- [ ] Verify NVM, SDKMAN, Go, uv, and opencode CLI installed under `opencode` user
+
+## K3s Dev Cluster (2026-05-25)
+
+### Phase 1: Cluster install
+- [ ] Clear stale SSH host key for 192.168.50.29: `ssh-keygen -R 192.168.50.29 && ssh-keyscan -H 192.168.50.29 >> ~/.ssh/known_hosts`
+- [ ] Ensure `vars/dev/secrets.yaml` on Ansible host has `vault_k3s_token` populated
+- [ ] Sync: `./sync-to-ansible.sh`
+- [ ] Run: `ansible-playbook k3s-cluster.yaml -e env=dev --vault-password-file ~/avpass`
+- [ ] Verify K3s is running: `ssh k3s-dev-server.taylor.lan "sudo k3s kubectl get nodes"`
+
+### Phase 2: Argo CD bootstrap
+- [ ] Generate or reuse Argo CD SSH deploy key for `git@github.com:awesomejt/homelab-k3s.git`
+  - Argo CD ed25519 key generated 2026-05-25 (see session notes for private key)
+  - Add public key as deploy key on `awesomejt/homelab-k3s` GitHub repo (read access)
+- [ ] Add to `vars/dev/secrets.yaml` on Ansible host:
+  - `vault_argocd_gitops_repo_ssh_private_key` (Argo CD ed25519 private key)
+  - `vault_sops_age_key` (age private key for SOPS decryption)
+  - `vault_external_dns_rfc2136_tsig_secret` (TSIG key for dev DNS)
+- [ ] Run: `ansible-playbook k3s-bootstrap.yaml -e env=dev --vault-password-file ~/avpass`
+- [ ] Verify Argo CD pods: `sudo k3s kubectl -n argocd get pods`
+- [ ] Verify root application syncing: `sudo k3s kubectl -n argocd get applications`
+- [ ] Configure External DNS for dev.lab zone
+
+### Phase 3: ESO migration (post-bootstrap)
+- [ ] Verify ESO ClusterSecretStore auth against Vault `secret/k3s/*` paths
+- [ ] Migrate dev secrets from Ansible Vault → HashiCorp Vault → ESO ExternalSecrets
+- [ ] Test External DNS TXT/A record creation via RFC2136
+
+## Code Review Remediation (from 2026-05-25 review)
+
+### Fixed this session
+- [x] Fix #1 (Critical): `sync-to-ansible.sh --delete` protects `vars/**/secrets.yaml` with rsync filter rules and excludes local-only state (`.env`, `.ansible/`, `.codex/`, `.agents/`)
+- [x] Fix #4 (High): removed `vault_password_file = ~/avpass` from `ansible.cfg` — must now pass `--vault-password-file ~/avpass` explicitly on the Ansible host
+
+### High priority — remaining
+- [ ] Fix #3 (High): create read-only `ansible-infra-read` AppRole in Vault; replace `vault_admin_token` runtime lookups in `vars/vault-secrets.yaml`
+- [ ] Fix #5 (High): add `no_log: true` or `diff: false` to secret-bearing template tasks in: litellm, open-webui, lldap, harbor, grafana, pgadmin, vikunja, n8n, hermes, ai-validation
+- [ ] Fix #6 (High): add `no_log: true` to Technitium login/TSIG/API tasks; remove or gate debug tasks behind a variable
+- [ ] Fix #7 (High): add upsert mode to `vault-populate.yaml`; validate optional dict keys before writing
+- [ ] Fix #8 (High): add `vars/vault-secrets.yaml` to `web-memory.yaml`, `grafana.yaml`, `pgadmin.yaml`; update README secret source-of-truth references
+
+### Medium priority
+- [ ] Fix #9 (Medium): exclude `archive/**` from `.ansible-lint` so active-project lint becomes a useful gate
+- [ ] Fix #10 (Medium): pin service image tags for Grafana, Prometheus, n8n, SearXNG, Vikunja, Ollama; verify Vault binary checksum
+- [ ] Fix #12 (Medium): add `no_log` to K3s installer env tasks; wrap bootstrap temp file cleanup in `block/always`
+- [ ] Fix #13 (Medium): factor out apt-lock pre_tasks and PostgreSQL provisioning into shared includes
+- [ ] Fix #14 (Medium): update README with new secret source-of-truth split; update `VAULT_BACKUP_ROLLBACK.md` for HashiCorp Vault snapshots
+- [ ] Fix #15 (Medium): set compose/env files with secrets to `0640` mode; fix AnythingLLM `0777` directory
+
 ## Ansible Project Code Review (2026-05-25)
 
 - [x] Inventory project structure and current Vault migration state.
