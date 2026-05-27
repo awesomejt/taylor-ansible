@@ -268,3 +268,37 @@
       (_harbor_existing_robots.json | map(attribute='name') | list)
   no_log: true
   changed_when: true
+
+- name: Update permissions on existing Harbor system robot accounts
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ harbor_http_port }}/api/v2.0/robots/{{ _existing_robot.id }}"
+    method: PUT
+    force_basic_auth: true
+    user: "{{ harbor_admin_username }}"
+    password: "{{ harbor_admin_password }}"
+    body_format: json
+    body:
+      name: "{{ item.name }}"
+      level: system
+      description: "{{ item.description | default('') }}"
+      disable: false
+      duration: -1
+      permissions: "{{ harbor_robot_permissions }}"
+    status_code: 200
+  vars:
+    _existing_robot: >-
+      {{
+        _harbor_existing_robots.json
+        | selectattr('name', 'equalto', 'robot$' + item.name)
+        | first
+      }}
+  loop: "{{ harbor_robot_accounts }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when:
+    - harbor_robot_accounts | length > 0
+    - >-
+      ('robot$' + item.name) in
+      (_harbor_existing_robots.json | map(attribute='name') | list)
+  no_log: true
+  changed_when: true
