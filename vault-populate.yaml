@@ -40,6 +40,9 @@
       - path: infra/harbor/robot-hermes
         data:
           secret: "{{ vault_harbor_robot_hermes_secret }}"
+      - path: infra/harbor/robot-ci-builder
+        data:
+          secret: "{{ vault_harbor_robot_ci_builder_secret }}"
 
       # ── LLDAP ─────────────────────────────────────────────────────────────
       - path: infra/lldap/jwt-secret

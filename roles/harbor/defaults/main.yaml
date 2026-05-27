@@ -47,6 +47,8 @@ harbor_proxy_container_port: 8080
 harbor_projects:
   - name: base
     public: false
+  - name: ci
+    public: false
   - name: dev
     public: false
   - name: stage
@@ -64,6 +66,9 @@ harbor_robot_accounts:
   - name: hermes
     description: "Hermes AI agent"
     secret: "{{ vault_harbor_robot_hermes_secret | default('change-me') }}"
+  - name: ci-builder
+    description: "GitHub Actions CI runner — builds and pushes images to ci/"
+    secret: "{{ vault_harbor_robot_ci_builder_secret | default('change-me') }}"
 
 # Pull/list/read only — base and prod
 harbor_robot_ro_access:
@@ -92,14 +97,17 @@ harbor_robot_permissions:
     namespace: base
     access: "{{ harbor_robot_ro_access }}"
   - kind: project
-    namespace: prod
-    access: "{{ harbor_robot_ro_access }}"
+    namespace: ci
+    access: "{{ harbor_robot_rw_access }}"
   - kind: project
     namespace: dev
     access: "{{ harbor_robot_rw_access }}"
   - kind: project
     namespace: stage
     access: "{{ harbor_robot_rw_access }}"
+  - kind: project
+    namespace: prod
+    access: "{{ harbor_robot_ro_access }}"
 
 harbor_ldap_enabled: true
 harbor_ldap_enforce: false
