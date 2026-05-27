@@ -1,0 +1,23 @@
+[Unit]
+Description=GitHub Actions Self-Hosted Runner ({{ gh_runner_name }})
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ gh_runner_user }}
+Group={{ gh_runner_group }}
+WorkingDirectory={{ gh_runner_dir }}
+ExecStart={{ gh_runner_dir }}/run.sh
+Restart=on-failure
+RestartSec=15
+# SIGTERM lets the runner finish the current job before exiting
+KillMode=process
+KillSignal=SIGTERM
+TimeoutStopSec=5min
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=github-runner
+
+[Install]
+WantedBy=multi-user.target

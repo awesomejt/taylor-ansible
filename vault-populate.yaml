@@ -55,6 +55,11 @@
         data:
           password: "{{ vault_lldap_db_password }}"
 
+      # ── GitHub Actions runner ─────────────────────────────────────────────
+      - path: infra/github-runner/pat
+        data:
+          token: "{{ vault_gh_runner_pat }}"
+
       # ── Hermes ────────────────────────────────────────────────────────────
       - path: infra/hermes/github-token
         data:

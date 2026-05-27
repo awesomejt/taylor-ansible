@@ -1,0 +1,45 @@
+---
+# ── Service user ──────────────────────────────────────────────────────────────
+gh_runner_user: gh-runner
+gh_runner_group: gh-runner
+gh_runner_home_dir: "/home/{{ gh_runner_user }}"
+
+# ── Installation paths ────────────────────────────────────────────────────────
+gh_runner_dir: /opt/github-runner
+gh_runner_work_dir: "{{ gh_runner_dir }}/_work"
+
+# ── Runner binary ─────────────────────────────────────────────────────────────
+# Check https://github.com/actions/runner/releases for latest version.
+gh_runner_version: "2.322.0"
+gh_runner_arch: x64
+gh_runner_archive: "actions-runner-linux-{{ gh_runner_arch }}-{{ gh_runner_version }}.tar.gz"
+gh_runner_download_url: "https://github.com/actions/runner/releases/download/v{{ gh_runner_version }}/{{ gh_runner_archive }}"
+
+# ── Runtime dependencies ──────────────────────────────────────────────────────
+# libicu is the only dep not always present on minimal Ubuntu installs.
+gh_runner_packages:
+  - libicu-dev
+  - libssl-dev
+
+# ── Registration ──────────────────────────────────────────────────────────────
+# gh_runner_scope: "org"  -> registers runner at the org level (recommended)
+#                  "repo" -> registers runner at a single repo
+gh_runner_scope: org
+gh_runner_org: ""     # GitHub org name, e.g. "taylor-family"
+gh_runner_repo: ""    # Required only when gh_runner_scope == "repo"
+
+# PAT with manage_runners:org (fine-grained) or admin:org (classic) scope.
+# Populated via vault_gh_runner_pat in vault-secrets.yaml.
+gh_runner_pat: "{{ vault_gh_runner_pat | default('') }}"
+
+# ── Runner identity ───────────────────────────────────────────────────────────
+gh_runner_name: "{{ inventory_hostname }}"
+gh_runner_labels: "self-hosted,linux,docker"
+
+# Set to true to deregister and re-register every Ansible run.
+# Leave false (default) — only registers when .runner file is absent.
+gh_runner_force_reconfigure: false
+
+# ── Docker access ─────────────────────────────────────────────────────────────
+# Add the runner user to the docker group so jobs can use Docker without sudo.
+gh_runner_docker_access: true
