@@ -7,10 +7,34 @@ hermes_ssh_key_bits: 4096
 
 # Runtime selection
 hermes_python_version: "3.14"
-hermes_nodejs_major_version: "24"
+
+# Go installation (latest from PPA)
+hermes_install_go: true
+hermes_go_ppa: "ppa:longsleep/golang-backports"
+hermes_go_package: "golang-go"
+hermes_go_required_series: "1.26"
 
 # Install uv package manager for Python projects
 hermes_install_uv: true
+
+# Node.js / NVM runtime selection
+hermes_install_nvm: true
+hermes_nvm_version: "0.40.4"
+hermes_node_versions:
+  - "lts/*"    # current LTS (24.x)
+  - "node"     # current latest (26.x)
+hermes_node_default: "lts/*"
+hermes_npm_global_packages:
+  - npm
+  - typescript
+  - ts-node
+  - express
+  - express-generator
+  - eslint
+  - prettier
+  - nodemon
+  - pnpm
+  - yarn
 
 # User privilege configuration
 hermes_sudo_nopasswd: true

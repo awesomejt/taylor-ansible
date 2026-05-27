@@ -2,7 +2,9 @@
 - name: Ensure apt dependencies for Hermes repositories are installed
   ansible.builtin.apt:
     name:
+      - build-essential
       - ca-certificates
+      - cmake
       - curl
       - cifs-utils
       - gh
@@ -59,42 +61,42 @@
     update_cache: true
     lock_timeout: 600
 
-- name: Create keyrings directory for APT repositories
-  ansible.builtin.file:
-    path: /etc/apt/keyrings
-    state: directory
-    mode: "0755"
-
-- name: Download NodeSource repository key
-  ansible.builtin.get_url:
-    url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
-    dest: /tmp/nodesource-repo.gpg.key
-    mode: "0644"
-
-- name: Convert NodeSource key to keyring format
-  ansible.builtin.command:
-    cmd: gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg /tmp/nodesource-repo.gpg.key
+- name: Add Go PPA
+  ansible.builtin.command: add-apt-repository -y "{{ hermes_go_ppa }}"
   args:
-    creates: /etc/apt/keyrings/nodesource.gpg
+    creates: "/etc/apt/sources.list.d/longsleep-ubuntu-golang-backports-{{ ansible_distribution_release }}.sources"
+  when: hermes_install_go | bool
 
-- name: Add NodeSource repository for Node.js {{ hermes_nodejs_major_version }}.x
-  ansible.builtin.apt_repository:
-    repo: "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_{{ hermes_nodejs_major_version }}.x nodistro main"
-    filename: nodesource
-    state: present
-
-- name: Install Node.js {{ hermes_nodejs_major_version }} LTS
+- name: Update apt cache after adding Go PPA
   ansible.builtin.apt:
-    name: nodejs
-    state: present
     update_cache: true
     lock_timeout: 600
+  when: hermes_install_go | bool
 
-- name: Upgrade npm to latest
-  ansible.builtin.command:
-    cmd: npm install -g npm@latest
-  register: _hermes_npm_upgrade
-  changed_when: "'up to date' not in (_hermes_npm_upgrade.stdout | default(''))"
+- name: Install Go (latest from PPA)
+  ansible.builtin.apt:
+    name: "{{ hermes_go_package }}"
+    state: latest
+    lock_timeout: 600
+  # noqa: package-latest
+  when: hermes_install_go | bool
+
+- name: Check installed Go version
+  ansible.builtin.command: go version
+  register: _hermes_go_version
+  changed_when: false
+  when: hermes_install_go | bool
+
+- name: Assert required Go series is installed
+  ansible.builtin.assert:
+    that:
+      - "'go{{ hermes_go_required_series }}.' in _hermes_go_version.stdout"
+    fail_msg: >-
+      Expected Go {{ hermes_go_required_series }}.x from {{ hermes_go_ppa }},
+      got: {{ _hermes_go_version.stdout | default('unknown') }}
+  when:
+    - hermes_install_go | bool
+    - (hermes_go_required_series | default('') | length) > 0
 
 - name: Install uv toolchain manager
   ansible.builtin.get_url:
@@ -111,6 +113,106 @@
   args:
     creates: /usr/local/bin/uv
   when: hermes_install_uv | bool
+
+- name: Check installed NVM version
+  become: true
+  become_user: "{{ hermes_user }}"
+  ansible.builtin.shell:
+    cmd: "bash -c 'source {{ hermes_home_dir }}/.nvm/nvm.sh && nvm --version'"
+  environment:
+    HOME: "{{ hermes_home_dir }}"
+    NVM_DIR: "{{ hermes_home_dir }}/.nvm"
+  register: _hermes_nvm_installed_version
+  changed_when: false
+  failed_when: false
+  when: hermes_install_nvm | bool
+
+- name: Download NVM install script
+  ansible.builtin.get_url:
+    url: "https://raw.githubusercontent.com/nvm-sh/nvm/v{{ hermes_nvm_version }}/install.sh"
+    dest: /tmp/nvm-install.sh
+    mode: "0755"
+    force: true
+  when:
+    - hermes_install_nvm | bool
+    - _hermes_nvm_installed_version.rc != 0 or hermes_nvm_version not in _hermes_nvm_installed_version.stdout
+
+- name: Install NVM for Hermes user
+  become: true
+  become_user: "{{ hermes_user }}"
+  ansible.builtin.command: bash /tmp/nvm-install.sh
+  environment:
+    HOME: "{{ hermes_home_dir }}"
+    NVM_DIR: "{{ hermes_home_dir }}/.nvm"
+  args:
+    creates: "{{ hermes_home_dir }}/.nvm/nvm.sh"
+  when:
+    - hermes_install_nvm | bool
+    - _hermes_nvm_installed_version.rc != 0 or hermes_nvm_version not in _hermes_nvm_installed_version.stdout
+
+- name: Install Node.js versions via NVM
+  become: true
+  become_user: "{{ hermes_user }}"
+  ansible.builtin.shell:
+    cmd: "bash -lc 'source {{ hermes_home_dir }}/.nvm/nvm.sh && nvm install {{ item }}'"
+  environment:
+    HOME: "{{ hermes_home_dir }}"
+    NVM_DIR: "{{ hermes_home_dir }}/.nvm"
+  loop: "{{ hermes_node_versions }}"
+  register: _hermes_nvm_install
+  changed_when: "'is already installed' not in _hermes_nvm_install.stdout"
+  when: hermes_install_nvm | bool
+
+- name: Set default Node.js version
+  become: true
+  become_user: "{{ hermes_user }}"
+  ansible.builtin.shell:
+    cmd: "bash -lc 'source {{ hermes_home_dir }}/.nvm/nvm.sh && nvm alias default {{ hermes_node_default }} && nvm use default'"
+  environment:
+    HOME: "{{ hermes_home_dir }}"
+    NVM_DIR: "{{ hermes_home_dir }}/.nvm"
+  changed_when: false
+  when: hermes_install_nvm | bool
+
+- name: Upgrade npm to latest for installed Node.js versions
+  become: true
+  become_user: "{{ hermes_user }}"
+  ansible.builtin.shell:
+    cmd: "bash -lc 'source {{ hermes_home_dir }}/.nvm/nvm.sh && nvm use {{ item }} >/dev/null && npm install -g npm@latest'"
+  environment:
+    HOME: "{{ hermes_home_dir }}"
+    NVM_DIR: "{{ hermes_home_dir }}/.nvm"
+  loop: "{{ hermes_node_versions }}"
+  changed_when: false
+  when: hermes_install_nvm | bool
+
+- name: Check installed global npm packages
+  become: true
+  become_user: "{{ hermes_user }}"
+  ansible.builtin.shell:
+    cmd: "bash -lc 'source {{ hermes_home_dir }}/.nvm/nvm.sh && nvm use default >/dev/null && npm list -g --depth=0 --json'"
+  environment:
+    HOME: "{{ hermes_home_dir }}"
+    NVM_DIR: "{{ hermes_home_dir }}/.nvm"
+  register: _hermes_npm_global_list
+  changed_when: false
+  failed_when: false
+  when: hermes_install_nvm | bool
+
+- name: Install global npm packages
+  become: true
+  become_user: "{{ hermes_user }}"
+  ansible.builtin.shell:
+    cmd: "bash -lc 'source {{ hermes_home_dir }}/.nvm/nvm.sh && nvm use default >/dev/null && npm install -g {{ item }}'"
+  environment:
+    HOME: "{{ hermes_home_dir }}"
+    NVM_DIR: "{{ hermes_home_dir }}/.nvm"
+  loop: "{{ hermes_npm_global_packages }}"
+  register: _hermes_npm_global_install
+  changed_when: "'added' in (_hermes_npm_global_install.stdout | default('')) or 'changed' in (_hermes_npm_global_install.stdout | default(''))"
+  when:
+    - hermes_install_nvm | bool
+    - item not in (_hermes_npm_global_list.stdout | default('{}'))
 
 - name: Grant hermes user sudo rights
   ansible.builtin.copy:

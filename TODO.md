@@ -1,5 +1,15 @@
 # TODO
 
+## Hermes Dev Toolchain Install (2026-05-26)
+
+- [x] Add Hermes role defaults for Go PPA, NVM multi-version Node, and global npm package management
+- [x] Update Hermes role tasks to install build tools, Go 1.26.x validation, uv, and NVM-managed Node/npm toolchains
+- [x] Update Hermes role docs for new runtime variables and behavior
+- [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`)
+- [x] Sync: `./sync-to-ansible.sh`
+- [x] Run on Ansible host: `ansible-playbook -i inventory.ini hermes.yaml --limit hermes --vault-password-file ~/avpass`
+- [x] Verify on Hermes host: `go version`, `python3.14 --version`, `uv --version`, `nvm ls`, `npm ls -g --depth=0`
+
 ## OpenCode VM Setup (2026-05-25)
 
 - [ ] Confirm OpenCode VM IP and update `inventory.ini` `[opencode]` group (currently placeholder 192.168.50.55)

@@ -1,3 +1,10 @@
+### Hermes Dev Runtime Tooling (2026-05-26)
+
+- `roles/hermes` now installs build tooling (`build-essential`, `cmake`) so `make` and CMake are available on Hermes.
+- Hermes Go install now uses `ppa:longsleep/golang-backports` and validates installed series against `hermes_go_required_series` (default `1.26`).
+- Hermes Node.js install moved to NVM (`0.40.4`) with both `lts/*` (24.x) and `node` (latest, 26.x) installed, with npm upgraded per installed Node runtime.
+- Hermes now installs common global npm packages via `hermes_npm_global_packages` (includes `typescript`, `express`, `express-generator`, lint/format/dev tools).
+
 ### HashiCorp Vault Post-Init Configuration (2026-05-24)
 
 - Added `vault-configure.yaml` playbook and `roles/vault-configure` for post-unseal automation.

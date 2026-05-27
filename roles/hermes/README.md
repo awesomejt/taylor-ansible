@@ -5,6 +5,8 @@ This role bootstraps and deploys Hermes Agent with a Discord-enabled gateway and
 Current scope (profile-first with legacy compatibility):
 
 - Install Python runtime, uv, Node.js, GitHub CLI, and base packages
+- Install Go from longsleep PPA and verify required Go series
+- Install Node.js via NVM (LTS + latest) with npm upgrades and common global npm packages
 - Create hermes system user with sudo access and managed git identity
 - Clone and install Hermes from source into a dedicated virtual environment
 - Clone AI profile repository (`ai-agents`) and install SOUL profiles
@@ -34,8 +36,11 @@ Current scope (profile-first with legacy compatibility):
 Key overridable variables:
 
 - `hermes_python_version` (default: `3.14`)
-- `hermes_nodejs_major_version` (default: `24`)
+- `hermes_install_go` / `hermes_go_ppa` / `hermes_go_required_series`
 - `hermes_install_uv` (default: `true`)
+- `hermes_install_nvm` / `hermes_nvm_version`
+- `hermes_node_versions` / `hermes_node_default`
+- `hermes_npm_global_packages`
 - `hermes_user` / `hermes_group` (default: `hermes`)
 - `hermes_sudo_nopasswd` (default: `true`)
 - `hermes_profiles` (preferred profile-centric schema)
