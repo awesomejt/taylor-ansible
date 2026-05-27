@@ -39,4 +39,7 @@
   roles:
     - updates
     - common
+    - role: trust-ca
+      vars:
+        trust_ca_install_intermediate: true
     - { role: hermes, tags: ["hermes"] }

@@ -18,3 +18,25 @@
   notify:
     - Update CA certificates
     - Restart Docker if present
+
+- name: Fetch intermediate CA cert from step-ca server
+  ansible.builtin.slurp:
+    src: "{{ trust_ca_intermediate_cert_src_path }}"
+  delegate_to: "{{ trust_ca_cert_src_host }}"
+  become: true
+  run_once: true
+  register: _trust_ca_intermediate_cert
+  when: trust_ca_install_intermediate | bool
+
+- name: Install intermediate CA cert to system trust store
+  become: true
+  ansible.builtin.copy:
+    dest: "{{ trust_ca_cert_dest_dir }}/{{ trust_ca_intermediate_cert_filename }}"
+    content: "{{ _trust_ca_intermediate_cert.content | b64decode }}"
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - Update CA certificates
+    - Restart Docker if present
+  when: trust_ca_install_intermediate | bool

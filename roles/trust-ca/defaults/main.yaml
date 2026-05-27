@@ -3,3 +3,9 @@ trust_ca_cert_src_host: "{{ groups['step_ca'][0] }}"
 trust_ca_cert_src_path: /etc/step/certs/root_ca.crt
 trust_ca_cert_dest_dir: /usr/local/share/ca-certificates
 trust_ca_cert_filename: taylor-lan-root-ca.crt
+
+# Set to true to also install the intermediate CA cert. Required on hosts
+# where services (e.g. Python requests, curl) need to verify the full chain.
+trust_ca_install_intermediate: false
+trust_ca_intermediate_cert_src_path: /etc/step/certs/intermediate_ca.crt
+trust_ca_intermediate_cert_filename: taylor-lan-intermediate-ca.crt
