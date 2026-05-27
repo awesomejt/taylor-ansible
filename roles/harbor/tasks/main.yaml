@@ -278,7 +278,7 @@
     password: "{{ harbor_admin_password }}"
     body_format: json
     body:
-      name: "{{ item.name }}"
+      name: "robot${{ item.name }}"
       level: system
       description: "{{ item.description | default('') }}"
       disable: false
