@@ -1,3 +1,8 @@
+### Simple Baseline Playbook (2026-05-29)
+
+- Added `simple.yaml` for simple or temporary systems that should only run the `updates` and `common` roles.
+- Inventory group `simple` currently includes `192.168.50.56`.
+
 ### Hermes Dev Runtime Tooling (2026-05-26)
 
 - `roles/hermes` now installs build tooling (`build-essential`, `cmake`) so `make` and CMake are available on Hermes.

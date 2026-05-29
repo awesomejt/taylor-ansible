@@ -35,6 +35,12 @@ Run system updates on all managed servers:
 ansible-playbook -i inventory.ini upgrade-all.yaml
 ```
 
+Run system updates and the common baseline on simple or temporary hosts in the `simple` inventory group:
+
+```bash
+ansible-playbook -i inventory.ini simple.yaml
+```
+
 Run Technitium DNS setup against hosts in the `dns` inventory group:
 
 ```bash
