@@ -34,6 +34,12 @@ vault_listener_tls_key_file: "{{ vault_tls_dir }}/vault.key"
 vault_api_addr: "http://vault.taylor.lan"
 vault_cluster_addr: "http://{{ ansible_default_ipv4.address }}:8201"
 
+# --- Lease TTLs ---
+# max_lease_ttl caps token/secret TTLs server-wide. Default Vault value is 768h.
+# Raising this allows long-lived admin/service tokens without periodic rotation.
+vault_max_lease_ttl: "8760h"    # 1 year
+vault_default_lease_ttl: "768h" # 32 days (unchanged from Vault default)
+
 # --- Vault UI ---
 vault_ui_enabled: true
 

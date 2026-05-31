@@ -1,6 +1,13 @@
 ui = {{ vault_ui_enabled | lower }}
 disable_mlock = false
 
+{% if vault_max_lease_ttl is defined %}
+max_lease_ttl     = "{{ vault_max_lease_ttl }}"
+{% endif %}
+{% if vault_default_lease_ttl is defined %}
+default_lease_ttl = "{{ vault_default_lease_ttl }}"
+{% endif %}
+
 storage "raft" {
   path    = "{{ vault_data_dir }}"
   node_id = "{{ vault_raft_node_id }}"
