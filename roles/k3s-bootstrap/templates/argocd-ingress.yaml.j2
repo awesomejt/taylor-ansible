@@ -22,5 +22,5 @@ spec:
   tls:
     - hosts:
         - {{ k3s_argocd_ingress_host }}
-      secretName: argocd-server-tls
+      secretName: {{ k3s_argocd_tls_secret_name }}
 {% endif %}

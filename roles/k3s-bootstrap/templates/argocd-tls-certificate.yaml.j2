@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: argocd-server-tls
+  namespace: {{ k3s_argocd_namespace }}
+spec:
+  secretName: {{ k3s_argocd_tls_secret_name }}
+  issuerRef:
+    name: {{ k3s_bootstrap_ca_cluster_issuer_name }}
+    kind: ClusterIssuer
+  dnsNames:
+    - {{ k3s_argocd_ingress_host }}

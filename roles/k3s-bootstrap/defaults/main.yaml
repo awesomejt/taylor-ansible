@@ -1,4 +1,5 @@
 ---
+# ── ArgoCD ────────────────────────────────────────────────────────────────────
 k3s_argocd_namespace: argocd
 k3s_argocd_version: v2.14.8
 k3s_argocd_install_manifest_url: "https://raw.githubusercontent.com/argoproj/argo-cd/{{ k3s_argocd_version }}/manifests/install.yaml"
@@ -18,10 +19,34 @@ k3s_argocd_ingress_host: ""
 k3s_argocd_ingress_class_name: traefik
 k3s_argocd_ingress_entrypoints: websecure
 k3s_argocd_ingress_tls: true
+k3s_argocd_tls_secret_name: argocd-server-tls
 
-k3s_sops_age_secret_name: sops-age
-k3s_sops_age_secret_key_name: keys.txt
-k3s_argocd_ksops_image: viaductoss/ksops:v4.4.0
-k3s_argocd_ksops_download_url: https://github.com/viaduct-ai/kustomize-sops/releases/download/v4.4.0/ksops_4.4.0_Linux_x86_64.tar.gz
+# ── cert-manager ──────────────────────────────────────────────────────────────
+k3s_certmanager_version: v1.20.2
+k3s_certmanager_manifest_url: "https://github.com/cert-manager/cert-manager/releases/download/{{ k3s_certmanager_version }}/cert-manager.yaml"
+k3s_certmanager_namespace: cert-manager
 
+# Name of the CA ClusterIssuer and the Secret it references (must live in cert-manager namespace)
+k3s_bootstrap_ca_cluster_issuer_name: step-ca-issuer
+k3s_bootstrap_ca_secret_name: step-ca-intermediate
+
+# ── Step-CA trust ─────────────────────────────────────────────────────────────
+k3s_bootstrap_step_ca_host: "{{ groups['step_ca'][0] }}"
+k3s_bootstrap_step_ca_root_cert_path: /etc/step/certs/root_ca.crt
+k3s_bootstrap_step_ca_intermediate_cert_path: /etc/step/certs/intermediate_ca.crt
+# ConfigMap that holds the root CA cert for pod-level trust
+k3s_bootstrap_step_ca_root_cm_name: step-ca-root
+k3s_bootstrap_step_ca_root_cm_namespace: kube-system
+
+# ── External Secrets Operator ─────────────────────────────────────────────────
+k3s_eso_version: v2.5.0
+k3s_eso_manifest_url: "https://github.com/external-secrets/external-secrets/releases/download/{{ k3s_eso_version }}/external-secrets.yaml"
+k3s_eso_namespace: external-secrets
+k3s_eso_approle_secret_name: vault-eso-approle
+k3s_eso_cluster_secret_store_name: vault-backend
+k3s_eso_vault_server: "https://vault.taylor.lan"
+k3s_eso_vault_kv_path: "secret"
+k3s_eso_vault_approle_mount: "approle"
+
+# ── Shared wait timeout ───────────────────────────────────────────────────────
 k3s_bootstrap_wait_timeout_seconds: 600

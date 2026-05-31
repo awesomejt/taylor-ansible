@@ -1,51 +1,39 @@
 ---
+# ── Validate bootstrap variables ──────────────────────────────────────────────
+
 - name: Validate bootstrap variables
   ansible.builtin.assert:
     that:
       - (vault_argocd_gitops_repo_ssh_private_key | string | trim | length) > 0
-      - (vault_sops_age_key | string | trim | length) > 0
+      - (vault_eso_role_id | string | trim | length) > 0
+      - (vault_eso_secret_id | string | trim | length) > 0
+      - (vault_step_ca_intermediate_key | string | trim | length) > 0
       - (k3s_argocd_gitops_repo_url | string | trim | length) > 0
       - (k3s_argocd_bootstrap_path | string | trim | length) > 0
     fail_msg: >-
       Missing required bootstrap variables. Ensure vault_argocd_gitops_repo_ssh_private_key,
-      vault_sops_age_key, k3s_argocd_gitops_repo_url, and k3s_argocd_bootstrap_path are set.
+      vault_eso_role_id, vault_eso_secret_id, and vault_step_ca_intermediate_key are set,
+      and that k3s_argocd_gitops_repo_url and k3s_argocd_bootstrap_path are configured.
 
-- name: Ensure Argo CD namespace exists
-  ansible.builtin.command: >-
-    k3s kubectl create namespace {{ k3s_argocd_namespace }}
-  register: create_argocd_namespace
-  changed_when: "'created' in create_argocd_namespace.stdout"
-  failed_when:
-    - create_argocd_namespace.rc != 0
-    - "'AlreadyExists' not in create_argocd_namespace.stderr"
+# ── Fetch CA certs from step-ca host ─────────────────────────────────────────
 
-- name: Delete any broken argocd-repo-server deployment from previous runs
-  ansible.builtin.command: >-
-    k3s kubectl delete deployment argocd-repo-server -n {{ k3s_argocd_namespace }} --ignore-not-found
-  changed_when: false
+- name: Fetch root CA cert from step-ca host
+  ansible.builtin.slurp:
+    src: "{{ k3s_bootstrap_step_ca_root_cert_path }}"
+  delegate_to: "{{ k3s_bootstrap_step_ca_host }}"
+  become: true
+  run_once: true
+  register: _step_ca_root_cert
 
-- name: Install Argo CD
-  ansible.builtin.command: >-
-    k3s kubectl apply -n {{ k3s_argocd_namespace }} -f {{ k3s_argocd_install_manifest_url }}
-  register: install_argocd
-  changed_when: "'created' in install_argocd.stdout or 'configured' in install_argocd.stdout"
+- name: Fetch intermediate CA cert from step-ca host
+  ansible.builtin.slurp:
+    src: "{{ k3s_bootstrap_step_ca_intermediate_cert_path }}"
+  delegate_to: "{{ k3s_bootstrap_step_ca_host }}"
+  become: true
+  run_once: true
+  register: _step_ca_intermediate_cert
 
-- name: Wait for Argo CD repo-server pod to be Ready
-  ansible.builtin.command: >-
-    k3s kubectl -n {{ k3s_argocd_namespace }} wait pod
-    -l app.kubernetes.io/name=argocd-repo-server
-    --for=condition=Ready
-    --timeout={{ k3s_bootstrap_wait_timeout_seconds }}s
-  changed_when: false
-  register: wait_repo_server
-
-- name: Wait for Argo CD server pod to be Ready
-  ansible.builtin.command: >-
-    k3s kubectl -n {{ k3s_argocd_namespace }} wait pod
-    -l app.kubernetes.io/name=argocd-server
-    --for=condition=Ready
-    --timeout={{ k3s_bootstrap_wait_timeout_seconds }}s
-  changed_when: false
+# ── Bootstrap core platform services ─────────────────────────────────────────
 
 - name: Create temporary directory for bootstrap manifests
   ansible.builtin.tempfile:
@@ -53,72 +41,256 @@
     prefix: k3s-bootstrap-
   register: bootstrap_tmpdir
 
-- name: Render Argo CD repository secret manifest
-  ansible.builtin.template:
-    src: argocd-repository-secret.yaml.j2
-    dest: "{{ bootstrap_tmpdir.path }}/argocd-repository-secret.yaml"
-    mode: "0600"
+- name: Bootstrap core platform services
+  block:
 
-- name: Apply Argo CD repository secret
-  ansible.builtin.command: >-
-    k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/argocd-repository-secret.yaml
-  register: apply_repo_secret
-  changed_when: "'created' in apply_repo_secret.stdout or 'configured' in apply_repo_secret.stdout"
+    # ── cert-manager ──────────────────────────────────────────────────────────
 
-- name: Render SOPS age key secret manifest
-  ansible.builtin.template:
-    src: sops-age-key-secret.yaml.j2
-    dest: "{{ bootstrap_tmpdir.path }}/sops-age-key-secret.yaml"
-    mode: "0600"
+    - name: Apply cert-manager manifest
+      ansible.builtin.command: >-
+        k3s kubectl apply -f {{ k3s_certmanager_manifest_url }}
+      register: _certmanager_apply
+      changed_when: >-
+        'created' in _certmanager_apply.stdout or 'configured' in _certmanager_apply.stdout
 
-- name: Apply SOPS age key secret
-  ansible.builtin.command: >-
-    k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/sops-age-key-secret.yaml
-  register: apply_sops_secret
-  changed_when: "'created' in apply_sops_secret.stdout or 'configured' in apply_sops_secret.stdout"
+    - name: Wait for cert-manager webhook to be available
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_certmanager_namespace }}
+        wait deployment/cert-manager-webhook
+        --for=condition=Available
+        --timeout={{ k3s_bootstrap_wait_timeout_seconds }}s
+      changed_when: false
 
-- name: Enable kustomize exec plugins in Argo CD
-  ansible.builtin.command: >-
-    k3s kubectl -n {{ k3s_argocd_namespace }} patch configmap argocd-cm
-    --type merge
-    --patch '{"data":{"kustomize.buildOptions":"--enable-alpha-plugins --enable-exec"}}'
-  register: patch_argocd_cm
-  changed_when: "'patched' in patch_argocd_cm.stdout"
-  failed_when:
-    - patch_argocd_cm.rc != 0
-    - "'not patched' not in patch_argocd_cm.stdout | lower"
+    - name: Wait for cert-manager controller to be available
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_certmanager_namespace }}
+        wait deployment/cert-manager
+        --for=condition=Available
+        --timeout={{ k3s_bootstrap_wait_timeout_seconds }}s
+      changed_when: false
 
-- name: Render Argo CD ingress manifest (if enabled)
-  ansible.builtin.template:
-    src: argocd-ingress.yaml.j2
-    dest: "{{ bootstrap_tmpdir.path }}/argocd-ingress.yaml"
-    mode: "0600"
-  when:
-    - k3s_argocd_ingress_enabled | bool
-    - (k3s_argocd_ingress_host | string | trim | length) > 0
+    - name: Wait for cert-manager CA injector to be available
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_certmanager_namespace }}
+        wait deployment/cert-manager-cainjector
+        --for=condition=Available
+        --timeout={{ k3s_bootstrap_wait_timeout_seconds }}s
+      changed_when: false
 
-- name: Apply Argo CD ingress (if enabled)
-  ansible.builtin.command: >-
-    k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/argocd-ingress.yaml
-  register: apply_argocd_ingress
-  changed_when: "'created' in apply_argocd_ingress.stdout or 'configured' in apply_argocd_ingress.stdout"
-  when:
-    - k3s_argocd_ingress_enabled | bool
-    - (k3s_argocd_ingress_host | string | trim | length) > 0
+    # ── Step-CA trust bundle ──────────────────────────────────────────────────
 
-- name: Render Argo CD root application manifest
-  ansible.builtin.template:
-    src: argocd-root-application.yaml.j2
-    dest: "{{ bootstrap_tmpdir.path }}/argocd-root-application.yaml"
-    mode: "0600"
+    - name: Render root CA ConfigMap manifest
+      ansible.builtin.template:
+        src: step-ca-root-configmap.yaml.j2
+        dest: "{{ bootstrap_tmpdir.path }}/step-ca-root-configmap.yaml"
+        mode: "0600"
 
-- name: Apply Argo CD root application
-  ansible.builtin.command: >-
-    k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/argocd-root-application.yaml
-  register: apply_root_app
-  changed_when: "'created' in apply_root_app.stdout or 'configured' in apply_root_app.stdout"
+    - name: Apply root CA ConfigMap
+      ansible.builtin.command: >-
+        k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/step-ca-root-configmap.yaml
+      register: _root_ca_cm
+      changed_when: "'created' in _root_ca_cm.stdout or 'configured' in _root_ca_cm.stdout"
 
-- name: Clean up bootstrap temporary directory
-  ansible.builtin.file:
-    path: "{{ bootstrap_tmpdir.path }}"
-    state: absent
+    # ── cert-manager CA ClusterIssuer ─────────────────────────────────────────
+
+    - name: Render cert-manager CA Secret manifest
+      ansible.builtin.template:
+        src: cert-manager-ca-secret.yaml.j2
+        dest: "{{ bootstrap_tmpdir.path }}/cert-manager-ca-secret.yaml"
+        mode: "0600"
+
+    - name: Apply cert-manager CA Secret
+      ansible.builtin.command: >-
+        k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/cert-manager-ca-secret.yaml
+      register: _ca_secret
+      changed_when: "'created' in _ca_secret.stdout or 'configured' in _ca_secret.stdout"
+      no_log: true
+
+    - name: Render cert-manager ClusterIssuer manifest
+      ansible.builtin.template:
+        src: cert-manager-cluster-issuer.yaml.j2
+        dest: "{{ bootstrap_tmpdir.path }}/cert-manager-cluster-issuer.yaml"
+        mode: "0600"
+
+    - name: Apply cert-manager ClusterIssuer
+      ansible.builtin.command: >-
+        k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/cert-manager-cluster-issuer.yaml
+      register: _cluster_issuer
+      changed_when: >-
+        'created' in _cluster_issuer.stdout or 'configured' in _cluster_issuer.stdout
+
+    # ── ArgoCD ────────────────────────────────────────────────────────────────
+
+    - name: Ensure ArgoCD namespace exists
+      ansible.builtin.command: >-
+        k3s kubectl create namespace {{ k3s_argocd_namespace }}
+      register: _create_argocd_ns
+      changed_when: "'created' in _create_argocd_ns.stdout"
+      failed_when:
+        - _create_argocd_ns.rc != 0
+        - "'AlreadyExists' not in _create_argocd_ns.stderr"
+
+    - name: Apply ArgoCD manifest
+      ansible.builtin.command: >-
+        k3s kubectl apply -n {{ k3s_argocd_namespace }} -f {{ k3s_argocd_install_manifest_url }}
+      register: _argocd_apply
+      changed_when: "'created' in _argocd_apply.stdout or 'configured' in _argocd_apply.stdout"
+
+    - name: Configure ArgoCD server to run in insecure mode (TLS terminated at ingress)
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_argocd_namespace }} patch configmap argocd-cmd-params-cm
+        --type merge
+        --patch '{"data":{"server.insecure":"true"}}'
+      register: _argocd_insecure
+      changed_when: "'patched' in _argocd_insecure.stdout"
+      failed_when:
+        - _argocd_insecure.rc != 0
+        - "'not patched' not in _argocd_insecure.stdout | lower"
+
+    - name: Restart ArgoCD server to apply insecure mode if config changed  # noqa: no-handler
+      ansible.builtin.command: >-
+        k3s kubectl rollout restart deployment/argocd-server -n {{ k3s_argocd_namespace }}
+      changed_when: true
+      when: _argocd_insecure is changed
+
+    - name: Wait for ArgoCD repo-server to be Ready
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_argocd_namespace }} wait pod
+        -l app.kubernetes.io/name=argocd-repo-server
+        --for=condition=Ready
+        --timeout={{ k3s_bootstrap_wait_timeout_seconds }}s
+      changed_when: false
+
+    - name: Wait for ArgoCD server to be Ready
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_argocd_namespace }} wait pod
+        -l app.kubernetes.io/name=argocd-server
+        --for=condition=Ready
+        --timeout={{ k3s_bootstrap_wait_timeout_seconds }}s
+      changed_when: false
+
+    - name: Render ArgoCD repository secret manifest
+      ansible.builtin.template:
+        src: argocd-repository-secret.yaml.j2
+        dest: "{{ bootstrap_tmpdir.path }}/argocd-repository-secret.yaml"
+        mode: "0600"
+
+    - name: Apply ArgoCD repository secret
+      ansible.builtin.command: >-
+        k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/argocd-repository-secret.yaml
+      register: _argocd_repo_secret
+      changed_when: >-
+        'created' in _argocd_repo_secret.stdout or 'configured' in _argocd_repo_secret.stdout
+      no_log: true
+
+    # ── External Secrets Operator ─────────────────────────────────────────────
+
+    - name: Apply ESO manifest
+      ansible.builtin.command: >-
+        k3s kubectl apply -f {{ k3s_eso_manifest_url }}
+      register: _eso_apply
+      changed_when: "'created' in _eso_apply.stdout or 'configured' in _eso_apply.stdout"
+
+    - name: Wait for ESO controller to be available
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_eso_namespace }}
+        wait deployment/external-secrets
+        --for=condition=Available
+        --timeout={{ k3s_bootstrap_wait_timeout_seconds }}s
+      changed_when: false
+
+    - name: Wait for ESO webhook to be available
+      ansible.builtin.command: >-
+        k3s kubectl -n {{ k3s_eso_namespace }}
+        wait deployment/external-secrets-webhook
+        --for=condition=Available
+        --timeout={{ k3s_bootstrap_wait_timeout_seconds }}s
+      changed_when: false
+
+    - name: Render ESO AppRole secret manifest
+      ansible.builtin.template:
+        src: eso-approle-secret.yaml.j2
+        dest: "{{ bootstrap_tmpdir.path }}/eso-approle-secret.yaml"
+        mode: "0600"
+
+    - name: Apply ESO AppRole secret
+      ansible.builtin.command: >-
+        k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/eso-approle-secret.yaml
+      register: _eso_approle
+      changed_when: "'created' in _eso_approle.stdout or 'configured' in _eso_approle.stdout"
+      no_log: true
+
+    - name: Render ESO ClusterSecretStore manifest
+      ansible.builtin.template:
+        src: eso-cluster-secret-store.yaml.j2
+        dest: "{{ bootstrap_tmpdir.path }}/eso-cluster-secret-store.yaml"
+        mode: "0600"
+
+    - name: Apply ESO ClusterSecretStore
+      ansible.builtin.command: >-
+        k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/eso-cluster-secret-store.yaml
+      register: _eso_store
+      changed_when: "'created' in _eso_store.stdout or 'configured' in _eso_store.stdout"
+
+    # ── ArgoCD ingress + TLS cert ─────────────────────────────────────────────
+
+    - name: Render ArgoCD TLS Certificate manifest
+      ansible.builtin.template:
+        src: argocd-tls-certificate.yaml.j2
+        dest: "{{ bootstrap_tmpdir.path }}/argocd-tls-certificate.yaml"
+        mode: "0600"
+      when:
+        - k3s_argocd_ingress_enabled | bool
+        - k3s_argocd_ingress_tls | bool
+        - (k3s_argocd_ingress_host | string | trim | length) > 0
+
+    - name: Apply ArgoCD TLS Certificate
+      ansible.builtin.command: >-
+        k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/argocd-tls-certificate.yaml
+      register: _argocd_tls_cert
+      changed_when: >-
+        'created' in _argocd_tls_cert.stdout or 'configured' in _argocd_tls_cert.stdout
+      when:
+        - k3s_argocd_ingress_enabled | bool
+        - k3s_argocd_ingress_tls | bool
+        - (k3s_argocd_ingress_host | string | trim | length) > 0
+
+    - name: Render ArgoCD Ingress manifest
+      ansible.builtin.template:
+        src: argocd-ingress.yaml.j2
+        dest: "{{ bootstrap_tmpdir.path }}/argocd-ingress.yaml"
+        mode: "0600"
+      when:
+        - k3s_argocd_ingress_enabled | bool
+        - (k3s_argocd_ingress_host | string | trim | length) > 0
+
+    - name: Apply ArgoCD Ingress
+      ansible.builtin.command: >-
+        k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/argocd-ingress.yaml
+      register: _argocd_ingress
+      changed_when: >-
+        'created' in _argocd_ingress.stdout or 'configured' in _argocd_ingress.stdout
+      when:
+        - k3s_argocd_ingress_enabled | bool
+        - (k3s_argocd_ingress_host | string | trim | length) > 0
+
+    # ── ArgoCD root Application ───────────────────────────────────────────────
+
+    - name: Render ArgoCD root Application manifest
+      ansible.builtin.template:
+        src: argocd-root-application.yaml.j2
+        dest: "{{ bootstrap_tmpdir.path }}/argocd-root-application.yaml"
+        mode: "0600"
+
+    - name: Apply ArgoCD root Application
+      ansible.builtin.command: >-
+        k3s kubectl apply -f {{ bootstrap_tmpdir.path }}/argocd-root-application.yaml
+      register: _argocd_root_app
+      changed_when: >-
+        'created' in _argocd_root_app.stdout or 'configured' in _argocd_root_app.stdout
+
+  always:
+    - name: Remove bootstrap temporary directory
+      ansible.builtin.file:
+        path: "{{ bootstrap_tmpdir.path }}"
+        state: absent
