@@ -34,6 +34,8 @@ k3s_bootstrap_ca_secret_name: step-ca-intermediate
 k3s_bootstrap_step_ca_host: "{{ groups['step_ca'][0] }}"
 k3s_bootstrap_step_ca_root_cert_path: /etc/step/certs/root_ca.crt
 k3s_bootstrap_step_ca_intermediate_cert_path: /etc/step/certs/intermediate_ca.crt
+k3s_bootstrap_step_ca_intermediate_key_path: /etc/step/secrets/intermediate_ca_key
+k3s_bootstrap_step_ca_user: step
 # ConfigMap that holds the root CA cert for pod-level trust
 k3s_bootstrap_step_ca_root_cm_name: step-ca-root
 k3s_bootstrap_step_ca_root_cm_namespace: kube-system
