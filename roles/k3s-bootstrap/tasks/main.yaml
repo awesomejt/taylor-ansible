@@ -60,12 +60,12 @@
 
     - name: Decrypt intermediate CA private key from step-ca host
       ansible.builtin.command: >-
-        step crypto key format --pem
-        --password-file /tmp/.k3s-bootstrap-ca-pw
-        {{ k3s_bootstrap_step_ca_intermediate_key_path }}
+        openssl pkey
+        -in {{ k3s_bootstrap_step_ca_intermediate_key_path }}
+        -passin file:/tmp/.k3s-bootstrap-ca-pw
+        -traditional
       delegate_to: "{{ k3s_bootstrap_step_ca_host }}"
       become: true
-      become_user: "{{ k3s_bootstrap_step_ca_user }}"
       run_once: true
       register: _step_ca_intermediate_key
       changed_when: false
