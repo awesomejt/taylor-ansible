@@ -167,28 +167,24 @@ Do not use `MEMORY.md` for secrets.
 
 ## Task Tracking
 
-Use `TODO.md` to track multi-step work.
+Use the agent's built-in **TodoWrite** tool (AWB workflow) to track multi-step work during a session.
 
 For non-trivial tasks:
 
-- Add or update a checklist in `TODO.md` before or during the work.
-- Mark steps complete as they are finished.
-- Leave clear notes for any blocked, skipped, or deferred work.
+- Create a TodoWrite task list at the start of the work.
+- Mark tasks `in_progress` before beginning each step.
+- Mark tasks `completed` immediately after finishing each step.
+- Leave only one task `in_progress` at a time.
+- For tasks that span multiple sessions or that other tools or humans need to see, also record them in `TODO.md`.
 
-Suggested format:
+Suggested task granularity (same as previous TODO.md format):
 
-```markdown
-# TODO
+- Validate with syntax check
+- Sync to Ansible host
+- Run playbook on Ansible host
+- Commit changes locally
 
-## <Task Name>
-
-- [ ] Step one
-- [ ] Step two
-- [ ] Validate with syntax check
-- [ ] Sync to Ansible host
-- [ ] Run playbook on Ansible host
-- [ ] Commit changes locally
-```
+`TODO.md` remains in the repository for cross-session continuity and human visibility, but the primary tracking mechanism during an active session is TodoWrite.
 
 ## Validation Expectations
 

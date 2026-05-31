@@ -6,7 +6,7 @@ ALLOW_PROGRESSING="false"
 
 for argument in "$@"; do
   case "$argument" in
-    stage|prod)
+    dev|stage|prod)
       TARGET_ENV="$argument"
       ;;
     --allow-progressing)
@@ -14,7 +14,7 @@ for argument in "$@"; do
       ;;
     -h|--help)
       cat <<'USAGE'
-Usage: ./validate-k3s-post-setup.sh [stage|prod] [--allow-progressing]
+Usage: ./validate-k3s-post-setup.sh [dev|stage|prod] [--allow-progressing]
 
 Defaults:
   env: prod
