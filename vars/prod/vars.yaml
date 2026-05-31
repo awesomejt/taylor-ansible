@@ -5,7 +5,7 @@ k3s_fqdn: "{{ k3s_server_name }}.{{ k3s_domain_name }}"
 k3s_api_fqdn: "k3s-prod-server.taylor.lan"
 k3s_server_count: 3
 k3s_worker_count: 5
-k3s_version: "v1.35.1+k3s1"
+k3s_version: "v1.36.1+k3s1"
 
 postgresql_db_user: "postgres"
 postgresql_listen_addresses: "*"
