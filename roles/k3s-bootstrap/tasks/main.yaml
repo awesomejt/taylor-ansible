@@ -220,9 +220,10 @@
 
     # ── External Secrets Operator ─────────────────────────────────────────────
 
+    # --server-side avoids the 262KB annotation limit on large CRDs (clustersecretstores, secretstores)
     - name: Apply ESO manifest
       ansible.builtin.command: >-
-        k3s kubectl apply -f {{ k3s_eso_manifest_url }}
+        k3s kubectl apply --server-side -f {{ k3s_eso_manifest_url }}
       register: _eso_apply
       changed_when: "'created' in _eso_apply.stdout or 'configured' in _eso_apply.stdout"
 
