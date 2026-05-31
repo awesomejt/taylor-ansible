@@ -43,7 +43,8 @@ k3s_bootstrap_step_ca_root_cm_namespace: kube-system
 # ── External Secrets Operator ─────────────────────────────────────────────────
 k3s_eso_version: v2.5.0
 k3s_eso_manifest_url: "https://github.com/external-secrets/external-secrets/releases/download/{{ k3s_eso_version }}/external-secrets.yaml"
-k3s_eso_namespace: external-secrets
+# ESO v2.5.0 standalone manifest deploys to default namespace; Helm chart allows override
+k3s_eso_namespace: default
 k3s_eso_approle_secret_name: vault-eso-approle
 k3s_eso_cluster_secret_store_name: vault-backend
 k3s_eso_vault_server: "https://vault.taylor.lan"

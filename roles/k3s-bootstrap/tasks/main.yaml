@@ -220,21 +220,16 @@
 
     # ── External Secrets Operator ─────────────────────────────────────────────
 
-    - name: Ensure external-secrets namespace exists
-      ansible.builtin.command: >-
-        k3s kubectl create namespace {{ k3s_eso_namespace }}
-      register: _create_eso_ns
-      changed_when: "'created' in _create_eso_ns.stdout"
-      failed_when:
-        - _create_eso_ns.rc != 0
-        - "'AlreadyExists' not in _create_eso_ns.stderr"
-
     # --server-side avoids the 262KB annotation limit on large CRDs (clustersecretstores, secretstores)
+    # ESO v2.5.0 standalone manifest deploys to the default namespace; no separate namespace needed
     - name: Apply ESO manifest
       ansible.builtin.command: >-
         k3s kubectl apply --server-side -f {{ k3s_eso_manifest_url }}
       register: _eso_apply
-      changed_when: "'created' in _eso_apply.stdout or 'configured' in _eso_apply.stdout"
+      changed_when: >-
+        'created' in _eso_apply.stdout
+        or 'configured' in _eso_apply.stdout
+        or 'serverside-applied' in _eso_apply.stdout
 
     - name: Wait for ESO controller to be available
       ansible.builtin.command: >-
