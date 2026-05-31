@@ -104,11 +104,25 @@
           password: "{{ vault_vikunja_db_password }}"
 
       # ── k3s workload secrets (ESO-accessible via secret/k3s/*) ────────────
-      - path: k3s/external-dns
+      - path: k3s/dev/external-dns-tsig
         data:
-          dev: "{{ vault_external_dns_dev_rfc2136_tsig_secret }}"
-          stage: "{{ vault_external_dns_stage_rfc2136_tsig_secret }}"
-          prod: "{{ vault_external_dns_prod_rfc2136_tsig_secret }}"
+          tsig-keyname: "{{ k3s_external_dns_rfc2136_tsig_keyname_dev }}"
+          tsig-secret: "{{ vault_external_dns_dev_rfc2136_tsig_secret }}"
+          tsig-secret-alg: "hmac-sha256"
+      - path: k3s/stage/external-dns-tsig
+        data:
+          tsig-keyname: "{{ k3s_external_dns_rfc2136_tsig_keyname_stage }}"
+          tsig-secret: "{{ vault_external_dns_stage_rfc2136_tsig_secret }}"
+          tsig-secret-alg: "hmac-sha256"
+      - path: k3s/prod/external-dns-tsig
+        data:
+          tsig-keyname: "{{ k3s_external_dns_rfc2136_tsig_keyname_prod }}"
+          tsig-secret: "{{ vault_external_dns_prod_rfc2136_tsig_secret }}"
+          tsig-secret-alg: "hmac-sha256"
+      - path: k3s/dev/grafana
+        data:
+          admin-user: "admin"
+          admin-password: "{{ vault_grafana_admin_password_dev }}"
 
   tasks:
     - name: Verify Vault is unsealed and reachable
@@ -158,3 +172,13 @@
         status_code: [204, 404]
       register: _delete_wildcard_tls
       changed_when: _delete_wildcard_tls.status == 204
+
+    - name: Remove deprecated flat secret/k3s/external-dns
+      ansible.builtin.uri:
+        url: "{{ _vault_addr }}/v1/secret/metadata/k3s/external-dns"
+        method: DELETE
+        headers:
+          X-Vault-Token: "{{ _vault_token }}"
+        status_code: [204, 404]
+      register: _delete_flat_external_dns
+      changed_when: _delete_flat_external_dns.status == 204
