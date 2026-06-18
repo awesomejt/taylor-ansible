@@ -72,6 +72,23 @@
     mode: "0644"
   notify: Restart minecraft service
 
+- name: Ensure .docker config directory exists for {{ minecraft_primary_user }}
+  ansible.builtin.file:
+    path: "/home/{{ minecraft_primary_user }}/.docker"
+    state: directory
+    owner: "{{ minecraft_primary_user }}"
+    group: "{{ minecraft_primary_user }}"
+    mode: "0700"
+
+- name: Configure Docker registry authentication for Harbor
+  ansible.builtin.template:
+    src: docker-config.json.j2
+    dest: "/home/{{ minecraft_primary_user }}/.docker/config.json"
+    owner: "{{ minecraft_primary_user }}"
+    group: "{{ minecraft_primary_user }}"
+    mode: "0600"
+  no_log: true
+
 - name: Deploy Minecraft systemd unit
   ansible.builtin.template:
     src: minecraft.service.j2

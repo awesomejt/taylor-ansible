@@ -3,6 +3,8 @@
   hosts: "{{ target | default('minecraft') }}"
   become: true
   gather_facts: true
+  vars:
+    trust_ca_install_intermediate: true
   vars_files:
     - vars/common/vars.yaml
     - vars/common/secrets.yaml
@@ -21,5 +23,6 @@
   roles:
     - updates
     - common
+    - trust-ca
     - docker
     - minecraft

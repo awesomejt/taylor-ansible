@@ -6,13 +6,22 @@ minecraft_compose_file: "{{ minecraft_project_dir }}/compose.yaml"
 
 minecraft_restart_policy: unless-stopped
 
-# Both the Velocity proxy and game servers use the same itzg image
-minecraft_image_registry: harbor.taylor.lan/proxy
-minecraft_server_image: "{{ minecraft_image_registry }}/itzg/minecraft-server:latest"
+# Game server image (itzg) — switch minecraft_image_registry to harbor.taylor.lan/proxy once Harbor proxy project is created
+minecraft_image_registry: docker.io
+minecraft_server_image: "{{ minecraft_image_registry }}/itzg/minecraft-server:java25"
+
+# Velocity proxy image — separate from itzg; TYPE=VELOCITY was removed from itzg/minecraft-server
+minecraft_proxy_image: "{{ minecraft_image_registry }}/papermc/velocity:latest"
+
+# Harbor authentication — credentials written to ~jason/.docker/config.json
+minecraft_harbor_url: harbor.taylor.lan
+minecraft_harbor_username: admin
+minecraft_harbor_password: "{{ vault_harbor_admin_password | default('change-me') }}"
 
 # Velocity proxy — listens internally on 25577, exposed to LAN on minecraft_velocity_port
 minecraft_velocity_secret: "{{ vault_minecraft_velocity_secret | default('change-me') }}"
-minecraft_velocity_port: 25565
+# Moved off 25565 while Velocity 1.7.x lacks 26.x support — restore to 25565 once compatible
+minecraft_velocity_port: 25580
 minecraft_velocity_container_name: velocity
 minecraft_velocity_data_dir: "{{ minecraft_project_dir }}/velocity"
 minecraft_velocity_motd: "A Minecraft Server"
@@ -29,23 +38,32 @@ minecraft_velocity_try:
 minecraft_servers:
   - name: vanilla
     container_name: mc-vanilla
-    type: PAPER
+    type: VANILLA
+    version: "26.2"
+    direct_port: 25565
+    seed: 3502492030175085738
+    level: "cold-start"
     memory: 4G
-    difficulty: normal
+    difficulty: hard
     hardcore: false
     max_players: 20
     motd: "Vanilla Survival"
   - name: modded
     container_name: mc-modded
     type: FABRIC
+    direct_port: 25566
     memory: 6G
-    difficulty: normal
+    seed: 4359669564523485218
+    level: "stony-start-modded"
+    difficulty: hard
     hardcore: false
     max_players: 20
     motd: "Modded"
   - name: hardcore
     container_name: mc-hardcore
-    type: PAPER
+    type: VANILLA
+    version: "26.2"
+    direct_port: 25567
     memory: 3G
     difficulty: hard
     hardcore: true
@@ -53,7 +71,9 @@ minecraft_servers:
     motd: "Hardcore"
   - name: world-challenge
     container_name: mc-world-challenge
-    type: PAPER
+    type: VANILLA
+    version: "26.2"
+    direct_port: 25568
     memory: 3G
     difficulty: hard
     hardcore: false

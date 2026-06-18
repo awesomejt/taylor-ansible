@@ -1,16 +1,12 @@
 services:
   {{ minecraft_velocity_container_name }}:
-    image: {{ minecraft_server_image }}
+    image: {{ minecraft_proxy_image }}
     container_name: {{ minecraft_velocity_container_name }}
     restart: {{ minecraft_restart_policy }}
-    environment:
-      TYPE: VELOCITY
-      UID: "{{ minecraft_uid }}"
-      GID: "{{ minecraft_gid }}"
     ports:
       - "{{ minecraft_velocity_port }}:25577"
     volumes:
-      - {{ minecraft_velocity_data_dir }}:/data
+      - {{ minecraft_velocity_data_dir }}:/server
     networks:
       - {{ minecraft_network_name }}
     pull_policy: always
@@ -34,6 +30,19 @@ services:
       ONLINE_MODE: "false"
       UID: "{{ minecraft_uid }}"
       GID: "{{ minecraft_gid }}"
+{% if server.version is defined %}
+      VERSION: "{{ server.version }}"
+{% endif %}
+{% if server.seed is defined %}
+      SEED: "{{ server.seed }}"
+{% endif %}
+{% if server.level is defined %}
+      LEVEL: "{{ server.level }}"
+{% endif %}
+{% if server.direct_port is defined %}
+    ports:
+      - "{{ server.direct_port }}:25565"
+{% endif %}
     volumes:
       - {{ minecraft_project_dir }}/{{ server.name }}/data:/data
     networks:

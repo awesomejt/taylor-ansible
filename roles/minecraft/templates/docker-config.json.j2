@@ -1,0 +1,7 @@
+{
+  "auths": {
+    "{{ minecraft_harbor_url }}": {
+      "auth": "{{ (minecraft_harbor_username + ':' + minecraft_harbor_password) | b64encode }}"
+    }
+  }
+}
