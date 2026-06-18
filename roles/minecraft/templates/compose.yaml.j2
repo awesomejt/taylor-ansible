@@ -1,0 +1,46 @@
+services:
+  {{ minecraft_velocity_container_name }}:
+    image: {{ minecraft_server_image }}
+    container_name: {{ minecraft_velocity_container_name }}
+    restart: {{ minecraft_restart_policy }}
+    environment:
+      TYPE: VELOCITY
+      UID: "{{ minecraft_uid }}"
+      GID: "{{ minecraft_gid }}"
+    ports:
+      - "{{ minecraft_velocity_port }}:25577"
+    volumes:
+      - {{ minecraft_velocity_data_dir }}:/data
+    networks:
+      - {{ minecraft_network_name }}
+    pull_policy: always
+
+{% for server in minecraft_servers %}
+  {{ server.name }}:
+    image: {{ minecraft_server_image }}
+    container_name: {{ server.container_name }}
+    restart: {{ minecraft_restart_policy }}
+    environment:
+      EULA: "TRUE"
+      TYPE: "{{ server.type }}"
+      MEMORY: "{{ server.memory }}"
+      DIFFICULTY: "{{ server.difficulty }}"
+      HARDCORE: "{{ 'true' if server.hardcore | default(false) else 'false' }}"
+      MAX_PLAYERS: "{{ server.max_players | string }}"
+      MOTD: "{{ server.motd }}"
+      # Velocity modern forwarding — itzg image auto-configures paper-global.yml for PAPER type.
+      # Fabric/Forge servers require FabricProxy-Lite (or equivalent) installed as a mod.
+      VELOCITY_SECRET: "{{ minecraft_velocity_secret }}"
+      ONLINE_MODE: "false"
+      UID: "{{ minecraft_uid }}"
+      GID: "{{ minecraft_gid }}"
+    volumes:
+      - {{ minecraft_project_dir }}/{{ server.name }}/data:/data
+    networks:
+      - {{ minecraft_network_name }}
+    pull_policy: always
+
+{% endfor %}
+networks:
+  {{ minecraft_network_name }}:
+    driver: bridge

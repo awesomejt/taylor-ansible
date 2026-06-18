@@ -1,0 +1,18 @@
+[Unit]
+Description=Minecraft Java Edition (Velocity + game servers)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=exec
+WorkingDirectory={{ minecraft_project_dir }}
+ExecStart=/usr/bin/docker compose -f {{ minecraft_compose_file }} up --remove-orphans
+ExecStop=/usr/bin/docker compose -f {{ minecraft_compose_file }} down
+Restart=on-failure
+RestartSec=10s
+User={{ minecraft_primary_user }}
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

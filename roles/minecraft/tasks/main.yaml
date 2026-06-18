@@ -1,0 +1,89 @@
+---
+- name: Ensure role runs on Debian-family systems
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == "Debian"
+    fail_msg: "minecraft role currently supports Debian/Ubuntu only"
+
+- name: Ensure Velocity forwarding secret is set
+  ansible.builtin.assert:
+    that:
+      - minecraft_velocity_secret != 'change-me'
+    fail_msg: "Set vault_minecraft_velocity_secret in vars/common/secrets.yaml before deploying"
+
+- name: Look up UID and GID for {{ minecraft_primary_user }}
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ minecraft_primary_user }}"
+
+- name: Set minecraft process UID and GID from host user
+  ansible.builtin.set_fact:
+    minecraft_uid: "{{ ansible_facts['getent_passwd'][minecraft_primary_user][1] }}"
+    minecraft_gid: "{{ ansible_facts['getent_passwd'][minecraft_primary_user][2] }}"
+
+- name: Ensure Minecraft project and Velocity directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ minecraft_primary_user }}"
+    group: "{{ minecraft_primary_user }}"
+    mode: "0755"
+  loop:
+    - "{{ minecraft_project_dir }}"
+    - "{{ minecraft_velocity_data_dir }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Ensure server data directories exist
+  ansible.builtin.file:
+    path: "{{ minecraft_project_dir }}/{{ item.name }}/data"
+    state: directory
+    owner: "{{ minecraft_primary_user }}"
+    group: "{{ minecraft_primary_user }}"
+    mode: "0755"
+  loop: "{{ minecraft_servers }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Deploy Velocity config
+  ansible.builtin.template:
+    src: velocity.toml.j2
+    dest: "{{ minecraft_velocity_data_dir }}/velocity.toml"
+    owner: "{{ minecraft_primary_user }}"
+    group: "{{ minecraft_primary_user }}"
+    mode: "0644"
+  notify: Restart minecraft service
+
+- name: Deploy Velocity forwarding secret
+  ansible.builtin.copy:
+    dest: "{{ minecraft_velocity_data_dir }}/forwarding.secret"
+    content: "{{ minecraft_velocity_secret }}"
+    owner: "{{ minecraft_primary_user }}"
+    group: "{{ minecraft_primary_user }}"
+    mode: "0640"
+  notify: Restart minecraft service
+
+- name: Deploy Minecraft Docker Compose file
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: "{{ minecraft_compose_file }}"
+    owner: "{{ minecraft_primary_user }}"
+    group: "{{ minecraft_primary_user }}"
+    mode: "0644"
+  notify: Restart minecraft service
+
+- name: Deploy Minecraft systemd unit
+  ansible.builtin.template:
+    src: minecraft.service.j2
+    dest: "{{ minecraft_systemd_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart minecraft service
+
+- name: Ensure Minecraft service is enabled and running
+  ansible.builtin.systemd:
+    name: "{{ minecraft_systemd_unit }}"
+    enabled: true
+    state: started
+    daemon_reload: true

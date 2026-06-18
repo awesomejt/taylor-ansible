@@ -1,0 +1,50 @@
+config-version = "2.7"
+
+# Velocity listens on 25577 inside the container; Docker maps minecraft_velocity_port -> 25577
+bind = "0.0.0.0:25577"
+motd = "{{ minecraft_velocity_motd }}"
+show-max-players = {{ minecraft_velocity_max_players }}
+
+# Velocity authenticates players with Mojang; game servers run with ONLINE_MODE=false
+online-mode = {{ minecraft_velocity_online_mode | lower }}
+force-key-authentication = true
+prevent-client-proxy-connections = false
+
+# MODERN forwarding passes player identity to Paper/Fabric backends via forwarding.secret
+player-info-forwarding-mode = "MODERN"
+announce-forge = false
+kick-existing-players = false
+ping-passthrough = "DISABLED"
+enable-player-address-logging = true
+
+[servers]
+{% for server in minecraft_servers %}
+{{ server.name }} = "{{ server.name }}:25565"
+{% endfor %}
+
+# Players are dropped into this server list in order when they first connect
+try = [{% for s in minecraft_velocity_try %}"{{ s }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+
+[forced-hosts]
+
+[advanced]
+compression-threshold = 256
+compression-level = -1
+login-ratelimit = 3000
+connection-timeout = 5000
+read-timeout = 30000
+haproxy-protocol = false
+tcp-fast-open = false
+bungee-plugin-message-channel = true
+show-ping-requests = false
+failover-on-unexpected-server-disconnect = true
+announce-proxy-commands = true
+log-command-executions = false
+log-player-connections = true
+accepts-transfers = false
+
+[query]
+enabled = false
+port = 25577
+map = "Velocity"
+max-players = 0

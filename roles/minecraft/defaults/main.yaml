@@ -1,0 +1,66 @@
+---
+minecraft_primary_user: jason
+minecraft_project_name: minecraft
+minecraft_project_dir: /opt/minecraft
+minecraft_compose_file: "{{ minecraft_project_dir }}/compose.yaml"
+
+minecraft_restart_policy: unless-stopped
+
+# Both the Velocity proxy and game servers use the same itzg image
+minecraft_image_registry: harbor.taylor.lan/proxy
+minecraft_server_image: "{{ minecraft_image_registry }}/itzg/minecraft-server:latest"
+
+# Velocity proxy — listens internally on 25577, exposed to LAN on minecraft_velocity_port
+minecraft_velocity_secret: "{{ vault_minecraft_velocity_secret | default('change-me') }}"
+minecraft_velocity_port: 25565
+minecraft_velocity_container_name: velocity
+minecraft_velocity_data_dir: "{{ minecraft_project_dir }}/velocity"
+minecraft_velocity_motd: "A Minecraft Server"
+minecraft_velocity_max_players: 500
+minecraft_velocity_online_mode: true
+# Which server players land on when they first connect
+minecraft_velocity_try:
+  - vanilla
+
+# Game servers — each entry becomes one compose service under /opt/minecraft/<name>/data
+# TYPE: PAPER | FABRIC | FORGE | VANILLA — see itzg/minecraft-server docs
+# VELOCITY_SECRET is injected into Paper servers automatically by the itzg image.
+# Fabric/Forge modded servers require FabricProxy-Lite (or equivalent) installed as a mod.
+minecraft_servers:
+  - name: vanilla
+    container_name: mc-vanilla
+    type: PAPER
+    memory: 4G
+    difficulty: normal
+    hardcore: false
+    max_players: 20
+    motd: "Vanilla Survival"
+  - name: modded
+    container_name: mc-modded
+    type: FABRIC
+    memory: 6G
+    difficulty: normal
+    hardcore: false
+    max_players: 20
+    motd: "Modded"
+  - name: hardcore
+    container_name: mc-hardcore
+    type: PAPER
+    memory: 3G
+    difficulty: hard
+    hardcore: true
+    max_players: 20
+    motd: "Hardcore"
+  - name: world-challenge
+    container_name: mc-world-challenge
+    type: PAPER
+    memory: 3G
+    difficulty: hard
+    hardcore: false
+    max_players: 20
+    motd: "World Challenge"
+
+minecraft_network_name: minecraft_net
+
+minecraft_systemd_unit: minecraft.service
+minecraft_systemd_unit_path: "/etc/systemd/system/{{ minecraft_systemd_unit }}"
