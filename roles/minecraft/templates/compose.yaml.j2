@@ -39,6 +39,10 @@ services:
 {% if server.level is defined %}
       LEVEL: "{{ server.level }}"
 {% endif %}
+{% if server.modrinth_projects is defined %}
+      MODRINTH_PROJECTS: "{{ server.modrinth_projects | join(',') }}"
+      MODRINTH_ALLOWED_VERSION_TYPE: "{{ server.modrinth_allowed_version_type | default('release') }}"
+{% endif %}
 {% if server.direct_port is defined %}
     ports:
       - "{{ server.direct_port }}:25565"

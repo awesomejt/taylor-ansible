@@ -50,6 +50,7 @@ minecraft_servers:
     motd: "Vanilla Survival"
   - name: modded
     container_name: mc-modded
+    version: "26.2"
     type: FABRIC
     direct_port: 25566
     memory: 6G
@@ -59,6 +60,24 @@ minecraft_servers:
     hardcore: false
     max_players: 20
     motd: "Modded"
+    modrinth_allowed_version_type: beta
+    modrinth_projects:
+      - fabric-api
+      - xaeros-minimap
+      - appleskin
+      - balm
+      - waystones
+      - servercore
+      - trade-cycling
+      - pneumono_core
+      - pneumono_gravestones
+      - veinminer-plus-plus
+      - tiered-backpacks
+      - fzzy-config
+      - fabric-language-kotlin
+      - shogi
+      - uncharted-upgrades
+      - sleeping-bag-mod
   - name: hardcore
     container_name: mc-hardcore
     type: VANILLA
