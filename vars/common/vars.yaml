@@ -151,7 +151,7 @@ technitium_tsig_keys:
 
 # Hermes AI Agent (Nous Research) - https://github.com/NousResearch/hermes-agent
 hermes_git_repo: "https://github.com/NousResearch/hermes-agent.git"
-hermes_git_version: "main"
+hermes_git_version: "v0.17.0"
 hermes_git_user_name: "Rogue Daemon"
 hermes_git_user_email: "hermes@jasongtaylor.com"
 hermes_soul_version: "main"

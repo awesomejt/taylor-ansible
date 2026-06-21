@@ -31,6 +31,11 @@ group_sessions_per_user: true
 
 agent:
   api_max_retries: {{ hermes_api_max_retries }}
+  gateway_timeout: {{ hermes_gateway_timeout }}
+  gateway_timeout_warning: {{ hermes_gateway_timeout_warning }}
+
+curator:
+  consolidate: {{ hermes_curator_consolidate | bool | lower }}
 
 web:
   backend: "{{ hermes_web_backend }}"
