@@ -78,6 +78,7 @@ minecraft_servers:
       - shogi
       - uncharted-upgrades
       - sleeping-bag-mod
+      - xaeros-world-map
   - name: hardcore
     container_name: mc-hardcore
     type: VANILLA
