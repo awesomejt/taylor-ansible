@@ -4,7 +4,7 @@ traefik_project_name: traefik
 traefik_project_dir: "/opt/traefik"
 traefik_compose_file: "{{ traefik_project_dir }}/compose.yaml"
 
-traefik_image: traefik:v3
+traefik_image: traefik:v3.7.10
 traefik_container_name: traefik
 traefik_restart_policy: unless-stopped
 

@@ -1,6 +1,6 @@
 ---
 # --- LLDAP image ---
-lldap_image: lldap/lldap:stable
+lldap_image: lldap/lldap:v0.6.3
 lldap_container_name: lldap
 
 # --- Project layout ---

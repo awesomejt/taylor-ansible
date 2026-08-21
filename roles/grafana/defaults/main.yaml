@@ -4,7 +4,7 @@ grafana_project_name: grafana
 grafana_project_dir: "/opt/grafana"
 grafana_compose_file: "{{ grafana_project_dir }}/compose.yaml"
 
-grafana_image: grafana/grafana:latest
+grafana_image: grafana/grafana:13.1.3
 grafana_container_name: grafana
 grafana_restart_policy: unless-stopped
 

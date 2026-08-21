@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export OPENCODE_CONFIG="{{ opencode_workflows_overlay_path }}"
+export AGENTIC_WORKFLOWS_ROOT="{{ opencode_workflows_root_dir }}"
+export AWB_BIN="${AWB_BIN:-{{ opencode_awb_bin_dest }}}"
+
+exec "{{ opencode_local_bin_dir }}/agent-orchestrator" "$@"

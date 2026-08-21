@@ -43,6 +43,7 @@ services:
       - searxng
     environment:
       SEARXNG_URL: {{ searxng_mcp_searxng_url }}
+      MCP_HTTP_HOST: "{{ searxng_mcp_http_host }}"
       MCP_HTTP_PORT: "{{ searxng_mcp_port }}"
     labels:
       - "traefik.enable=true"

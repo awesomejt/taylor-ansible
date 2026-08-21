@@ -1,0 +1,17 @@
+[Unit]
+Description=OpenCode web interface
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ opencode_user }}
+Group={{ opencode_group }}
+WorkingDirectory={{ opencode_home_dir }}
+EnvironmentFile=-{{ opencode_server_env_path }}
+ExecStart=/bin/bash -lc 'source {{ opencode_home_dir }}/.nvm/nvm.sh && exec {{ opencode_cli_command }} serve'
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

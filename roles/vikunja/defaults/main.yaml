@@ -4,7 +4,7 @@ vikunja_project_name: vikunja
 vikunja_project_dir: "/opt/vikunja"
 vikunja_compose_file: "{{ vikunja_project_dir }}/compose.yaml"
 
-vikunja_image: vikunja/vikunja:latest
+vikunja_image: vikunja/vikunja:2.5.0
 vikunja_container_name: vikunja
 vikunja_restart_policy: unless-stopped
 

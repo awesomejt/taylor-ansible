@@ -1,0 +1,16 @@
+- name: Ensure existing Traefik TLS certificate permissions are correct
+  ansible.builtin.file:
+    path: "{{ traefik_tls_cert_dir }}/{{ traefik_tls_cert_file }}"
+    state: file
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Ensure existing Traefik TLS private key permissions are correct
+  ansible.builtin.file:
+    path: "{{ traefik_tls_cert_dir }}/{{ traefik_tls_key_file }}"
+    state: file
+    owner: root
+    group: root
+    mode: '0600'
+  no_log: true

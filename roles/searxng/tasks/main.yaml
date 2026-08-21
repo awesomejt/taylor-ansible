@@ -54,6 +54,9 @@
     state: started
     daemon_reload: true
 
+- name: Apply pending handlers before readiness checks
+  ansible.builtin.meta: flush_handlers
+
 - name: Wait for SearXNG to be ready
   ansible.builtin.uri:
     url: "http://127.0.0.1/"
@@ -84,6 +87,6 @@
       - 308
   register: searxng_mcp_ready
   until: searxng_mcp_ready is succeeded
-  retries: 24
+  retries: 60
   delay: 5
   when: searxng_mcp_enabled | bool

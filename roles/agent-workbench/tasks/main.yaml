@@ -85,12 +85,13 @@
 # ── Readiness check ───────────────────────────────────────────────────────────
 
 - name: Wait for Agent Workbench API to be ready
-  ansible.builtin.uri:
-    url: "https://{{ awb_api_hostname }}/health"
-    validate_certs: false
-    status_code:
-      - 200
+  ansible.builtin.command:
+    cmd: >-
+      docker compose -f "{{ awb_compose_server_file }}" exec -T api
+      python -c "import json,urllib.request; resp=urllib.request.urlopen('http://127.0.0.1:{{ awb_api_port }}/health', timeout=5); body=json.loads(resp.read().decode()); assert body.get('status') == 'ok'"
+    chdir: "{{ awb_project_dir }}"
+  changed_when: false
   register: _awb_api_ready
-  until: _awb_api_ready is succeeded
+  until: _awb_api_ready.rc == 0
   retries: 36
   delay: 5

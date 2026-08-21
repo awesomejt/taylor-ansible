@@ -4,6 +4,7 @@
 # vault_traefik_tls_cert: <PEM cert content for *.taylor.lan / *.dev.lab / *.stage.lab / *.prod.lab>
 # vault_traefik_tls_key: <PEM private key content>
 traefik_tls_enabled: true
+traefik_dashboard_port: 18081
 
 technitium_api_url: "http://192.168.50.53:5380"
 technitium_username: "admin"

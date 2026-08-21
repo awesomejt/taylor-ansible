@@ -50,10 +50,11 @@ opencode_npm_global_packages:
   - typescript
   - ts-node
 
-# ── Claude Code CLI ───────────────────────────────────────────────────────────
+# ── OpenCode CLI ──────────────────────────────────────────────────────────────
 # Installed via npm after NVM setup. Set to false to skip.
 opencode_install_cli: true
-opencode_cli_npm_package: "@anthropic-ai/claude-code"
+opencode_cli_npm_package: "opencode-ai"
+opencode_cli_command: "opencode"
 
 # ── Docker access ─────────────────────────────────────────────────────────────
 opencode_docker_access: true
@@ -63,3 +64,59 @@ opencode_docker_access: true
 opencode_github_ssh_private_key: "{{ vault_opencode_github_ssh_private_key | default('') }}"
 opencode_github_ssh_public_key: "{{ vault_opencode_github_ssh_public_key | default('') }}"
 opencode_github_known_host: "github.com"
+
+# ── Workspace / install paths ─────────────────────────────────────────────────
+opencode_local_bin_dir: "{{ opencode_home_dir }}/.local/bin"
+opencode_projects_dir: "{{ opencode_home_dir }}/projects"
+opencode_repos_dir: "{{ opencode_home_dir }}/repos"
+opencode_config_dir: "{{ opencode_home_dir }}/.config/opencode"
+opencode_global_config_path: "{{ opencode_config_dir }}/opencode.json"
+opencode_workflows_root_dir: "{{ opencode_config_dir }}"
+opencode_workflows_overlay_path: "{{ opencode_config_dir }}/opencode.workflows.json"
+opencode_awb_bin_dest: "{{ opencode_local_bin_dir }}/awb"
+opencode_agent_orchestrator_source_dir: "{{ opencode_projects_dir }}/agent-orchestrator"
+opencode_agent_loop_helper_path: "{{ opencode_local_bin_dir }}/opencode-agent-loop"
+
+# ── Controller-side deployment sources ────────────────────────────────────────
+# These paths are resolved on the Ansible control host when the playbook runs.
+opencode_manage_workflows_bundle: false
+opencode_controller_workflows_bundle_dir: ""
+
+opencode_install_awb_cli: false
+opencode_controller_awb_bin_path: ""
+
+opencode_install_agent_orchestrator: false
+opencode_controller_agent_orchestrator_source_dir: ""
+
+# ── OpenCode global config ────────────────────────────────────────────────────
+opencode_provider_id: "ollama-direct"
+opencode_provider_name: "Ollama Direct"
+opencode_provider_npm_package: "@ai-sdk/openai-compatible"
+opencode_provider_base_url: "http://ollama.taylor.lan:11434/v1"
+
+opencode_model_alias: "local-coding"
+opencode_model_backend_id: "deepseek-coder-v2:latest"
+opencode_model_display_name: "DeepSeek Coder V2"
+
+opencode_small_model_alias: "local-small"
+opencode_small_model_backend_id: "qwen3.5:latest"
+opencode_small_model_display_name: "Qwen 3.5"
+
+opencode_default_model: "{{ opencode_provider_id }}/{{ opencode_model_alias }}"
+opencode_small_model: "{{ opencode_provider_id }}/{{ opencode_small_model_alias }}"
+opencode_enabled_providers:
+  - "{{ opencode_provider_id }}"
+opencode_share_mode: "disabled"
+opencode_subagent_depth: 2
+opencode_autoupdate: false
+
+# ── Managed OpenCode web service ──────────────────────────────────────────────
+opencode_web_service_enabled: true
+opencode_web_service_name: "opencode-web"
+opencode_server_hostname: "127.0.0.1"
+opencode_server_port: 4096
+opencode_server_mdns: false
+opencode_server_mdns_domain: "opencode.local"
+opencode_server_env_path: "/etc/opencode/opencode-web.env"
+opencode_server_username: "opencode"
+opencode_server_password: ""

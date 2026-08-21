@@ -1,6 +1,6 @@
 ---
 # Ollama image and runtime
-ollama_image: ollama/ollama:latest
+ollama_image: ollama/ollama:0.32.14
 ollama_container_name: ollama
 ollama_restart_policy: unless-stopped
 

@@ -49,26 +49,30 @@
     mode: '0755'
   when: traefik_tls_enabled | bool
 
-- name: Deploy TLS certificate
-  ansible.builtin.copy:
-    dest: "{{ traefik_tls_cert_dir }}/{{ traefik_tls_cert_file }}"
-    content: "{{ vault_traefik_tls_cert }}"
-    owner: root
-    group: root
-    mode: '0644'
+- name: Check whether Traefik TLS certificate already exists
+  ansible.builtin.stat:
+    path: "{{ traefik_tls_cert_dir }}/{{ traefik_tls_cert_file }}"
+  register: traefik_tls_cert_existing_path
   when: traefik_tls_enabled | bool
-  notify: Restart traefik service
 
-- name: Deploy TLS private key
-  ansible.builtin.copy:
-    dest: "{{ traefik_tls_cert_dir }}/{{ traefik_tls_key_file }}"
-    content: "{{ vault_traefik_tls_key }}"
-    owner: root
-    group: root
-    mode: '0600'
+- name: Check whether Traefik TLS private key already exists
+  ansible.builtin.stat:
+    path: "{{ traefik_tls_cert_dir }}/{{ traefik_tls_key_file }}"
+  register: traefik_tls_key_existing_path
   when: traefik_tls_enabled | bool
-  no_log: true
-  notify: Restart traefik service
+
+- name: Use existing Traefik TLS material when present
+  ansible.builtin.include_tasks: tls-existing.yaml
+  when:
+    - traefik_tls_enabled | bool
+    - traefik_tls_cert_existing_path.stat.exists | default(false)
+    - traefik_tls_key_existing_path.stat.exists | default(false)
+
+- name: Provision Traefik TLS material from Vault when missing
+  ansible.builtin.include_tasks: tls-vault.yaml
+  when:
+    - traefik_tls_enabled | bool
+    - not (traefik_tls_cert_existing_path.stat.exists | default(false) and traefik_tls_key_existing_path.stat.exists | default(false))
 
 - name: Deploy Traefik dynamic TLS config
   ansible.builtin.template:

@@ -4,7 +4,7 @@ prometheus_project_name: prometheus
 prometheus_project_dir: "/opt/prometheus"
 prometheus_compose_file: "{{ prometheus_project_dir }}/compose.yaml"
 
-prometheus_image: prom/prometheus:latest
+prometheus_image: prom/prometheus:v3.13.2
 prometheus_container_name: prometheus
 prometheus_restart_policy: unless-stopped
 

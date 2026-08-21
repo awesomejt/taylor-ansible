@@ -4,7 +4,7 @@ portainer_project_name: portainer
 portainer_project_dir: "/opt/portainer"
 portainer_compose_file: "{{ portainer_project_dir }}/compose.yaml"
 
-portainer_image: portainer/portainer-ce:latest
+portainer_image: portainer/portainer-ce:2.44.0
 portainer_container_name: portainer
 portainer_restart_policy: unless-stopped
 

@@ -4,7 +4,7 @@ pgadmin_project_name: pgadmin
 pgadmin_project_dir: "/opt/pgadmin"
 pgadmin_compose_file: "{{ pgadmin_project_dir }}/compose.yaml"
 
-pgadmin_image: dpage/pgadmin4:latest
+pgadmin_image: dpage/pgadmin4:9.17
 pgadmin_container_name: pgadmin
 pgadmin_restart_policy: unless-stopped
 pgadmin_container_uid: "5050"

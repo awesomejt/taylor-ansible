@@ -4,7 +4,7 @@ n8n_project_name: n8n
 n8n_project_dir: "/opt/n8n"
 n8n_compose_file: "{{ n8n_project_dir }}/compose.yaml"
 
-n8n_image: n8nio/n8n:latest
+n8n_image: n8nio/n8n:2.34.5
 n8n_container_name: n8n
 n8n_restart_policy: unless-stopped
 

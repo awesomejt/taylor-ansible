@@ -14,28 +14,47 @@ router_settings:
         - "{{ litellm_omlx_secondary_model_name }}"
     - "{{ litellm_alias_chat }}":
         - "omlx-secondary-chat"
+        - "ws2-lmstudio-chat"
         - "ollama-chat"
     - "{{ litellm_alias_coding }}":
         - "omlx-secondary-coding"
+        - "ws2-lmstudio-coding"
         - "ollama-coding"
     - "{{ litellm_alias_thinking }}":
         - "omlx-secondary-thinking"
+        - "ws2-lmstudio-thinking"
         - "ollama-thinking"
     - "omlx-primary-chat":
         - "omlx-secondary-chat"
         - "ollama-chat"
     - "omlx-secondary-chat":
+        - "ws2-lmstudio-chat"
         - "ollama-chat"
     - "omlx-primary-coding":
         - "omlx-secondary-coding"
         - "ollama-coding"
     - "omlx-secondary-coding":
+        - "ws2-lmstudio-coding"
         - "ollama-coding"
     - "omlx-primary-thinking":
         - "omlx-secondary-thinking"
         - "ollama-thinking"
     - "omlx-secondary-thinking":
+        - "ws2-lmstudio-thinking"
         - "ollama-thinking"
+    - "{{ litellm_homelab_orchestrator_alias }}":
+      - "{{ litellm_homelab_coder_alias }}"
+      - "{{ litellm_homelab_research_alias }}"
+      - "{{ litellm_homelab_deterministic_alias }}"
+    - "{{ litellm_homelab_coder_alias }}":
+      - "{{ litellm_homelab_thinker_alias }}"
+      - "{{ litellm_homelab_research_alias }}"
+      - "{{ litellm_homelab_deterministic_alias }}"
+    - "{{ litellm_homelab_thinker_alias }}":
+      - "{{ litellm_homelab_research_alias }}"
+      - "{{ litellm_homelab_deterministic_alias }}"
+    - "{{ litellm_homelab_research_alias }}":
+      - "{{ litellm_homelab_deterministic_alias }}"
 
 model_list:
   - model_name: "{{ litellm_alias_chat }}"
@@ -98,6 +117,71 @@ model_list:
       model: "ollama/{{ litellm_ollama_thinking_model }}"
       api_base: "{{ litellm_ollama_base_url }}"
       api_key: "none"
+  - model_name: "ws2-lmstudio-chat"
+    litellm_params:
+      model: "openai/{{ litellm_ws2_lmstudio_chat_model }}"
+      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
+      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
+  - model_name: "ws2-lmstudio-coding"
+    litellm_params:
+      model: "openai/{{ litellm_ws2_lmstudio_coding_model }}"
+      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
+      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
+  - model_name: "ws2-lmstudio-thinking"
+    litellm_params:
+      model: "openai/{{ litellm_ws2_lmstudio_thinking_model }}"
+      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
+      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
+  - model_name: "ws2-lmstudio-qwen3-8-27b"
+    litellm_params:
+      model: "openai/{{ litellm_ws2_lmstudio_qwen38_model }}"
+      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
+      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
+  - model_name: "ws2-lmstudio-muse-glimmer"
+    litellm_params:
+      model: "openai/{{ litellm_ws2_lmstudio_muse_glimmer_model }}"
+      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
+      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
+  - model_name: "ws2-lmstudio-gpt-oss-20b"
+    litellm_params:
+      model: "openai/{{ litellm_ws2_lmstudio_gpt_oss_20b_model }}"
+      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
+      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
+  - model_name: "ws2-lmstudio-gemma4-26b-qat"
+    litellm_params:
+      model: "openai/{{ litellm_ws2_lmstudio_gemma4_26b_model }}"
+      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
+      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
+  - model_name: "ws2-lmstudio-gemma4-12b-qat"
+    litellm_params:
+      model: "openai/{{ litellm_ws2_lmstudio_gemma4_12b_model }}"
+      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
+      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
+  - model_name: "{{ litellm_homelab_orchestrator_alias }}"
+    litellm_params:
+      model: "openai/{{ litellm_homelab_orchestrator_model }}"
+      api_base: "{{ litellm_homelab_orchestrator_base_url }}"
+      api_key: "{{ litellm_homelab_orchestrator_api_key }}"
+  - model_name: "{{ litellm_homelab_coder_alias }}"
+    litellm_params:
+      model: "openai/{{ litellm_homelab_coder_model }}"
+      api_base: "{{ litellm_homelab_ws2_base_url }}"
+      api_key: "{{ litellm_homelab_ws2_api_key }}"
+  - model_name: "{{ litellm_homelab_thinker_alias }}"
+    litellm_params:
+      model: "openai/{{ litellm_homelab_thinker_model }}"
+      api_base: "{{ litellm_homelab_ws2_base_url }}"
+      api_key: "{{ litellm_homelab_ws2_api_key }}"
+  - model_name: "{{ litellm_homelab_research_alias }}"
+    litellm_params:
+      model: "openai/{{ litellm_homelab_research_model }}"
+      api_base: "{{ litellm_homelab_research_base_url }}"
+      api_key: "{{ litellm_homelab_research_api_key }}"
+  - model_name: "{{ litellm_homelab_deterministic_alias }}"
+    litellm_params:
+      model: "openai/{{ litellm_homelab_deterministic_model }}"
+      api_base: "{{ litellm_homelab_deterministic_base_url }}"
+      api_key: "{{ litellm_homelab_deterministic_api_key }}"
   - model_name: "{{ litellm_model_name }}"
     litellm_params:
       model: "ollama/{{ litellm_ollama_chat_model }}"

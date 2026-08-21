@@ -103,6 +103,43 @@
     value: main
     scope: global
 
+- name: Ensure OpenCode workspace directories exist
+  become: true
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ opencode_user }}"
+    group: "{{ opencode_group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "{{ opencode_local_bin_dir }}", mode: "0755" }
+    - { path: "{{ opencode_projects_dir }}", mode: "0775" }
+    - { path: "{{ opencode_repos_dir }}", mode: "0775" }
+    - { path: "{{ opencode_config_dir }}", mode: "0755" }
+
+- name: Export OpenCode shell environment
+  become: true
+  ansible.builtin.blockinfile:
+    path: "{{ opencode_home_dir }}/.bashrc"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK: opencode environment"
+    owner: "{{ opencode_user }}"
+    group: "{{ opencode_group }}"
+    mode: "0644"
+    block: |
+      export PATH="$HOME/.local/bin:$PATH"
+      export OPENCODE_CONFIG="$HOME/.config/opencode/opencode.workflows.json"
+      export AGENTIC_WORKFLOWS_ROOT="$HOME/.config/opencode"
+      export AWB_BIN="$HOME/.local/bin/awb"
+
+- name: Write OpenCode global config
+  become: true
+  ansible.builtin.template:
+    src: opencode.json.j2
+    dest: "{{ opencode_global_config_path }}"
+    owner: "{{ opencode_user }}"
+    group: "{{ opencode_group }}"
+    mode: "0644"
+
 # ── System dev packages ───────────────────────────────────────────────────────
 
 - name: Install system dev packages
@@ -348,11 +385,11 @@
 
 # ── OpenCode CLI ──────────────────────────────────────────────────────────────
 
-- name: Check if Claude Code CLI is installed
+- name: Check if OpenCode CLI is installed
   become: true
   become_user: "{{ opencode_user }}"
   ansible.builtin.shell:
-    cmd: "bash -lc 'source {{ opencode_home_dir }}/.nvm/nvm.sh && nvm use default && command -v claude'"
+    cmd: "bash -lc 'source {{ opencode_home_dir }}/.nvm/nvm.sh && nvm use default >/dev/null && command -v {{ opencode_cli_command }}'"
   environment:
     HOME: "{{ opencode_home_dir }}"
     NVM_DIR: "{{ opencode_home_dir }}/.nvm"
@@ -363,11 +400,11 @@
     - opencode_install_cli | bool
     - opencode_install_nvm | bool
 
-- name: Install Claude Code CLI via npm
+- name: Install OpenCode CLI via npm
   become: true
   become_user: "{{ opencode_user }}"
   ansible.builtin.shell:
-    cmd: "bash -lc 'source {{ opencode_home_dir }}/.nvm/nvm.sh && nvm use default && npm install -g {{ opencode_cli_npm_package }}'"
+    cmd: "bash -lc 'source {{ opencode_home_dir }}/.nvm/nvm.sh && nvm use default >/dev/null && npm install -g {{ opencode_cli_npm_package }}'"
   environment:
     HOME: "{{ opencode_home_dir }}"
     NVM_DIR: "{{ opencode_home_dir }}/.nvm"
@@ -375,3 +412,236 @@
     - opencode_install_cli | bool
     - opencode_install_nvm | bool
     - _opencode_check.rc != 0
+
+- name: Validate OpenCode CLI runtime
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.shell:
+    cmd: "bash -lc 'source {{ opencode_home_dir }}/.nvm/nvm.sh && nvm use default >/dev/null && {{ opencode_cli_command }} -v'"
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    NVM_DIR: "{{ opencode_home_dir }}/.nvm"
+  register: _opencode_cli_health
+  changed_when: false
+  failed_when: false
+  when:
+    - opencode_install_cli | bool
+    - opencode_install_nvm | bool
+
+- name: Repair OpenCode CLI postinstall artifacts when required
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.shell:
+    cmd: >-
+      bash -lc 'source {{ opencode_home_dir }}/.nvm/nvm.sh &&
+      nvm use default >/dev/null &&
+      cd "$(npm root -g)/{{ opencode_cli_npm_package }}" &&
+      node postinstall.mjs'
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    NVM_DIR: "{{ opencode_home_dir }}/.nvm"
+  when:
+    - opencode_install_cli | bool
+    - opencode_install_nvm | bool
+    - _opencode_cli_health.rc != 0
+
+# ── Workflow bundle / AWB / orchestrator deployment ──────────────────────────
+
+- name: Validate controller-side workflow bundle path
+  ansible.builtin.stat:
+    path: "{{ opencode_controller_workflows_bundle_dir }}"
+  delegate_to: localhost
+  become: false
+  register: _opencode_workflows_bundle_stat
+  when: opencode_manage_workflows_bundle | bool
+
+- name: Require workflow bundle source when bundle deployment is enabled
+  ansible.builtin.assert:
+    that:
+      - opencode_controller_workflows_bundle_dir | length > 0
+      - _opencode_workflows_bundle_stat.stat.exists
+      - _opencode_workflows_bundle_stat.stat.isdir
+    fail_msg: >-
+      Set opencode_controller_workflows_bundle_dir to a rendered OpenCode bundle
+      directory on the Ansible control host before enabling bundle deployment.
+  when: opencode_manage_workflows_bundle | bool
+
+- name: Deploy rendered OpenCode workflows bundle
+  become: true
+  ansible.builtin.copy:
+    src: "{{ opencode_controller_workflows_bundle_dir }}/"
+    dest: "{{ opencode_workflows_root_dir }}/"
+    owner: "{{ opencode_user }}"
+    group: "{{ opencode_group }}"
+    mode: preserve
+  when: opencode_manage_workflows_bundle | bool
+
+- name: Ensure agent-orchestrator workflow compatibility directories exist
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ opencode_user }}"
+    group: "{{ opencode_group }}"
+    mode: "0755"
+  loop:
+    - "{{ opencode_workflows_root_dir }}/common"
+    - "{{ opencode_workflows_root_dir }}/opencode"
+  when: opencode_manage_workflows_bundle | bool
+
+- name: Link bundled prompts as agent-orchestrator common prompts
+  become: true
+  ansible.builtin.file:
+    src: "{{ opencode_workflows_root_dir }}/prompts"
+    dest: "{{ opencode_workflows_root_dir }}/common/prompts"
+    state: link
+    force: true
+    owner: "{{ opencode_user }}"
+    group: "{{ opencode_group }}"
+  when: opencode_manage_workflows_bundle | bool
+
+- name: Link bundled workflows as agent-orchestrator common workflows
+  become: true
+  ansible.builtin.file:
+    src: "{{ opencode_workflows_root_dir }}/workflows"
+    dest: "{{ opencode_workflows_root_dir }}/common/workflows"
+    state: link
+    force: true
+    owner: "{{ opencode_user }}"
+    group: "{{ opencode_group }}"
+  when: opencode_manage_workflows_bundle | bool
+
+- name: Write OpenCode routing metadata for agent-orchestrator
+  become: true
+  ansible.builtin.template:
+    src: opencode-routing.yaml.j2
+    dest: "{{ opencode_workflows_root_dir }}/opencode/routing.yaml"
+    owner: "{{ opencode_user }}"
+    group: "{{ opencode_group }}"
+    mode: "0644"
+  when: opencode_manage_workflows_bundle | bool
+
+- name: Validate controller-side AWB binary path
+  ansible.builtin.stat:
+    path: "{{ opencode_controller_awb_bin_path }}"
+  delegate_to: localhost
+  become: false
+  register: _opencode_awb_bin_stat
+  when: opencode_install_awb_cli | bool
+
+- name: Require AWB binary source when AWB installation is enabled
+  ansible.builtin.assert:
+    that:
+      - opencode_controller_awb_bin_path | length > 0
+      - _opencode_awb_bin_stat.stat.exists
+      - _opencode_awb_bin_stat.stat.isreg
+    fail_msg: >-
+      Set opencode_controller_awb_bin_path to a built awb binary on the Ansible
+      control host before enabling AWB installation.
+  when: opencode_install_awb_cli | bool
+
+- name: Install AWB CLI for the opencode user
+  become: true
+  ansible.builtin.copy:
+    src: "{{ opencode_controller_awb_bin_path }}"
+    dest: "{{ opencode_awb_bin_dest }}"
+    owner: "{{ opencode_user }}"
+    group: "{{ opencode_group }}"
+    mode: "0755"
+  when: opencode_install_awb_cli | bool
+
+- name: Validate controller-side agent-orchestrator source path
+  ansible.builtin.stat:
+    path: "{{ opencode_controller_agent_orchestrator_source_dir }}"
+  delegate_to: localhost
+  become: false
+  register: _opencode_agent_orchestrator_source_stat
+  when: opencode_install_agent_orchestrator | bool
+
+- name: Require agent-orchestrator source when installation is enabled
+  ansible.builtin.assert:
+    that:
+      - opencode_controller_agent_orchestrator_source_dir | length > 0
+      - _opencode_agent_orchestrator_source_stat.stat.exists
+      - _opencode_agent_orchestrator_source_stat.stat.isdir
+    fail_msg: >-
+      Set opencode_controller_agent_orchestrator_source_dir to the checked-out
+      agent-orchestrator repository on the Ansible control host before enabling
+      installation.
+  when: opencode_install_agent_orchestrator | bool
+
+- name: Copy agent-orchestrator source tree
+  become: true
+  ansible.builtin.copy:
+    src: "{{ opencode_controller_agent_orchestrator_source_dir }}/"
+    dest: "{{ opencode_agent_orchestrator_source_dir }}/"
+    owner: "{{ opencode_user }}"
+    group: "{{ opencode_group }}"
+    mode: preserve
+  when: opencode_install_agent_orchestrator | bool
+
+- name: Install agent-orchestrator commands for the opencode user
+  become: true
+  become_user: "{{ opencode_user }}"
+  ansible.builtin.command: "bash {{ opencode_agent_orchestrator_source_dir }}/install.sh --copy"
+  environment:
+    HOME: "{{ opencode_home_dir }}"
+    PATH: "{{ opencode_local_bin_dir }}:/usr/local/bin:/usr/bin:/bin"
+  changed_when: false
+  when: opencode_install_agent_orchestrator | bool
+
+- name: Install helper wrapper for OpenCode orchestration passes
+  become: true
+  ansible.builtin.template:
+    src: opencode-agent-loop.j2
+    dest: "{{ opencode_agent_loop_helper_path }}"
+    owner: "{{ opencode_user }}"
+    group: "{{ opencode_group }}"
+    mode: "0755"
+
+# ── Managed OpenCode web service ──────────────────────────────────────────────
+
+- name: Ensure /etc/opencode exists
+  become: true
+  ansible.builtin.file:
+    path: /etc/opencode
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: opencode_web_service_enabled | bool
+
+- name: Write OpenCode web service environment file
+  become: true
+  ansible.builtin.template:
+    src: opencode-web.env.j2
+    dest: "{{ opencode_server_env_path }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: "{{ opencode_server_password | length > 0 }}"
+  when: opencode_web_service_enabled | bool
+
+- name: Deploy OpenCode web systemd unit
+  become: true
+  ansible.builtin.template:
+    src: opencode-web.service.j2
+    dest: "/etc/systemd/system/{{ opencode_web_service_name }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  when: opencode_web_service_enabled | bool
+
+- name: Reload systemd after updating OpenCode web unit
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: opencode_web_service_enabled | bool
+
+- name: Enable and restart OpenCode web service
+  become: true
+  ansible.builtin.systemd:
+    name: "{{ opencode_web_service_name }}"
+    enabled: true
+    state: restarted
+  when: opencode_web_service_enabled | bool

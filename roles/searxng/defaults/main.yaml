@@ -23,6 +23,7 @@ searxng_valkey_container_name: searxng-valkey
 searxng_mcp_enabled: true
 searxng_mcp_image: isokoliuk/mcp-searxng:latest
 searxng_mcp_container_name: searxng-mcp
+searxng_mcp_http_host: "0.0.0.0"
 searxng_mcp_port: 3000
 searxng_mcp_searxng_url: "http://searxng:8080"
 searxng_mcp_traefik_hostname: "mcp-searxng.taylor.lan"

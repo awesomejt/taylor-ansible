@@ -1,0 +1,38 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "{{ opencode_default_model }}",
+  "small_model": "{{ opencode_small_model }}",
+  "enabled_providers": [
+{% for provider in opencode_enabled_providers %}
+    "{{ provider }}"{% if not loop.last %},{% endif %}
+{% endfor %}
+  ],
+  "share": "{{ opencode_share_mode }}",
+  "subagent_depth": {{ opencode_subagent_depth }},
+  "autoupdate": {{ opencode_autoupdate | tojson }},
+  "server": {
+    "hostname": "{{ opencode_server_hostname }}",
+    "port": {{ opencode_server_port }},
+    "mdns": {{ opencode_server_mdns | tojson }},
+    "mdnsDomain": "{{ opencode_server_mdns_domain }}"
+  },
+  "provider": {
+    "{{ opencode_provider_id }}": {
+      "npm": "{{ opencode_provider_npm_package }}",
+      "name": "{{ opencode_provider_name }}",
+      "options": {
+        "baseURL": "{{ opencode_provider_base_url }}"
+      },
+      "models": {
+        "{{ opencode_model_alias }}": {
+          "id": "{{ opencode_model_backend_id }}",
+          "name": "{{ opencode_model_display_name }}"
+        },
+        "{{ opencode_small_model_alias }}": {
+          "id": "{{ opencode_small_model_backend_id }}",
+          "name": "{{ opencode_small_model_display_name }}"
+        }
+      }
+    }
+  }
+}

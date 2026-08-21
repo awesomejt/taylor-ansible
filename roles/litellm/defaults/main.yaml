@@ -4,7 +4,7 @@ litellm_project_name: litellm
 litellm_project_dir: "/opt/litellm"
 litellm_compose_file: "{{ litellm_project_dir }}/compose.yaml"
 
-litellm_image: ghcr.io/berriai/litellm:main-stable
+litellm_image: ghcr.io/berriai/litellm:v1.96.2
 litellm_container_name: litellm
 litellm_restart_policy: unless-stopped
 
@@ -32,25 +32,71 @@ litellm_ollama_base_url: "http://192.168.50.51:11434"
 
 litellm_omlx_api_key: "{{ vault_omlx_api_key | default(vault_openwebui_omlx_api_key | default(vault_hermes_omlx_api_key | default('example'))) }}"
 
+# The primary oMLX host is currently offline; both oMLX routing groups point at
+# the live secondary host until the primary comes back.
 litellm_omlx_primary_model_name: omlx-primary
-litellm_omlx_primary_model: gpt-oss-20b-MXFP4-Q8
-litellm_omlx_primary_base_url: "http://192.168.50.93:8000/v1"
+litellm_omlx_primary_model: gpt-oss-20b-MLX-8bit
+litellm_omlx_primary_base_url: "http://192.168.50.94:8000/v1"
 litellm_omlx_primary_chat_model: "Qwen3.6-27B-6bit"
-litellm_omlx_primary_coding_model: "Qwen3.5-27B-Claude-4.6-Opus-Distilled-MLX-6bit"
-litellm_omlx_primary_thinking_model: "gpt-oss-20b-MXFP4-Q8"
+litellm_omlx_primary_coding_model: "Qwen3.6-35B-A3B-6bit"
+litellm_omlx_primary_thinking_model: "gpt-oss-20b-MLX-8bit"
 
 litellm_omlx_secondary_model_name: omlx-secondary
-litellm_omlx_secondary_model: gpt-oss-20b-MLX-8bit
+litellm_omlx_secondary_model: gemma-4-26b-a4b-it-6bit
 litellm_omlx_secondary_base_url: "http://192.168.50.94:8000/v1"
-litellm_omlx_secondary_chat_model: "Qwen3.6-27B-6bit"
-litellm_omlx_secondary_coding_model: "Qwen3.6-35B-A3B-6bit"
-litellm_omlx_secondary_thinking_model: "gpt-oss-20b-MLX-8bit"
+litellm_omlx_secondary_chat_model: "gemma-4-26b-a4b-it-6bit"
+litellm_omlx_secondary_coding_model: "gpt-oss-20b-MLX-8bit"
+litellm_omlx_secondary_thinking_model: "Qwen3.6-35B-A3B-6bit"
 
 litellm_ollama_chat_model: "llama3.2:latest"
 litellm_ollama_coding_model: "deepseek-coder-v2:latest"
 litellm_ollama_thinking_model: "qwen3.5:latest"
 litellm_ollama_hermes_model: "hermes3:latest"
 litellm_ollama_gemma_model: "gemma4:latest"
+
+# Workstation2 LM Studio (OpenAI-compatible endpoint) can be used as an
+# additional fallback while model mixes are tuned.
+litellm_ws2_lmstudio_base_url: "http://192.168.50.92:1234/v1"
+litellm_ws2_lmstudio_api_key: "none"
+litellm_ws2_lmstudio_qwen38_model: "qwen/qwen3.8-27b"
+litellm_ws2_lmstudio_muse_glimmer_model: "meta/muse-glimmer"
+litellm_ws2_lmstudio_gpt_oss_20b_model: "gpt-oss-20b"
+litellm_ws2_lmstudio_gemma4_26b_model: "google/gemma-4-26b-a4b-qat"
+litellm_ws2_lmstudio_gemma4_12b_model: "google/gemma-4-12b-qat"
+
+litellm_ws2_lmstudio_chat_model: "{{ litellm_ws2_lmstudio_qwen38_model }}"
+litellm_ws2_lmstudio_coding_model: "{{ litellm_ws2_lmstudio_qwen38_model }}"
+litellm_ws2_lmstudio_thinking_model: "{{ litellm_ws2_lmstudio_qwen38_model }}"
+
+# Homelab suite aliases for single-model-per-host operation.
+# Keep these aliases separate from legacy use-chat/use-coding/use-thinking so
+# existing consumers can migrate incrementally.
+litellm_homelab_orchestrator_alias: "homelab-orchestrator"
+litellm_homelab_coder_alias: "homelab-coder"
+litellm_homelab_thinker_alias: "homelab-thinker"
+litellm_homelab_research_alias: "homelab-research"
+litellm_homelab_deterministic_alias: "homelab-deterministic"
+
+# Local fast orchestrator (override to your workstation endpoint if needed).
+litellm_homelab_orchestrator_base_url: "http://192.168.50.93:8000/v1"
+litellm_homelab_orchestrator_api_key: "{{ litellm_omlx_api_key }}"
+litellm_homelab_orchestrator_model: "gpt-oss-20b-MXFP4-Q8"
+
+# Main coder/thinker on workstation2 LM Studio.
+litellm_homelab_ws2_base_url: "http://192.168.50.92:1234/v1"
+litellm_homelab_ws2_api_key: "none"
+litellm_homelab_coder_model: "{{ litellm_ws2_lmstudio_qwen38_model }}"
+litellm_homelab_thinker_model: "{{ litellm_ws2_lmstudio_qwen38_model }}"
+
+# Research model on MacBook Pro oMLX.
+litellm_homelab_research_base_url: "http://192.168.50.93:8000/v1"
+litellm_homelab_research_api_key: "{{ litellm_omlx_api_key }}"
+litellm_homelab_research_model: "Qwen3.6-35B-A3B-6bit"
+
+# Deterministic small-task model on Mac Mini oMLX.
+litellm_homelab_deterministic_base_url: "http://192.168.50.94:8000/v1"
+litellm_homelab_deterministic_api_key: "{{ litellm_omlx_api_key }}"
+litellm_homelab_deterministic_model: "Qwen3.5-9B"
 
 litellm_alias_chat: use-chat
 litellm_alias_coding: use-coding
