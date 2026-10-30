@@ -25,82 +25,202 @@ litellm_postgres_user: litellm
 litellm_postgres_db: litellm
 litellm_postgres_password: "{{ vault_litellm_postgres_password | default(vault_openwebui_postgres_password | default('change-me')) }}"
 
-# Model routing
-# Keep this legacy alias for compatibility with existing clients (e.g., AnythingLLM).
-litellm_model_name: local-ollama
+# Model routing (refreshed 2026-10-29 from ~/projects/ai/local: HANDOFF.md, benchmarks/FLEET.md, servers/*).
+# How to switch what each machine serves: docs/ai-model-switching.md.
+#
+# Machines:
+#   ai-server  192.168.50.112  2x Radeon R9700, llama.cpp behind llama-swap :8080. The model name a request sends decides
+#              what gets loaded: tt-coder + tt-manager (production pair, boot default), tt-flash, flash-strata, or one of
+#              the "solo" models. Asking for a model in another group swaps the cards (6-90 s, the request waits).
+#   minisys    192.168.50.111  RX 7900 XTX, one llama-server lane on :8001 (preset chosen with `ai-lane`, default 35B 262k).
+#   Mac Mini   192.168.50.94   oMLX :8000, all five models resident, API key = vault_omlx_api_key.
+#   workstation 192.168.50.91  RTX 4080, LM Studio :1234 (gpt-oss-20b), only when LM Studio is running.
+#   Ollama     192.168.50.51   CPU, always on: the last fallback.
+# Removed in this refresh: ws2 LM Studio (192.168.50.92, now the ai-server) and the MacBook oMLX (192.168.50.93, laptop).
+litellm_aiserver_base_url: "http://192.168.50.112:8080/v1"
+litellm_minisys_base_url: "http://192.168.50.111:8001/v1"
+litellm_macmini_base_url: "http://192.168.50.94:8000/v1"
+litellm_workstation_base_url: "http://192.168.50.91:1234/v1"
 litellm_ollama_base_url: "http://192.168.50.51:11434"
 
 litellm_omlx_api_key: "{{ vault_omlx_api_key | default(vault_openwebui_omlx_api_key | default(vault_hermes_omlx_api_key | default('example'))) }}"
+litellm_workstation_api_key: "lm-studio"
 
-# The primary oMLX host is currently offline; both oMLX routing groups point at
-# the live secondary host until the primary comes back.
-litellm_omlx_primary_model_name: omlx-primary
-litellm_omlx_primary_model: gpt-oss-20b-MLX-8bit
-litellm_omlx_primary_base_url: "http://192.168.50.94:8000/v1"
-litellm_omlx_primary_chat_model: "Qwen3.6-27B-6bit"
-litellm_omlx_primary_coding_model: "Qwen3.6-35B-A3B-6bit"
-litellm_omlx_primary_thinking_model: "gpt-oss-20b-MLX-8bit"
-
-litellm_omlx_secondary_model_name: omlx-secondary
-litellm_omlx_secondary_model: gemma-4-26b-a4b-it-6bit
-litellm_omlx_secondary_base_url: "http://192.168.50.94:8000/v1"
-litellm_omlx_secondary_chat_model: "gemma-4-26b-a4b-it-6bit"
-litellm_omlx_secondary_coding_model: "gpt-oss-20b-MLX-8bit"
-litellm_omlx_secondary_thinking_model: "Qwen3.6-35B-A3B-6bit"
-
+# Legacy alias kept for existing clients (AnythingLLM).
+litellm_model_name: local-ollama
 litellm_ollama_chat_model: "llama3.2:latest"
 litellm_ollama_coding_model: "deepseek-coder-v2:latest"
 litellm_ollama_thinking_model: "qwen3.5:latest"
 litellm_ollama_hermes_model: "hermes3:latest"
 litellm_ollama_gemma_model: "gemma4:latest"
 
-# Workstation2 LM Studio (OpenAI-compatible endpoint) can be used as an
-# additional fallback while model mixes are tuned.
-litellm_ws2_lmstudio_base_url: "http://192.168.50.92:1234/v1"
-litellm_ws2_lmstudio_api_key: "none"
-litellm_ws2_lmstudio_qwen38_model: "qwen/qwen3.8-27b"
-litellm_ws2_lmstudio_muse_glimmer_model: "meta/muse-glimmer"
-litellm_ws2_lmstudio_gpt_oss_20b_model: "gpt-oss-20b"
-litellm_ws2_lmstudio_gemma4_26b_model: "google/gemma-4-26b-a4b-qat"
-litellm_ws2_lmstudio_gemma4_12b_model: "google/gemma-4-12b-qat"
-
-litellm_ws2_lmstudio_chat_model: "{{ litellm_ws2_lmstudio_qwen38_model }}"
-litellm_ws2_lmstudio_coding_model: "{{ litellm_ws2_lmstudio_qwen38_model }}"
-litellm_ws2_lmstudio_thinking_model: "{{ litellm_ws2_lmstudio_qwen38_model }}"
-
-# Homelab suite aliases for single-model-per-host operation.
-# Keep these aliases separate from legacy use-chat/use-coding/use-thinking so
-# existing consumers can migrate incrementally.
-litellm_homelab_orchestrator_alias: "homelab-orchestrator"
-litellm_homelab_coder_alias: "homelab-coder"
-litellm_homelab_thinker_alias: "homelab-thinker"
-litellm_homelab_research_alias: "homelab-research"
-litellm_homelab_deterministic_alias: "homelab-deterministic"
-
-# Local fast orchestrator (override to your workstation endpoint if needed).
-litellm_homelab_orchestrator_base_url: "http://192.168.50.93:8000/v1"
-litellm_homelab_orchestrator_api_key: "{{ litellm_omlx_api_key }}"
-litellm_homelab_orchestrator_model: "gpt-oss-20b-MXFP4-Q8"
-
-# Main coder/thinker on workstation2 LM Studio.
-litellm_homelab_ws2_base_url: "http://192.168.50.92:1234/v1"
-litellm_homelab_ws2_api_key: "none"
-litellm_homelab_coder_model: "{{ litellm_ws2_lmstudio_qwen38_model }}"
-litellm_homelab_thinker_model: "{{ litellm_ws2_lmstudio_qwen38_model }}"
-
-# Research model on MacBook Pro oMLX.
-litellm_homelab_research_base_url: "http://192.168.50.93:8000/v1"
-litellm_homelab_research_api_key: "{{ litellm_omlx_api_key }}"
-litellm_homelab_research_model: "Qwen3.6-35B-A3B-6bit"
-
-# Deterministic small-task model on Mac Mini oMLX.
-litellm_homelab_deterministic_base_url: "http://192.168.50.94:8000/v1"
-litellm_homelab_deterministic_api_key: "{{ litellm_omlx_api_key }}"
-litellm_homelab_deterministic_model: "Qwen3.5-9B"
-
 litellm_alias_chat: use-chat
 litellm_alias_coding: use-coding
 litellm_alias_thinking: use-thinking
+
+# Every deployment LiteLLM serves. Fields: name (what clients ask for), model (the id the backend knows), api_base,
+# optional api_key (default "none"), provider (default openai), max_input_tokens, timeout / stream_timeout (seconds).
+# max_input_tokens + enable_pre_call_checks keep an oversized prompt off a deployment it would not fit; it goes to the fallback.
+litellm_models:
+  # --- Tiers: same names as the MacBook router (~/opencode/litellm/config.yaml), so OpenCode can point here too ---
+  - {name: tt-main, model: tt-coder, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1500, stream_timeout: 1200}
+  - {name: tt-manager, model: tt-manager, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1200, stream_timeout: 900}
+  # Review tier: the first request swaps the ai-server to Flash-Next on both cards; the next tt-main/tt-manager request swaps back.
+  - {name: tt-flash, model: tt-flash, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 131072, timeout: 2400, stream_timeout: 1800}
+  - {name: tt-orch, model: minisys-35b, api_base: "{{ litellm_minisys_base_url }}", max_input_tokens: 262144, timeout: 1200, stream_timeout: 900}
+  - name: tt-research
+    model: Qwen3.6-35B-A3B-UD-MLX-4bit
+    api_base: "{{ litellm_macmini_base_url }}"
+    api_key: "{{ litellm_omlx_api_key }}"
+    max_input_tokens: 120000
+    timeout: 900
+    stream_timeout: 600
+  - name: tt-review
+    model: Qwen3-Coder-30B-A3B-Instruct-MLX-4bit
+    api_base: "{{ litellm_macmini_base_url }}"
+    api_key: "{{ litellm_omlx_api_key }}"
+    max_input_tokens: 131072
+    timeout: 1800
+    stream_timeout: 900
+  - name: tt-worker
+    model: openai/gpt-oss-20b
+    api_base: "{{ litellm_workstation_base_url }}"
+    api_key: "{{ litellm_workstation_api_key }}"
+    max_input_tokens: 120000
+    timeout: 600
+    stream_timeout: 300
+  - name: tt-light
+    model: Qwen3.6-35B-A3B-UD-MLX-4bit
+    api_base: "{{ litellm_macmini_base_url }}"
+    api_key: "{{ litellm_omlx_api_key }}"
+    max_input_tokens: 120000
+    timeout: 600
+    stream_timeout: 300
+  # Fallback targets.
+  - {name: bk-minisys, model: minisys-35b, api_base: "{{ litellm_minisys_base_url }}", max_input_tokens: 262144, timeout: 1500, stream_timeout: 900}
+  - name: bk-macmini
+    model: Qwen3.6-35B-A3B-UD-MLX-4bit
+    api_base: "{{ litellm_macmini_base_url }}"
+    api_key: "{{ litellm_omlx_api_key }}"
+    max_input_tokens: 120000
+    timeout: 900
+    stream_timeout: 600
+
+  # --- General-purpose aliases (Hermes, Open WebUI task model). Primary is the Mac Mini: always loaded and never swaps, so
+  # Hermes traffic cannot pull Flash-Next off the ai-server during a review window. Fallbacks reach the ai-server, then Ollama.
+  - name: "{{ litellm_alias_chat }}"
+    model: Qwen3.6-35B-A3B-UD-MLX-4bit
+    api_base: "{{ litellm_macmini_base_url }}"
+    api_key: "{{ litellm_omlx_api_key }}"
+    max_input_tokens: 120000
+    timeout: 600
+    stream_timeout: 300
+  - name: "{{ litellm_alias_thinking }}"
+    model: Qwen3.6-35B-A3B-UD-MLX-4bit
+    api_base: "{{ litellm_macmini_base_url }}"
+    api_key: "{{ litellm_omlx_api_key }}"
+    max_input_tokens: 120000
+    timeout: 900
+    stream_timeout: 600
+  - name: "{{ litellm_alias_coding }}"
+    model: Qwen3-Coder-30B-A3B-Instruct-MLX-4bit
+    api_base: "{{ litellm_macmini_base_url }}"
+    api_key: "{{ litellm_omlx_api_key }}"
+    max_input_tokens: 131072
+    timeout: 900
+    stream_timeout: 600
+
+  # --- Pick-a-model catalog: one entry per model on each machine, no fallbacks (you get the model you asked for or an error).
+  # ai-server: asking for one of these makes llama-swap load it (see the swap note above).
+  - {name: aiserver-qwen38-27b, model: tt-coder, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1500, stream_timeout: 1200}
+  - {name: aiserver-qwen36-35b, model: tt-manager, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1200, stream_timeout: 900}
+  - {name: aiserver-flash-next, model: tt-flash, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 131072, timeout: 2400, stream_timeout: 1800}
+  - name: aiserver-flash-strata
+    model: flash-strata
+    api_base: "{{ litellm_aiserver_base_url }}"
+    max_input_tokens: 131072
+    timeout: 2400
+    stream_timeout: 1800
+  - {name: aiserver-swift-27b, model: swift-27b, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1500, stream_timeout: 1200}
+  - {name: aiserver-gemma4-31b, model: gemma4-31b, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1200, stream_timeout: 900}
+  - {name: aiserver-gemma4-26b, model: gemma4-26b, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1200, stream_timeout: 900}
+  - {name: aiserver-glm47-flash, model: glm47-flash, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 202752, timeout: 1200, stream_timeout: 900}
+  - {name: aiserver-muse-30b, model: muse-30b, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1200, stream_timeout: 900}
+  # minisys: whatever preset `ai-lane` selected (35B by default).
+  - {name: minisys-lane, model: minisys-35b, api_base: "{{ litellm_minisys_base_url }}", max_input_tokens: 262144, timeout: 1500, stream_timeout: 900}
+  # Mac Mini oMLX: all resident, no swap.
+  - name: macmini-qwen36-35b
+    model: Qwen3.6-35B-A3B-UD-MLX-4bit
+    api_base: "{{ litellm_macmini_base_url }}"
+    api_key: "{{ litellm_omlx_api_key }}"
+    max_input_tokens: 120000
+    timeout: 900
+    stream_timeout: 600
+  - name: macmini-qwen38-27b
+    model: Qwen3.8-27B-MLX-4bit
+    api_base: "{{ litellm_macmini_base_url }}"
+    api_key: "{{ litellm_omlx_api_key }}"
+    max_input_tokens: 120000
+    timeout: 1500
+    stream_timeout: 1200
+  - name: macmini-qwen3-coder-30b
+    model: Qwen3-Coder-30B-A3B-Instruct-MLX-4bit
+    api_base: "{{ litellm_macmini_base_url }}"
+    api_key: "{{ litellm_omlx_api_key }}"
+    max_input_tokens: 131072
+    timeout: 900
+    stream_timeout: 600
+  - name: macmini-gemma4-26b
+    model: gemma-4-26B-A4B-it-QAT-MLX-4bit
+    api_base: "{{ litellm_macmini_base_url }}"
+    api_key: "{{ litellm_omlx_api_key }}"
+    max_input_tokens: 120000
+    timeout: 900
+    stream_timeout: 600
+  - name: macmini-gpt-oss-20b
+    model: gpt-oss-20b-MLX-8bit
+    api_base: "{{ litellm_macmini_base_url }}"
+    api_key: "{{ litellm_omlx_api_key }}"
+    max_input_tokens: 120000
+    timeout: 600
+    stream_timeout: 300
+  - name: workstation-gpt-oss-20b
+    model: openai/gpt-oss-20b
+    api_base: "{{ litellm_workstation_base_url }}"
+    api_key: "{{ litellm_workstation_api_key }}"
+    max_input_tokens: 120000
+    timeout: 600
+    stream_timeout: 300
+
+  # --- Ollama (CPU, always on) ---
+  - {name: ollama-chat, provider: ollama, model: "{{ litellm_ollama_chat_model }}", api_base: "{{ litellm_ollama_base_url }}"}
+  - {name: ollama-coding, provider: ollama, model: "{{ litellm_ollama_coding_model }}", api_base: "{{ litellm_ollama_base_url }}"}
+  - {name: ollama-thinking, provider: ollama, model: "{{ litellm_ollama_thinking_model }}", api_base: "{{ litellm_ollama_base_url }}"}
+  - {name: ollama-hermes3, provider: ollama, model: "{{ litellm_ollama_hermes_model }}", api_base: "{{ litellm_ollama_base_url }}"}
+  - {name: ollama-gemma4, provider: ollama, model: "{{ litellm_ollama_gemma_model }}", api_base: "{{ litellm_ollama_base_url }}"}
+  - {name: "{{ litellm_model_name }}", provider: ollama, model: "{{ litellm_ollama_chat_model }}", api_base: "{{ litellm_ollama_base_url }}"}
+
+# Fallback chains, tried in order. A fallback target does not inherit its own chain (not transitive), so list the
+# whole path a request should take.
+litellm_fallbacks:
+  - {model: tt-main, to: [bk-minisys, bk-macmini]}
+  - {model: tt-manager, to: [bk-minisys, bk-macmini]}
+  - {model: tt-orch, to: [bk-macmini, tt-manager]}
+  - {model: tt-research, to: [bk-minisys, tt-main]}
+  - {model: tt-worker, to: [bk-macmini, bk-minisys]}
+  - {model: tt-light, to: [bk-minisys]}
+  - {model: tt-review, to: [tt-manager, tt-research]}
+  - {model: tt-flash, to: [tt-review, tt-research]}
+  - {model: "{{ litellm_alias_chat }}", to: [tt-manager, bk-minisys, ollama-chat]}
+  - {model: "{{ litellm_alias_thinking }}", to: [tt-manager, bk-minisys, ollama-thinking]}
+  - {model: "{{ litellm_alias_coding }}", to: [tt-main, bk-minisys, ollama-coding]}
+  - {model: "{{ litellm_model_name }}", to: [bk-macmini]}
+
+# A sleeping or unplugged server does not refuse the connection; it times out. So: no retries on the same server, and the
+# first timeout benches it for litellm_cooldown_time so later calls go straight to the fallback. LiteLLM never cools down
+# a one-deployment group without an explicit allowed_fails_policy.
+litellm_num_retries: 0
+litellm_cooldown_time: 600
 
 # Traefik integration
 litellm_network_name: traefik_proxy

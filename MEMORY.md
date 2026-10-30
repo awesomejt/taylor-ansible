@@ -1,3 +1,14 @@
+### LiteLLM Fleet Refresh + ai-server Model Switching (2026-10-29)
+
+- `roles/litellm` is now data-driven: `litellm_models` (name, model, api_base, optional api_key/provider/max_input_tokens/timeouts) and `litellm_fallbacks` (list of `{model, to}`; Ansible does not template dict keys, so not a dict).
+- Removed stale names `omlx-primary-*`, `omlx-secondary-*`, `ws2-lmstudio-*`, `homelab-*`: their model ids and hosts no longer existed (ws2 192.168.50.92 is now the ai-server 192.168.50.112; MacBook oMLX 192.168.50.93 is a laptop), so requests were silently ending on Ollama.
+- Added the MacBook router's tier names (`tt-main`, `tt-manager`, `tt-flash`, `tt-orch`, `tt-research`, `tt-review`, `tt-worker`, `tt-light`, `bk-*`) plus a pick-a-model catalog (`aiserver-*`, `macmini-*`, `minisys-lane`, `workstation-gpt-oss-20b`).
+- ai-server serves through llama-swap :8080 (systemd user service, linger on). Requesting an `aiserver-*` name loads that model and swaps the cards; it stays loaded until another group is requested (`ai-model production` restores the default).
+- Decision: `use-chat`/`use-thinking`/`use-coding` (Hermes, Open WebUI) go to the Mac Mini first, because it never swaps. Hermes traffic must not pull Flash-Next off the ai-server during time-track review windows. The ai-server is the first fallback.
+- Router settings copied from the MacBook router: `enable_pre_call_checks`, `num_retries: 0`, `cooldown_time: 600`, `allowed_fails_policy` (one timeout benches a sleeping host).
+- Docs: `docs/ai-model-switching.md`; per-machine switching lives in `~/projects/ai/local/servers/SWITCHING-MODELS.md`.
+- The `litellm.yaml` apply needs HashiCorp Vault unsealed (master key and Postgres password are `hashi_vault` lookups in `vars/vault-secrets.yaml`).
+
 ### Simple Baseline Playbook (2026-05-29)
 
 - Added `simple.yaml` for simple or temporary systems that should only run the `updates` and `common` roles.

@@ -29,8 +29,11 @@ ai_validation_required_litellm_models:
   - ollama-chat
   - ollama-coding
   - ollama-thinking
-  - omlx-primary-chat
-  - omlx-secondary-chat
+  - tt-main
+  - tt-manager
+  - tt-research
+  - aiserver-qwen38-27b
+  - macmini-qwen36-35b
 
 # Log rotation
 ai_validation_logrotate_frequency: daily

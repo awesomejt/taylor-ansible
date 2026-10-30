@@ -1,249 +1,42 @@
+# Managed by Ansible (roles/litellm). Edit litellm_models / litellm_fallbacks in roles/litellm/defaults/main.yaml.
+# How to switch models on each machine: docs/ai-model-switching.md.
 general_settings:
   master_key: "{{ litellm_master_key }}"
 
+litellm_settings:
+  drop_params: true       # clients send params some backends (LM Studio, oMLX) reject
+  telemetry: false
+
 router_settings:
+  # Skip any deployment whose max_input_tokens the prompt would exceed (it goes to the fallback instead).
+  enable_pre_call_checks: true
+  num_retries: {{ litellm_num_retries }}
+  cooldown_time: {{ litellm_cooldown_time }}
+  allowed_fails_policy:
+    TimeoutErrorAllowedFails: 0
+    InternalServerErrorAllowedFails: 1
+    ServiceUnavailableErrorAllowedFails: 1
+    BadGatewayErrorAllowedFails: 1
   fallbacks:
-    - "{{ litellm_omlx_primary_model_name }}":
-        - "{{ litellm_omlx_secondary_model_name }}"
-        - "{{ litellm_model_name }}"
-    - "{{ litellm_omlx_secondary_model_name }}":
-        - "{{ litellm_omlx_primary_model_name }}"
-        - "{{ litellm_model_name }}"
-    - "{{ litellm_model_name }}":
-        - "{{ litellm_omlx_primary_model_name }}"
-        - "{{ litellm_omlx_secondary_model_name }}"
-    - "{{ litellm_alias_chat }}":
-        - "omlx-secondary-chat"
-        - "ws2-lmstudio-chat"
-        - "ollama-chat"
-    - "{{ litellm_alias_coding }}":
-        - "omlx-secondary-coding"
-        - "ws2-lmstudio-coding"
-        - "ollama-coding"
-    - "{{ litellm_alias_thinking }}":
-        - "omlx-secondary-thinking"
-        - "ws2-lmstudio-thinking"
-        - "ollama-thinking"
-    - "omlx-primary-chat":
-        - "omlx-secondary-chat"
-        - "ollama-chat"
-    - "omlx-secondary-chat":
-        - "ws2-lmstudio-chat"
-        - "ollama-chat"
-    - "omlx-primary-coding":
-        - "omlx-secondary-coding"
-        - "ollama-coding"
-    - "omlx-secondary-coding":
-        - "ws2-lmstudio-coding"
-        - "ollama-coding"
-    - "omlx-primary-thinking":
-        - "omlx-secondary-thinking"
-        - "ollama-thinking"
-    - "omlx-secondary-thinking":
-        - "ws2-lmstudio-thinking"
-        - "ollama-thinking"
-    - "{{ litellm_homelab_orchestrator_alias }}":
-      - "{{ litellm_homelab_coder_alias }}"
-      - "{{ litellm_homelab_research_alias }}"
-      - "{{ litellm_homelab_deterministic_alias }}"
-    - "{{ litellm_homelab_coder_alias }}":
-      - "{{ litellm_homelab_thinker_alias }}"
-      - "{{ litellm_homelab_research_alias }}"
-      - "{{ litellm_homelab_deterministic_alias }}"
-    - "{{ litellm_homelab_thinker_alias }}":
-      - "{{ litellm_homelab_research_alias }}"
-      - "{{ litellm_homelab_deterministic_alias }}"
-    - "{{ litellm_homelab_research_alias }}":
-      - "{{ litellm_homelab_deterministic_alias }}"
+{% for f in litellm_fallbacks %}
+    - "{{ f.model }}": {{ f.to | to_json }}
+{% endfor %}
 
 model_list:
-  - model_name: "{{ litellm_alias_chat }}"
+{% for m in litellm_models %}
+  - model_name: "{{ m.name }}"
     litellm_params:
-      model: "openai/{{ litellm_omlx_primary_chat_model }}"
-      api_base: "{{ litellm_omlx_primary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "{{ litellm_alias_coding }}"
-    litellm_params:
-      model: "openai/{{ litellm_omlx_primary_coding_model }}"
-      api_base: "{{ litellm_omlx_primary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "{{ litellm_alias_thinking }}"
-    litellm_params:
-      model: "openai/{{ litellm_omlx_primary_thinking_model }}"
-      api_base: "{{ litellm_omlx_primary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "omlx-primary-chat"
-    litellm_params:
-      model: "openai/{{ litellm_omlx_primary_chat_model }}"
-      api_base: "{{ litellm_omlx_primary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "omlx-primary-coding"
-    litellm_params:
-      model: "openai/{{ litellm_omlx_primary_coding_model }}"
-      api_base: "{{ litellm_omlx_primary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "omlx-primary-thinking"
-    litellm_params:
-      model: "openai/{{ litellm_omlx_primary_thinking_model }}"
-      api_base: "{{ litellm_omlx_primary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "omlx-secondary-chat"
-    litellm_params:
-      model: "openai/{{ litellm_omlx_secondary_chat_model }}"
-      api_base: "{{ litellm_omlx_secondary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "omlx-secondary-coding"
-    litellm_params:
-      model: "openai/{{ litellm_omlx_secondary_coding_model }}"
-      api_base: "{{ litellm_omlx_secondary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "omlx-secondary-thinking"
-    litellm_params:
-      model: "openai/{{ litellm_omlx_secondary_thinking_model }}"
-      api_base: "{{ litellm_omlx_secondary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "ollama-chat"
-    litellm_params:
-      model: "ollama/{{ litellm_ollama_chat_model }}"
-      api_base: "{{ litellm_ollama_base_url }}"
-      api_key: "none"
-  - model_name: "ollama-coding"
-    litellm_params:
-      model: "ollama/{{ litellm_ollama_coding_model }}"
-      api_base: "{{ litellm_ollama_base_url }}"
-      api_key: "none"
-  - model_name: "ollama-thinking"
-    litellm_params:
-      model: "ollama/{{ litellm_ollama_thinking_model }}"
-      api_base: "{{ litellm_ollama_base_url }}"
-      api_key: "none"
-  - model_name: "ws2-lmstudio-chat"
-    litellm_params:
-      model: "openai/{{ litellm_ws2_lmstudio_chat_model }}"
-      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
-      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
-  - model_name: "ws2-lmstudio-coding"
-    litellm_params:
-      model: "openai/{{ litellm_ws2_lmstudio_coding_model }}"
-      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
-      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
-  - model_name: "ws2-lmstudio-thinking"
-    litellm_params:
-      model: "openai/{{ litellm_ws2_lmstudio_thinking_model }}"
-      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
-      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
-  - model_name: "ws2-lmstudio-qwen3-8-27b"
-    litellm_params:
-      model: "openai/{{ litellm_ws2_lmstudio_qwen38_model }}"
-      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
-      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
-  - model_name: "ws2-lmstudio-muse-glimmer"
-    litellm_params:
-      model: "openai/{{ litellm_ws2_lmstudio_muse_glimmer_model }}"
-      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
-      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
-  - model_name: "ws2-lmstudio-gpt-oss-20b"
-    litellm_params:
-      model: "openai/{{ litellm_ws2_lmstudio_gpt_oss_20b_model }}"
-      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
-      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
-  - model_name: "ws2-lmstudio-gemma4-26b-qat"
-    litellm_params:
-      model: "openai/{{ litellm_ws2_lmstudio_gemma4_26b_model }}"
-      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
-      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
-  - model_name: "ws2-lmstudio-gemma4-12b-qat"
-    litellm_params:
-      model: "openai/{{ litellm_ws2_lmstudio_gemma4_12b_model }}"
-      api_base: "{{ litellm_ws2_lmstudio_base_url }}"
-      api_key: "{{ litellm_ws2_lmstudio_api_key }}"
-  - model_name: "{{ litellm_homelab_orchestrator_alias }}"
-    litellm_params:
-      model: "openai/{{ litellm_homelab_orchestrator_model }}"
-      api_base: "{{ litellm_homelab_orchestrator_base_url }}"
-      api_key: "{{ litellm_homelab_orchestrator_api_key }}"
-  - model_name: "{{ litellm_homelab_coder_alias }}"
-    litellm_params:
-      model: "openai/{{ litellm_homelab_coder_model }}"
-      api_base: "{{ litellm_homelab_ws2_base_url }}"
-      api_key: "{{ litellm_homelab_ws2_api_key }}"
-  - model_name: "{{ litellm_homelab_thinker_alias }}"
-    litellm_params:
-      model: "openai/{{ litellm_homelab_thinker_model }}"
-      api_base: "{{ litellm_homelab_ws2_base_url }}"
-      api_key: "{{ litellm_homelab_ws2_api_key }}"
-  - model_name: "{{ litellm_homelab_research_alias }}"
-    litellm_params:
-      model: "openai/{{ litellm_homelab_research_model }}"
-      api_base: "{{ litellm_homelab_research_base_url }}"
-      api_key: "{{ litellm_homelab_research_api_key }}"
-  - model_name: "{{ litellm_homelab_deterministic_alias }}"
-    litellm_params:
-      model: "openai/{{ litellm_homelab_deterministic_model }}"
-      api_base: "{{ litellm_homelab_deterministic_base_url }}"
-      api_key: "{{ litellm_homelab_deterministic_api_key }}"
-  - model_name: "{{ litellm_model_name }}"
-    litellm_params:
-      model: "ollama/{{ litellm_ollama_chat_model }}"
-      api_base: "{{ litellm_ollama_base_url }}"
-      api_key: "none"
-  - model_name: "ollama-hermes3"
-    litellm_params:
-      model: "ollama/{{ litellm_ollama_hermes_model }}"
-      api_base: "{{ litellm_ollama_base_url }}"
-      api_key: "none"
-  - model_name: "ollama-gemma4"
-    litellm_params:
-      model: "ollama/{{ litellm_ollama_gemma_model }}"
-      api_base: "{{ litellm_ollama_base_url }}"
-      api_key: "none"
-  - model_name: "omlx-primary-gpt-oss-20b"
-    litellm_params:
-      model: "openai/gpt-oss-20b-MXFP4-Q8"
-      api_base: "{{ litellm_omlx_primary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "omlx-primary-qwen3-6-27b"
-    litellm_params:
-      model: "openai/Qwen3.6-27B-6bit"
-      api_base: "{{ litellm_omlx_primary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "omlx-primary-qwen3-6-35b"
-    litellm_params:
-      model: "openai/Qwen3.6-35B-A3B-6bit"
-      api_base: "{{ litellm_omlx_primary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "omlx-primary-gemma4-31b"
-    litellm_params:
-      model: "openai/gemma-4-31b-it-6bit"
-      api_base: "{{ litellm_omlx_primary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "omlx-primary-glm-4-7-flash"
-    litellm_params:
-      model: "openai/GLM-4.7-Flash-MLX-6bit"
-      api_base: "{{ litellm_omlx_primary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "omlx-primary-qwen3-5-opus-distilled"
-    litellm_params:
-      model: "openai/Qwen3.5-27B-Claude-4.6-Opus-Distilled-MLX-6bit"
-      api_base: "{{ litellm_omlx_primary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "omlx-secondary-gpt-oss-20b"
-    litellm_params:
-      model: "openai/gpt-oss-20b-MLX-8bit"
-      api_base: "{{ litellm_omlx_secondary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "omlx-secondary-qwen3-6-27b"
-    litellm_params:
-      model: "openai/Qwen3.6-27B-6bit"
-      api_base: "{{ litellm_omlx_secondary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "omlx-secondary-qwen3-6-35b"
-    litellm_params:
-      model: "openai/Qwen3.6-35B-A3B-6bit"
-      api_base: "{{ litellm_omlx_secondary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
-  - model_name: "omlx-secondary-gemma4-26b"
-    litellm_params:
-      model: "openai/gemma-4-26b-a4b-it-6bit"
-      api_base: "{{ litellm_omlx_secondary_base_url }}"
-      api_key: "{{ litellm_omlx_api_key }}"
+      model: "{{ m.provider | default('openai') }}/{{ m.model }}"
+      api_base: "{{ m.api_base }}"
+      api_key: "{{ m.api_key | default('none') }}"
+{% if m.timeout is defined %}
+      timeout: {{ m.timeout }}
+{% endif %}
+{% if m.stream_timeout is defined %}
+      stream_timeout: {{ m.stream_timeout }}
+{% endif %}
+{% if m.max_input_tokens is defined %}
+    model_info:
+      max_input_tokens: {{ m.max_input_tokens }}
+{% endif %}
+{% endfor %}
