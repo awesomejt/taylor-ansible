@@ -6,10 +6,11 @@
 - [x] Update `roles/ai-validation` required alias list
 - [x] Validate locally (`ansible-playbook --syntax-check`, `ansible-lint`)
 - [x] Sync: `./sync-to-ansible.sh`
-- [ ] Unseal HashiCorp Vault (`vault operator unseal` x3 on 192.168.50.13); `--check` run failed with "Vault is sealed"
-- [ ] Run on Ansible host: `ansible-playbook -i inventory.ini litellm.yaml --vault-password-file ~/avpass`
-- [ ] Run on Ansible host: `ansible-playbook -i inventory.ini ai-validation.yaml --vault-password-file ~/avpass`
-- [ ] Verify: `/v1/models` lists the new names; `use-chat` answers from the Mac Mini; `aiserver-gemma4-26b` swaps the ai-server, then `ai-model production`
+- [x] Unseal HashiCorp Vault (`vault operator unseal` x3 on 192.168.50.13); `--check` run failed with "Vault is sealed"
+- [x] Run on Ansible host: `ansible-playbook -i inventory.ini litellm.yaml --vault-password-file ~/avpass`
+- [x] Run on Ansible host: `ansible-playbook -i inventory.ini ai-validation.yaml --vault-password-file ~/avpass`
+- [x] Verify: `/v1/models` lists the new names; `use-chat` answers from the Mac Mini; `aiserver-gemma4-26b` swaps the ai-server, then `ai-model production`
+- [ ] Reboot 192.168.50.50 for kernel 7.0.0-42 (installed by the 2026-10-29 litellm.yaml run; /var/run/reboot-required)
 - [ ] Reboot the minisys (amdgpu hung since 2026-10-27 after an OCuLink link drop; needs sudo/power button)
 
 ## Hermes Dev Toolchain Install (2026-05-26)
