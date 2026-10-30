@@ -62,34 +62,34 @@ litellm_alias_thinking: use-thinking
 # optional api_key (default "none"), provider (default openai), max_input_tokens, timeout / stream_timeout (seconds).
 # max_input_tokens + enable_pre_call_checks keep an oversized prompt off a deployment it would not fit; it goes to the fallback.
 litellm_models:
-  # --- Tiers: same names as the MacBook router (~/opencode/litellm/config.yaml), so OpenCode can point here too ---
-  - {name: tt-main, model: tt-coder, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1500, stream_timeout: 1200}
-  - {name: tt-manager, model: tt-manager, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1200, stream_timeout: 900}
-  # Review tier: the first request swaps the ai-server to Flash-Next on both cards; the next tt-main/tt-manager request swaps back.
-  - {name: tt-flash, model: tt-flash, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 131072, timeout: 2400, stream_timeout: 1800}
-  - {name: tt-orch, model: minisys-35b, api_base: "{{ litellm_minisys_base_url }}", max_input_tokens: 262144, timeout: 1200, stream_timeout: 900}
-  - name: tt-research
+  # --- Role tiers (the MacBook router, ~/opencode/litellm/config.yaml, has the same roles as tt-* for time-track) ---
+  - {name: main, model: tt-coder, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1500, stream_timeout: 1200}
+  - {name: manager, model: tt-manager, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1200, stream_timeout: 900}
+  # Review tier: the first request swaps the ai-server to Flash-Next on both cards; the next main/manager request swaps back.
+  - {name: flash, model: tt-flash, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 131072, timeout: 2400, stream_timeout: 1800}
+  - {name: orch, model: minisys-35b, api_base: "{{ litellm_minisys_base_url }}", max_input_tokens: 262144, timeout: 1200, stream_timeout: 900}
+  - name: research
     model: Qwen3.6-35B-A3B-UD-MLX-4bit
     api_base: "{{ litellm_macmini_base_url }}"
     api_key: "{{ litellm_omlx_api_key }}"
     max_input_tokens: 120000
     timeout: 900
     stream_timeout: 600
-  - name: tt-review
+  - name: review
     model: Qwen3-Coder-30B-A3B-Instruct-MLX-4bit
     api_base: "{{ litellm_macmini_base_url }}"
     api_key: "{{ litellm_omlx_api_key }}"
     max_input_tokens: 131072
     timeout: 1800
     stream_timeout: 900
-  - name: tt-worker
+  - name: worker
     model: openai/gpt-oss-20b
     api_base: "{{ litellm_workstation_base_url }}"
     api_key: "{{ litellm_workstation_api_key }}"
     max_input_tokens: 120000
     timeout: 600
     stream_timeout: 300
-  - name: tt-light
+  - name: light
     model: Qwen3.6-35B-A3B-UD-MLX-4bit
     api_base: "{{ litellm_macmini_base_url }}"
     api_key: "{{ litellm_omlx_api_key }}"
@@ -203,17 +203,17 @@ litellm_models:
 # Fallback chains, tried in order. A fallback target does not inherit its own chain (not transitive), so list the
 # whole path a request should take.
 litellm_fallbacks:
-  - {model: tt-main, to: [bk-minisys, bk-macmini]}
-  - {model: tt-manager, to: [bk-minisys, bk-macmini]}
-  - {model: tt-orch, to: [bk-macmini, tt-manager]}
-  - {model: tt-research, to: [bk-minisys, tt-main]}
-  - {model: tt-worker, to: [bk-macmini, bk-minisys]}
-  - {model: tt-light, to: [bk-minisys]}
-  - {model: tt-review, to: [tt-manager, tt-research]}
-  - {model: tt-flash, to: [tt-review, tt-research]}
-  - {model: "{{ litellm_alias_chat }}", to: [tt-manager, bk-minisys, ollama-chat]}
-  - {model: "{{ litellm_alias_thinking }}", to: [tt-manager, bk-minisys, ollama-thinking]}
-  - {model: "{{ litellm_alias_coding }}", to: [tt-main, bk-minisys, ollama-coding]}
+  - {model: main, to: [bk-minisys, bk-macmini]}
+  - {model: manager, to: [bk-minisys, bk-macmini]}
+  - {model: orch, to: [bk-macmini, manager]}
+  - {model: research, to: [bk-minisys, main]}
+  - {model: worker, to: [bk-macmini, bk-minisys]}
+  - {model: light, to: [bk-minisys]}
+  - {model: review, to: [manager, research]}
+  - {model: flash, to: [review, research]}
+  - {model: "{{ litellm_alias_chat }}", to: [manager, bk-minisys, ollama-chat]}
+  - {model: "{{ litellm_alias_thinking }}", to: [manager, bk-minisys, ollama-thinking]}
+  - {model: "{{ litellm_alias_coding }}", to: [main, bk-minisys, ollama-coding]}
   - {model: "{{ litellm_model_name }}", to: [bk-macmini]}
 
 # A sleeping or unplugged server does not refuse the connection; it times out. So: no retries on the same server, and the

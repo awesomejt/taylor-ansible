@@ -10,7 +10,7 @@ This page covers the names LiteLLM exposes and how to change them.
 | Kind | Names | Notes |
 |---|---|---|
 | General aliases | `use-chat`, `use-thinking`, `use-coding` | Mac Mini first (always loaded, never swaps the ai-server), then ai-server, minisys, Ollama |
-| Tiers (same as the MacBook router) | `tt-main`, `tt-manager`, `tt-flash`, `tt-orch`, `tt-research`, `tt-review`, `tt-worker`, `tt-light`, `bk-minisys`, `bk-macmini` | Fallback chains as on the MacBook, minus the MacBook itself |
+| Role tiers | `main` (ai-server 27B coder), `manager` (ai-server 35B), `flash` (ai-server Flash-Next, swaps both cards), `orch` (minisys), `research`, `light` (Mac Mini 35B), `review` (Mac Mini Qwen3-Coder), `worker` (workstation gpt-oss-20b), `bk-minisys`, `bk-macmini` | Same roles as the MacBook router's time-track `tt-*` names; fallback chains as there, minus the MacBook itself |
 | ai-server catalog | `aiserver-qwen38-27b`, `aiserver-qwen36-35b`, `aiserver-flash-next`, `aiserver-flash-strata`, `aiserver-swift-27b`, `aiserver-gemma4-31b`, `aiserver-gemma4-26b`, `aiserver-glm47-flash`, `aiserver-muse-30b` | **Asking for one loads it on the ai-server** (llama-swap). No fallbacks |
 | Other machines | `minisys-lane`, `macmini-qwen36-35b`, `macmini-qwen38-27b`, `macmini-qwen3-coder-30b`, `macmini-gemma4-26b`, `macmini-gpt-oss-20b`, `workstation-gpt-oss-20b` | No fallbacks |
 | Ollama | `ollama-chat`, `ollama-coding`, `ollama-thinking`, `ollama-hermes3`, `ollama-gemma4`, `local-ollama` | CPU, always on |

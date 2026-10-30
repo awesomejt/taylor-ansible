@@ -29,9 +29,9 @@ ai_validation_required_litellm_models:
   - ollama-chat
   - ollama-coding
   - ollama-thinking
-  - tt-main
-  - tt-manager
-  - tt-research
+  - main
+  - manager
+  - research
   - aiserver-qwen38-27b
   - macmini-qwen36-35b
 
