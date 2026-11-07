@@ -9,15 +9,18 @@ This page covers the names LiteLLM exposes and how to change them.
 
 | Kind | Names | Notes |
 |---|---|---|
-| General aliases | `use-chat`, `use-thinking`, `use-coding` | Mac Mini first (always loaded, never swaps the ai-server), then ai-server, minisys, Ollama |
+| General aliases | `use-chat`, `use-thinking`, `use-coding` | Mac Mini first (always loaded, never swaps the ai-server), then ai-server, minisys |
 | Role tiers | `main` (ai-server 27B coder), `manager` (ai-server 35B), `flash` (ai-server Flash-Next, swaps both cards), `orch` (minisys), `research`, `light` (Mac Mini 35B), `review` (Mac Mini Qwen3-Coder), `worker` (workstation gpt-oss-20b), `bk-minisys`, `bk-macmini` | Same roles as the MacBook router's time-track `tt-*` names; fallback chains as there, minus the MacBook itself |
 | ai-server catalog | `aiserver-qwen38-27b`, `aiserver-qwen36-35b`, `aiserver-flash-next`, `aiserver-flash-strata`, `aiserver-swift-27b`, `aiserver-gemma4-31b`, `aiserver-gemma4-26b`, `aiserver-glm47-flash`, `aiserver-muse-30b` | **Asking for one loads it on the ai-server** (llama-swap). No fallbacks |
 | Other machines | `minisys-lane`, `macmini-qwen36-35b`, `macmini-qwen38-27b`, `macmini-qwen3-coder-30b`, `macmini-gemma4-26b`, `macmini-gpt-oss-20b`, `workstation-gpt-oss-20b` | No fallbacks |
-| Ollama | `ollama-chat`, `ollama-coding`, `ollama-thinking`, `ollama-hermes3`, `ollama-gemma4`, `local-ollama` | CPU, always on |
 
 Removed on 2026-10-29: `omlx-primary-*`, `omlx-secondary-*`, `ws2-lmstudio-*` and `homelab-*`. They pointed at model ids and
 hosts that no longer exist (ws2 is now the ai-server; the MacBook oMLX is a laptop and is off), so every request through them
 was ending up on Ollama.
+
+Removed on 2026-11-07: every Ollama name (`ollama-*`, `local-ollama`) and the Ollama step at the end of the `use-*` chains.
+The Ollama host (192.168.50.51) is CPU only and far too slow; the other machines run better engines. AnythingLLM moved
+from `local-ollama` to `use-chat`.
 
 ## Using a specific model
 
@@ -35,8 +38,8 @@ Everything is data in `roles/litellm/defaults/main.yaml`:
 - `litellm_models`: one entry per name. Fields are `name`, `model` (the backend id), `api_base`, plus optional `api_key`,
   `provider` (default `openai`), `max_input_tokens`, `timeout` and `stream_timeout`.
 - `litellm_fallbacks`: `{model, to: [...]}`. Fallbacks are **not transitive**, so list the whole chain.
-- Backend URLs are set once in `litellm_aiserver_base_url`, `litellm_minisys_base_url`, `litellm_macmini_base_url`,
-  `litellm_workstation_base_url` and `litellm_ollama_base_url`.
+- Backend URLs are set once in `litellm_aiserver_base_url`, `litellm_minisys_base_url`, `litellm_macmini_base_url`
+  and `litellm_workstation_base_url`.
 
 To point the general aliases at the ai-server instead (faster, but it can interrupt review windows), change the `use-*`
 entries to `model: tt-manager` / `tt-coder` with `api_base: "{{ litellm_aiserver_base_url }}"`, and put `bk-macmini` first

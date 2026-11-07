@@ -13,7 +13,7 @@ anythingllm_storage_dir: "{{ anythingllm_project_dir }}/storage"
 # LiteLLM connection (via shared traefik_proxy network)
 anythingllm_litellm_base_url: "http://litellm:4000/v1"
 anythingllm_litellm_api_key: "{{ vault_litellm_master_key | default(vault_openwebui_litellm_master_key | default('change-me')) }}"
-anythingllm_litellm_model: local-ollama
+anythingllm_litellm_model: use-chat
 
 # Embedding via Ollama (direct host access)
 anythingllm_embedding_base_url: "http://192.168.50.51:11434"

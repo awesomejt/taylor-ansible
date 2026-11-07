@@ -35,24 +35,15 @@ litellm_postgres_password: "{{ vault_litellm_postgres_password | default(vault_o
 #   minisys    192.168.50.111  RX 7900 XTX, one llama-server lane on :8001 (preset chosen with `ai-lane`, default 35B 262k).
 #   Mac Mini   192.168.50.94   oMLX :8000, all five models resident, API key = vault_omlx_api_key.
 #   workstation 192.168.50.91  RTX 4080, LM Studio :1234 (gpt-oss-20b), only when LM Studio is running.
-#   Ollama     192.168.50.51   CPU, always on: the last fallback.
 # Removed in this refresh: ws2 LM Studio (192.168.50.92, now the ai-server) and the MacBook oMLX (192.168.50.93, laptop).
+# Removed 2026-11-07: Ollama (192.168.50.51, CPU only, far too slow). No LiteLLM name routes there any more.
 litellm_aiserver_base_url: "http://192.168.50.112:8080/v1"
 litellm_minisys_base_url: "http://192.168.50.111:8001/v1"
 litellm_macmini_base_url: "http://192.168.50.94:8000/v1"
 litellm_workstation_base_url: "http://192.168.50.91:1234/v1"
-litellm_ollama_base_url: "http://192.168.50.51:11434"
 
 litellm_omlx_api_key: "{{ vault_omlx_api_key | default(vault_openwebui_omlx_api_key | default(vault_hermes_omlx_api_key | default('example'))) }}"
 litellm_workstation_api_key: "lm-studio"
-
-# Legacy alias kept for existing clients (AnythingLLM).
-litellm_model_name: local-ollama
-litellm_ollama_chat_model: "llama3.2:latest"
-litellm_ollama_coding_model: "deepseek-coder-v2:latest"
-litellm_ollama_thinking_model: "qwen3.5:latest"
-litellm_ollama_hermes_model: "hermes3:latest"
-litellm_ollama_gemma_model: "gemma4:latest"
 
 litellm_alias_chat: use-chat
 litellm_alias_coding: use-coding
@@ -107,7 +98,7 @@ litellm_models:
     stream_timeout: 600
 
   # --- General-purpose aliases (Hermes, Open WebUI task model). Primary is the Mac Mini: always loaded and never swaps, so
-  # Hermes traffic cannot pull Flash-Next off the ai-server during a review window. Fallbacks reach the ai-server, then Ollama.
+  # Hermes traffic cannot pull Flash-Next off the ai-server during a review window. Fallbacks reach the ai-server, then minisys.
   - name: "{{ litellm_alias_chat }}"
     model: Qwen3.6-35B-A3B-UD-MLX-4bit
     api_base: "{{ litellm_macmini_base_url }}"
@@ -129,7 +120,6 @@ litellm_models:
     max_input_tokens: 131072
     timeout: 900
     stream_timeout: 600
-
   # --- Pick-a-model catalog: one entry per model on each machine, no fallbacks (you get the model you asked for or an error).
   # ai-server: asking for one of these makes llama-swap load it (see the swap note above).
   - {name: aiserver-qwen38-27b, model: tt-coder, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1500, stream_timeout: 1200}
@@ -192,13 +182,6 @@ litellm_models:
     timeout: 600
     stream_timeout: 300
 
-  # --- Ollama (CPU, always on) ---
-  - {name: ollama-chat, provider: ollama, model: "{{ litellm_ollama_chat_model }}", api_base: "{{ litellm_ollama_base_url }}"}
-  - {name: ollama-coding, provider: ollama, model: "{{ litellm_ollama_coding_model }}", api_base: "{{ litellm_ollama_base_url }}"}
-  - {name: ollama-thinking, provider: ollama, model: "{{ litellm_ollama_thinking_model }}", api_base: "{{ litellm_ollama_base_url }}"}
-  - {name: ollama-hermes3, provider: ollama, model: "{{ litellm_ollama_hermes_model }}", api_base: "{{ litellm_ollama_base_url }}"}
-  - {name: ollama-gemma4, provider: ollama, model: "{{ litellm_ollama_gemma_model }}", api_base: "{{ litellm_ollama_base_url }}"}
-  - {name: "{{ litellm_model_name }}", provider: ollama, model: "{{ litellm_ollama_chat_model }}", api_base: "{{ litellm_ollama_base_url }}"}
 
 # Fallback chains, tried in order. A fallback target does not inherit its own chain (not transitive), so list the
 # whole path a request should take.
@@ -211,10 +194,9 @@ litellm_fallbacks:
   - {model: light, to: [bk-minisys]}
   - {model: review, to: [manager, research]}
   - {model: flash, to: [review, research]}
-  - {model: "{{ litellm_alias_chat }}", to: [manager, bk-minisys, ollama-chat]}
-  - {model: "{{ litellm_alias_thinking }}", to: [manager, bk-minisys, ollama-thinking]}
-  - {model: "{{ litellm_alias_coding }}", to: [main, bk-minisys, ollama-coding]}
-  - {model: "{{ litellm_model_name }}", to: [bk-macmini]}
+  - {model: "{{ litellm_alias_chat }}", to: [manager, bk-minisys]}
+  - {model: "{{ litellm_alias_thinking }}", to: [manager, bk-minisys]}
+  - {model: "{{ litellm_alias_coding }}", to: [main, bk-minisys]}
 
 # A sleeping or unplugged server does not refuse the connection; it times out. So: no retries on the same server, and the
 # first timeout benches it for litellm_cooldown_time so later calls go straight to the fallback. LiteLLM never cools down

@@ -1,3 +1,11 @@
+### Ollama Removed From LiteLLM (2026-11-07)
+
+- Removed every Ollama deployment (`ollama-chat`, `ollama-coding`, `ollama-thinking`, `ollama-hermes3`, `ollama-gemma4`, `local-ollama`) and the Ollama step at the end of the `use-*` chains. Reason (owner): the Ollama host 192.168.50.51 is CPU only and dreadfully slow; the other machines run better engines. `use-*` chains now end at `bk-minisys`.
+- AnythingLLM chat model moved from `local-ollama` to `use-chat` (`anythingllm_litellm_model`). AnythingLLM embeddings still go to Ollama directly (`nomic-embed-text`), not through LiteLLM.
+- `ai-validation` no longer requires the Ollama names.
+- Not touched: `roles/open-webui/templates/litellm-config.yaml.j2` (old embedded LiteLLM config, no task deploys it), the `ollama` role/host, and the old Hermes vars (`hermes_ollama_*`, inventory 192.168.50.52).
+- New Hermes server is hermes.taylor.lan = 192.168.50.120 (installed by hand with the official install.sh, v0.23.0, user jason). Its cloud fallbacks (OpenCode Go -> OpenAI Codex -> OpenRouter) live in Hermes `fallback_providers`, not in LiteLLM. The `[hermes]` inventory group still points at the old 192.168.50.52.
+
 ### LiteLLM Fleet Refresh + ai-server Model Switching (2026-10-29)
 
 - `roles/litellm` is now data-driven: `litellm_models` (name, model, api_base, optional api_key/provider/max_input_tokens/timeouts) and `litellm_fallbacks` (list of `{model, to}`; Ansible does not template dict keys, so not a dict).
