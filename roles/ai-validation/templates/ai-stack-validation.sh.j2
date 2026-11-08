@@ -21,10 +21,18 @@ check_http() {
   local host="$2"
   local path="$3"
   local expected_codes="$4"
+  local scheme="${5:-http}"
   local url="http://127.0.0.1${path}"
+  local -a curl_args=(-H "Host: ${host}")
   local code=""
 
-  if ! code=$(curl -sS -o /dev/null -w "%{http_code}" -H "Host: ${host}" "${url}"); then
+  # HTTPS goes to Traefik on localhost with real SNI and certificate checks.
+  if [[ "${scheme}" == "https" ]]; then
+    url="https://${host}${path}"
+    curl_args=(--resolve "${host}:443:127.0.0.1")
+  fi
+
+  if ! code=$(curl -sS -o /dev/null -w "%{http_code}" "${curl_args[@]}" "${url}"); then
     log "FAIL ${name}: request failed (${url} Host=${host})"
     failures=$((failures + 1))
     return
@@ -85,7 +93,7 @@ check_http "Open WebUI route" "${AI_VALIDATION_OPENWEBUI_HOST:-chat.taylor.lan}"
 check_http "SearXNG route" "${AI_VALIDATION_SEARXNG_HOST:-search.taylor.lan}" "/" "200 301 302 307 308 404"
 check_http "AnythingLLM route" "${AI_VALIDATION_ANYTHINGLLM_HOST:-anythingllm.taylor.lan}" "/" "200 301 302 307 308"
 check_http "n8n route" "${AI_VALIDATION_N8N_HOST:-n8n.taylor.lan}" "/" "200 301 302 307 308"
-check_http "LiteLLM health route" "${AI_VALIDATION_LITELLM_HOST:-litellm.taylor.lan}" "/health" "200 401"
+check_http "LiteLLM health route" "${AI_VALIDATION_LITELLM_HOST:-litellm.taylor.lan}" "/health/liveliness" "200" https
 
 check_litellm_models
 
