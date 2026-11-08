@@ -4,7 +4,7 @@ anythingllm_project_name: anythingllm
 anythingllm_project_dir: "/opt/anythingllm"
 anythingllm_compose_file: "{{ anythingllm_project_dir }}/compose.yaml"
 
-anythingllm_image: mintplexlabs/anythingllm:v1.15.0
+anythingllm_image: mintplexlabs/anythingllm:1.15.0
 anythingllm_container_name: anythingllm
 anythingllm_restart_policy: unless-stopped
 

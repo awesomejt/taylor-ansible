@@ -49,6 +49,7 @@
 - name: Wait for AnythingLLM to be ready
   ansible.builtin.uri:
     url: "http://127.0.0.1/"
+    follow_redirects: none
     headers:
       Host: "{{ anythingllm_traefik_hostname }}"
     status_code:
