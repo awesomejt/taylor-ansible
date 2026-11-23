@@ -136,6 +136,16 @@ litellm_models:
   - {name: aiserver-gemma4-26b, model: gemma4-26b, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1200, stream_timeout: 900}
   - {name: aiserver-glm47-flash, model: glm47-flash, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 202752, timeout: 1200, stream_timeout: 900}
   - {name: aiserver-muse-30b, model: muse-30b, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1200, stream_timeout: 900}
+  - {name: aiserver-radiance-27b, model: radiance-27b, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1500, stream_timeout: 1200}
+  - {name: aiserver-glm53-maya, model: glm53-maya, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 131072, timeout: 2400, stream_timeout: 1800}
+  # --- TEST tier (candidates not yet promoted; evidence and promotion gates: ~/projects/ai/local/research/promotion-plan-2026-11-22.md) ---
+  # test-* names have NO fallbacks on purpose: a test run gets the candidate or an error, never a silent production model.
+  # They live on the ai-server and swap the cards, so never use them during a review window or beside main/manager/flash:
+  # `ai-model radiance` loads test-coder + test-manager together, `ai-model production` swaps back.
+  - {name: test-coder, model: radiance-27b, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1500, stream_timeout: 1200}
+  - {name: test-manager, model: manager-35b, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 262144, timeout: 1200, stream_timeout: 900}
+  - {name: test-reviewer, model: glm53-maya, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 131072, timeout: 2400, stream_timeout: 1800}
+  - {name: test-flash, model: flash-strata, api_base: "{{ litellm_aiserver_base_url }}", max_input_tokens: 131072, timeout: 2400, stream_timeout: 1800}
   # minisys: whatever preset `ai-lane` selected (35B by default).
   - {name: minisys-lane, model: minisys-35b, api_base: "{{ litellm_minisys_base_url }}", max_input_tokens: 262144, timeout: 1500, stream_timeout: 900}
   # Mac Mini oMLX: all resident, no swap.
